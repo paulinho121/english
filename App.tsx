@@ -5,7 +5,7 @@ import { Language, Level, Teacher, Topic } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
 import {
   Mic, MicOff, PhoneOff, Settings, Volume2,
-  Sparkles, Globe, ShieldCheck,
+  Sparkles, Globe, ShieldCheck, LayoutGrid, Loader2,
   ArrowRight, BrainCircuit, Bookmark
 } from 'lucide-react';
 
@@ -309,7 +309,7 @@ const App: React.FC = () => {
             for (const call of msg.toolCall.functionCalls) {
               if (call.name === 'next_phrase') {
                 console.log('Gemini Live API: Comando next_phrase detectado');
-                setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES.length - 1, prev + 1));
+                setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES[selectedLanguage].length - 1, prev + 1));
 
                 // Responder à ferramenta
                 sessionRef.current?.then((session: any) => {
@@ -402,11 +402,18 @@ const App: React.FC = () => {
       )}
 
       {step === 'setup' && (
-        <div className="flex-1 flex items-center justify-center p-4 md:p-6 animate-in slide-in-from-bottom-12 duration-500 overflow-y-auto">
-          <div className="max-w-xl w-full bg-white/5 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-6 md:p-8 space-y-6 md:space-y-8 shadow-2xl my-4">
-            <div className="text-center space-y-1">
-              <h2 className="text-3xl md:text-4xl font-black text-white">Configurar Aula</h2>
-              <p className="text-slate-400 text-sm md:text-base">Escolha como quer interagir com {currentTeacher?.name.split(' ')[1] || 'IA'} hoje.</p>
+        <div className="flex-1 flex items-center justify-center p-4 md:p-6 animate-in slide-in-from-bottom-12 duration-500 overflow-y-auto w-full">
+          <div className="max-w-7xl w-full bg-slate-950/90 backdrop-blur-2xl border border-white/5 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 space-y-8 md:space-y-12 shadow-2xl my-4 relative overflow-hidden">
+            {/* Ambient Background Glows */}
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/10 rounded-full blur-[100px]"></div>
+            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px]"></div>
+
+            <div className="relative text-center space-y-2 z-10">
+              <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3">
+                <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-orange-500" /> Configurar Sessão
+              </h2>
+              <p className="text-slate-400 text-sm md:text-lg max-w-lg mx-auto leading-relaxed">Personalize sua experiência de imersão total com a tecnologia Gemini.</p>
             </div>
 
             {hasSavedStage && (
@@ -418,123 +425,162 @@ const App: React.FC = () => {
               </button>
             )}
 
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <label className="text-xs font-black text-orange-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Globe className="w-4 h-4" /> Escolha o Idioma
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  {[
-                    { id: Language.ENGLISH, label: 'English', flag: '🇺🇸' },
-                    { id: Language.SPANISH, label: 'Español', flag: '🇪🇸' },
-                    { id: Language.FRENCH, label: 'Français', flag: '🇫🇷' }
-                  ].map(lang => (
-                    <button
-                      key={lang.id}
-                      onClick={() => {
-                        setSelectedLanguage(lang.id);
-                        // Auto-select the first teacher of the new language
-                        const firstTeacher = TEACHERS.find(t => t.language === lang.id);
-                        if (firstTeacher) setSelectedTeacherId(firstTeacher.id);
-                      }}
-                      className={`p-3 md:p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${selectedLanguage === lang.id
-                        ? 'border-orange-500 bg-orange-500/20 text-white scale-105 shadow-xl'
-                        : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
-                        }`}
-                    >
-                      <span className="text-2xl md:text-3xl">{lang.flag}</span>
-                      <span className="font-black text-sm md:text-base">{lang.label}</span>
-                    </button>
-                  ))}
+            <div className="grid md:grid-cols-12 gap-8 lg:gap-16 relative z-10">
+              <div className="md:col-span-12 lg:col-span-5 space-y-8">
+
+                {/* Language */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
+                    <Globe className="w-3 h-3 text-orange-500" /> Idioma
+                  </label>
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { id: Language.ENGLISH, label: 'Inglês', native: 'English', flagUrl: 'https://flagcdn.com/w80/us.png' },
+                      { id: Language.SPANISH, label: 'Espanhol', native: 'Español', flagUrl: 'https://flagcdn.com/w80/es.png' },
+                      { id: Language.FRENCH, label: 'Francês', native: 'Français', flagUrl: 'https://flagcdn.com/w80/fr.png' }
+                    ].map(lang => (
+                      <button
+                        key={lang.id}
+                        onClick={() => {
+                          setSelectedLanguage(lang.id);
+                          setCurrentPhraseIndex(0); // Reset phrase index
+                          const firstTeacher = TEACHERS.find(t => t.language === lang.id);
+                          if (firstTeacher) setSelectedTeacherId(firstTeacher.id);
+                        }}
+                        className={`p-3 rounded-xl border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedLanguage === lang.id
+                          ? 'border-orange-500/50 bg-gradient-to-r from-orange-500/10 to-transparent'
+                          : 'border-white/5 bg-white/5 hover:bg-white/10'
+                          }`}
+                      >
+                        <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all ${selectedLanguage === lang.id ? 'bg-orange-500' : 'bg-transparent'}`}></div>
+                        <img src={lang.flagUrl} alt={lang.label} className="w-8 h-6 object-cover rounded shadow-sm" />
+                        <div className="flex flex-col items-start">
+                          <span className={`font-bold text-sm ${selectedLanguage === lang.id ? 'text-white' : 'text-slate-300'}`}>{lang.label}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Level */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
+                    <Settings className="w-3 h-3 text-orange-500" /> Nível
+                  </label>
+                  <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                    {[
+                      { id: Level.BEGINNER, label: 'BÁSICO' },
+                      { id: Level.INTERMEDIATE, label: 'MÉDIO' },
+                      { id: Level.ADVANCED, label: 'PRO' }
+                    ].map(lvl => (
+                      <button
+                        key={lvl.id}
+                        onClick={() => setSelectedLevel(lvl.id)}
+                        className={`flex-1 py-3 px-2 rounded-lg text-[10px] font-black transition-all ${selectedLevel === lvl.id
+                          ? 'bg-orange-500 text-white shadow-lg'
+                          : 'text-slate-400 hover:text-white hover:bg-white/5'
+                          }`}
+                      >
+                        {lvl.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-slate-500 text-center italic">
+                    {selectedLevel === Level.BEGINNER ? 'Explicações em Português' : selectedLevel === Level.INTERMEDIATE ? 'Imersão (95% Idioma Alvo)' : 'Nativo (100% Idioma Alvo)'}
+                  </p>
+                </div>
+
+                {/* Topic */}
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
+                    <LayoutGrid className="w-3 h-3 text-orange-500" /> Tópico
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {TOPICS.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => setSelectedTopicId(t.id)}
+                        className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-2 ${selectedTopicId === t.id
+                          ? 'border-orange-500 bg-orange-500/10 text-white'
+                          : 'border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'
+                          }`}
+                      >
+                        <span className="text-xl">{t.icon}</span>
+                        <span className="font-bold text-[10px] uppercase leading-tight">{t.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-xs font-black text-orange-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <BrainCircuit className="w-4 h-4" /> Escolha seu Professor
+              <div className="md:col-span-12 lg:col-span-7 space-y-4 flex flex-col h-full lg:pl-16">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
+                  <BrainCircuit className="w-3 h-3 text-orange-500" /> Selecione o Professor
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+
+                <div className="grid grid-cols-1 gap-3 overflow-y-auto px-4 -mx-4 pb-4 pt-1 custom-scrollbar flex-1 min-h-[400px]">
                   {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => (
                     <button
                       key={teacher.id}
                       onClick={() => setSelectedTeacherId(teacher.id)}
-                      className={`p-3 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${selectedTeacherId === teacher.id
-                        ? 'border-orange-500 bg-orange-500/20 text-white scale-105 shadow-xl'
-                        : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
-                        }`}
+                      className={`relative group transition-all duration-300 ${selectedTeacherId === teacher.id ? 'scale-[1.02]' : 'hover:scale-[1.01]'}`}
                     >
-                      <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden border-2 border-white/10">
-                        <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="text-center">
-                        <span className="font-black text-xs md:text-sm block">{teacher.name}</span>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-tighter">{teacher.accent}</span>
+                      <div className={`p-4 rounded-2xl border flex items-start gap-4 transition-all ${selectedTeacherId === teacher.id
+                        ? 'bg-slate-900 border-orange-500 shadow-xl shadow-orange-900/20'
+                        : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                        }`}>
+
+                        <div className={`relative w-16 h-16 rounded-full overflow-hidden border-2 shrink-0 ${selectedTeacherId === teacher.id ? 'border-orange-500' : 'border-white/10 group-hover:border-white/30'}`}>
+                          <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
+                          {selectedTeacherId === teacher.id && <div className="absolute inset-0 bg-orange-500/10 mix-blend-overlay"></div>}
+                        </div>
+
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`font-bold text-base ${selectedTeacherId === teacher.id ? 'text-white' : 'text-slate-200'}`}>{teacher.name}</span>
+                            {selectedTeacherId === teacher.id && <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>}
+                          </div>
+                          <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider block mb-2">{teacher.accent}</span>
+                          <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{teacher.bio}</p>
+                        </div>
                       </div>
                     </button>
                   ))}
                   {TEACHERS.filter(t => t.language === selectedLanguage).length === 0 && (
-                    <div className="col-span-2 text-center py-2 text-slate-500 text-xs italic">
-                      Selecione um idioma primeiro
+                    <div className="py-12 text-center text-slate-500 border border-dashed border-white/10 rounded-3xl">
+                      Selecione um idioma para ver os professores
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <label className="text-xs font-black text-orange-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Settings className="w-4 h-4" /> Seu Nível
-                </label>
-                <div className="grid grid-cols-3 gap-3">
-                  {[Level.BEGINNER, Level.INTERMEDIATE, Level.ADVANCED].map(lvl => (
-                    <button
-                      key={lvl}
-                      onClick={() => setSelectedLevel(lvl)}
-                      className={`py-4 rounded-2xl border-2 text-xs font-black transition-all ${selectedLevel === lvl
-                        ? 'border-white bg-white text-black'
-                        : 'border-white/10 text-slate-400 hover:border-white/20'
-                        }`}
-                    >
-                      {lvl === Level.BEGINNER ? 'BÁSICO' : lvl === Level.INTERMEDIATE ? 'MÉDIO' : 'PRO'}
-                    </button>
-                  ))}
-                </div>
-              </div>
 
-              <div className="space-y-4">
-                <label className="text-xs font-black text-orange-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                  <Bookmark className="w-4 h-4" /> Escolha o Tópico
-                </label>
-                <div className="grid grid-cols-2 gap-3">
-                  {TOPICS.map(topic => (
-                    <button
-                      key={topic.id}
-                      onClick={() => setSelectedTopicId(topic.id)}
-                      className={`p-3 rounded-2xl border-2 transition-all flex items-center gap-3 ${selectedTopicId === topic.id
-                        ? 'border-orange-500 bg-orange-500/20 text-white shadow-xl'
-                        : 'border-white/10 bg-white/5 text-slate-400 hover:border-white/20'
-                        }`}
-                    >
-                      <span className="text-xl">{topic.icon}</span>
-                      <span className="font-black text-xs text-left leading-tight">{topic.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+
+
             </div>
 
-            <button
-              disabled={!selectedLanguage || !selectedTeacherId || connectionStatus === 'connecting'}
-              onClick={startSession}
-              className="w-full py-4 md:py-6 bg-white text-black hover:bg-orange-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed rounded-full font-black text-xl md:text-2xl transition-all flex items-center justify-center gap-4 shadow-xl"
-            >
-              {connectionStatus === 'connecting' ? 'Conectando...' : `Conectar com ${currentTeacher?.name?.split(' ')[1] || 'IA'}`} <Mic className="w-6 h-6 md:w-8 md:h-8" />
-            </button>
-
-            {connectionError && (
-              <div className="p-4 bg-rose-500/20 border border-rose-500/50 rounded-2xl text-rose-500 text-sm font-bold text-center animate-in fade-in zoom-in duration-300">
-                {connectionError}
-              </div>
-            )}
+            <div className="pt-4 mt-auto">
+              <button
+                onClick={startSession}
+                disabled={connectionStatus === 'connecting' || !selectedLanguage || !selectedTeacherId}
+                className="w-full py-5 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:gap-5 shadow-lg shadow-orange-600/20 hover:shadow-orange-600/40 disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                {connectionStatus === 'connecting' ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" /> Conectando...
+                  </>
+                ) : (
+                  <>
+                    Iniciar Sessão <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </>
+                )}
+              </button>
+              {connectionError && (
+                <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center text-xs font-medium">
+                  {connectionError}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -548,7 +594,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 w-full max-w-6xl mx-auto overflow-hidden">
-            <div className={`relative transition-all duration-500 z-20 ${selectedTopicId === 'pronunciation' ? '-mb-12 scale-90' : 'mb-8 md:mb-16'}`}>
+            <div className={`relative transition-all duration-500 z-40 ${selectedTopicId === 'pronunciation' ? '-mb-12 scale-90' : 'mb-8 md:mb-16'}`}>
               {/* Dynamic Aura */}
               <div className={`absolute inset-[-80px] rounded-full blur-[120px] transition-all duration-1000 ${isTeacherSpeaking ? 'bg-orange-500/40 opacity-100 scale-125' : 'bg-slate-800/10 opacity-0 scale-95'
                 }`}></div>
@@ -607,12 +653,12 @@ const App: React.FC = () => {
             {/* Pronunciation Target UI - UPDATED FOR IDEA B */}
             {/* Pronunciation Target UI - UPDATED FOR IDEA B */}
             {selectedTopicId === 'pronunciation' && (
-              <div className="w-full max-w-xl bg-slate-900/95 border-2 border-orange-500 rounded-[2rem] p-8 mb-8 shadow-2xl relative z-50 mx-auto flex flex-col items-center gap-6">
+              <div className="w-full max-w-xl bg-slate-900/95 border-2 border-orange-500 rounded-[2rem] p-8 mb-8 shadow-2xl relative z-30 mx-auto flex flex-col items-center gap-6">
 
                 {/* Header Badge */}
                 <div className="flex flex-col items-center gap-2">
                   <span className="text-orange-500 text-[10px] font-black uppercase tracking-[0.3em] bg-orange-500/10 px-4 py-1.5 rounded-full border border-orange-500/20">
-                    Modo Treinamento • {PRONUNCIATION_PHRASES[currentPhraseIndex]?.level || 'N/A'}
+                    Modo Treinamento • {PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.level || 'N/A'}
                   </span>
                   <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Leia em voz alta</p>
                 </div>
@@ -620,13 +666,13 @@ const App: React.FC = () => {
                 {/* Main Text */}
                 <div className="w-full text-center">
                   <p className="text-2xl md:text-4xl font-black text-white leading-snug tracking-tight drop-shadow-lg">
-                    "{PRONUNCIATION_PHRASES[currentPhraseIndex]?.text || 'Carregando...'}"
+                    "{PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.text || 'Carregando...'}"
                   </p>
                 </div>
 
                 {/* Translation */}
                 <div className="text-slate-400 text-sm italic font-medium">
-                  "{PRONUNCIATION_PHRASES[currentPhraseIndex]?.translation || ''}"
+                  "{PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.translation || ''}"
                 </div>
 
                 {/* Controls */}
@@ -640,12 +686,12 @@ const App: React.FC = () => {
                   </button>
 
                   <span className="text-xs font-black text-slate-500 bg-black/30 px-3 py-1 rounded-lg">
-                    {currentPhraseIndex + 1} / {PRONUNCIATION_PHRASES.length}
+                    {currentPhraseIndex + 1} / {PRONUNCIATION_PHRASES[selectedLanguage].length}
                   </span>
 
                   <button
-                    onClick={() => setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES.length - 1, prev + 1))}
-                    disabled={currentPhraseIndex === PRONUNCIATION_PHRASES.length - 1}
+                    onClick={() => setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES[selectedLanguage].length - 1, prev + 1))}
+                    disabled={currentPhraseIndex === PRONUNCIATION_PHRASES[selectedLanguage].length - 1}
                     className="p-4 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
                   >
                     <ArrowRight className="w-6 h-6 text-white" />
