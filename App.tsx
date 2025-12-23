@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 import { Language, Level, Teacher, Topic } from './types';
-import { TEACHERS, TOPICS } from './constants';
+import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
 import {
   Mic, MicOff, PhoneOff, Settings, Volume2,
   Sparkles, Globe, ShieldCheck,
@@ -49,11 +49,21 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected'>('idle');
   const [audioLevel, setAudioLevel] = useState(0);
-  const [pronunciationTarget, setPronunciationTarget] = useState<string | null>(null);
+  const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
 
   useEffect(() => {
-    setPronunciationTarget(null);
-  }, [selectedTopicId]);
+    if (selectedTopicId === 'pronunciation' && isConnectedRef.current) {
+      const phrase = PRONUNCIATION_PHRASES[currentPhraseIndex];
+      console.log('Enviando contexto de pronúncia para IA:', phrase.text);
+      sessionRef.current?.then((session: any) => {
+        session.send({
+          parts: [{ text: `CONTEXTO ATUALIZADO: O aluno vai ler a seguinte frase agora: "${phrase.text}". Avalie com rigor.` }]
+        });
+      });
+    }
+  }, [currentPhraseIndex, selectedTopicId]);
+
+
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -135,19 +145,13 @@ const App: React.FC = () => {
           {
             functionDeclarations: [
               {
-                name: 'display_pronunciation_target',
-                description: 'Displays a sentence for the user to practice reading out loud.',
-                parameters: {
-                  type: Type.OBJECT,
-                  properties: {
-                    phrase: { type: Type.STRING, description: 'The sentence to display.' }
-                  },
-                  required: ['phrase']
-                }
+                name: 'next_phrase',
+                description: 'Moves to the next pronunciation practice phrase.',
               }
             ]
           }
         ],
+
         speechConfig: {
           voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } }
         },
@@ -161,24 +165,24 @@ const App: React.FC = () => {
               - Idioma Alvo: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}.
 
               ESTRUTURA DA AULA (3 FASES OBRIGATÓRIAS):
+              
+              IMPORTANTE: NÍVEL ${selectedLevel}
+              ${selectedLevel === Level.BEGINNER
+                ? '⚠️ MODO BÁSICO: Explique TUDO em Português. Use o idioma alvo apenas para ensinar as frases e palavras, mas dê todas as instruções e correções em PORTUGUÊS para o aluno não se perder.'
+                : 'MODO IMERSÃO: Fale 95% no idioma alvo. Use português apenas se o aluno travar muito.'}
 
-              FASE 1: ACOLHIMENTO E RAPPORT (PORTUGUÊS)
-              - Se o aluno iniciar em Português, responda em Português.
-              - Seja caloroso e amigável. Pergunte como ele está.
-              - Objetivo: Criar conexão e deixar o aluno à vontade.
-              - QUANDO MUDAR: Assim que o aluno sinalizar que está pronto ("Vamos começar", "Ok", etc.), DIGA: "Ótimo! Vamos mudar para o ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'} agora!" e vá para a Fase 2.
+              FASE 1: ACOLHIMENTO E RAPPORT
+              - Inicie em Português (especialmente se for Básico).
+              - Seja caloroso e amigável.
+              - QUANDO MUDAR: Assim que o aluno sinalizar, vá para a Fase 2.
 
               FASE 2: AULA ESPECÍFICA (IDIOMA ALVO)
               - Tópico: ${topic.name}
               - Prompt Específico: "${topic.prompt}"
-              - Nesta fase, fale 100% no IDIOMA ALVO.
-              - Se o aluno travar, ajude rapidamente em português e volte ao idioma alvo.
+              ${selectedLevel === Level.BEGINNER ? '- Mantenha as explicações em Português, peça para o aluno repetir as frases no idioma alvo.' : '- Fale 100% no IDIOMA ALVO.'}
 
-              FASE 3: CONVERSAÇÃO LIVRE (IDIOMA ALVO)
-              - Após concluir o exercício da Fase 2, converse livremente sobre o dia a dia, hobbies, etc.
-              - Mantenha o idioma alvo.
-
-              NÍVEL DO ALUNO: ${selectedLevel}
+              FASE 3: CONVERSAÇÃO LIVRE
+              - Após concluir o exercício, converse livremente.
               `
               : `
               PERSONA: ${teacher.name}
@@ -187,24 +191,25 @@ const App: React.FC = () => {
 
               ESTRUTURA DA AULA (3 FASES OBRIGATÓRIAS):
 
-              FASE 1: ACOLHIMENTO (PORTUGUÊS)
-              - Inicie ou responda em Português se o aluno falar português.
-              - Seja polido(a) e profissional. Crie um ambiente seguro.
-              - Objetivo: Quebrar o gelo.
-              - TRANSIÇÃO: Quando sentir que o aluno está pronto, anuncie a mudança de idioma: "Shall we start speaking in English now?" (ou equivalente) e inicie a Fase 2.
+              IMPORTANTE: NÍVEL ${selectedLevel}
+              ${selectedLevel === Level.BEGINNER
+                ? '⚠️ MODO BÁSICO ATIVADO: O aluno é iniciante. Você DEVE dar explicações, feedback e instruções em PORTUGUÊS. Fale a frase no idioma alvo, mas explique o significado em português.'
+                : 'MODO IMERSÃO: REGRA ABSOLUTA: 95% da aula deve ser conduzida em ' + (selectedLanguage === Language.ENGLISH ? 'INGLÊS' : selectedLanguage === Language.SPANISH ? 'ESPANHOL' : 'FRANCÊS') + '.'}
 
-              FASE 2: AULA ESPECÍFICA (IDIOMA ALVO)
+              FASE 1: ACOLHIMENTO (PORTUGUÊS)
+              - Inicie ou responda em Português para criar conforto.
+              - TRANSIÇÃO: Quando sentir que o aluno está pronto, inicie o tópico.
+
+              FASE 2: AULA ESPECÍFICA
               - Tópico: ${topic.name}
               - Instrução da Atividade: ${topic.prompt}
-              - REGRA: Fale 95% no IDIOMA ALVO. Use português apenas para explicar conceitos complexos se o aluno não entender.
-              - Corrija erros gentilmente.
+              ${selectedLevel === Level.BEGINNER ? '- Explique o conceito em Português, dê o exemplo no Idioma Alvo, peça para repetir.' : '- A partir daqui, IMERSÃO TOTAL no idioma alvo.'}
 
-              FASE 3: CONVERSAÇÃO LIVRE (IDIOMA ALVO)
-              - Após o término da atividade principal, expanda para uma conversa natural e fluida.
-              - Mantenha o foco no idioma alvo para maximizar a imersão.
+              FASE 3: CONVERSAÇÃO LIVRE
+              - Expanda para uma conversa natural.
+              ${selectedLevel === Level.BEGINNER ? '- Mantenha o suporte em português quando necessário.' : '- Evite português a todo custo.'}
 
               NÍVEL DO ALUNO: ${selectedLevel}
-              ${selectedLevel === Level.BEGINNER ? '- Fale devagar e claro.' : selectedLevel === Level.ADVANCED ? '- Fale em velocidade natural/rápida.' : '- Velocidade moderada.'}
               `
           }]
         },
@@ -299,19 +304,19 @@ const App: React.FC = () => {
             }
           }
 
+
           if (msg.toolCall) {
             for (const call of msg.toolCall.functionCalls) {
-              if (call.name === 'display_pronunciation_target') {
-                const phrase = (call.args as any).phrase;
-                console.log('Gemini Live API: Chamada de ferramenta detectada:', phrase);
-                setPronunciationTarget(phrase);
+              if (call.name === 'next_phrase') {
+                console.log('Gemini Live API: Comando next_phrase detectado');
+                setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES.length - 1, prev + 1));
 
-                // Responder à ferramenta (Obrigatório pelo protocolo Gemini Live)
+                // Responder à ferramenta
                 sessionRef.current?.then((session: any) => {
                   session.sendToolResponse({
                     functionResponses: [{
-                      name: 'display_pronunciation_target',
-                      response: { result: 'Frase exibida com sucesso' },
+                      name: 'next_phrase',
+                      response: { result: 'Frase alterada com sucesso' },
                       id: call.id
                     }]
                   });
@@ -319,6 +324,8 @@ const App: React.FC = () => {
               }
             }
           }
+
+
 
           if (msg.serverContent?.interrupted) {
             sourcesRef.current.forEach(s => s.stop());
@@ -540,14 +547,16 @@ const App: React.FC = () => {
             <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-600/20 rounded-full blur-[150px]"></div>
           </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 w-full max-w-6xl mx-auto overflow-y-auto">
-            <div className="relative mb-8 md:mb-16">
+          <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 w-full max-w-6xl mx-auto overflow-hidden">
+            <div className={`relative transition-all duration-500 z-20 ${selectedTopicId === 'pronunciation' ? '-mb-12 scale-90' : 'mb-8 md:mb-16'}`}>
               {/* Dynamic Aura */}
               <div className={`absolute inset-[-80px] rounded-full blur-[120px] transition-all duration-1000 ${isTeacherSpeaking ? 'bg-orange-500/40 opacity-100 scale-125' : 'bg-slate-800/10 opacity-0 scale-95'
                 }`}></div>
 
               {/* Avatar Frame */}
-              <div className={`relative w-64 h-64 md:w-80 md:h-80 rounded-full overflow-hidden border-8 transition-all duration-700 shadow-[0_0_100px_rgba(0,0,0,0.9)] ${isTeacherSpeaking ? 'border-orange-500 scale-105 rotate-1' : 'border-white/10 scale-100 rotate-0'
+              <div className={`relative rounded-full overflow-hidden border-8 transition-all duration-700 shadow-[0_0_100px_rgba(0,0,0,0.9)] 
+                ${selectedTopicId === 'pronunciation' ? 'w-32 h-32 md:w-40 md:h-40 border-4 bg-slate-950' : 'w-64 h-64 md:w-80 md:h-80'} 
+                ${isTeacherSpeaking ? 'border-orange-500 scale-105 rotate-1' : 'border-white/10 scale-100 rotate-0'
                 }`}>
                 <img
                   src={currentTeacher.avatar}
@@ -557,23 +566,26 @@ const App: React.FC = () => {
               </div>
 
               {/* Talking Indicator */}
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 bg-white text-black px-8 py-4 rounded-[2rem] flex items-center gap-5 shadow-2xl z-20 min-w-[240px] justify-center transition-all">
-                <div className="flex gap-1.5 items-end h-6 w-10">
+              <div className={`absolute left-1/2 -translate-x-1/2 bg-white text-black rounded-[2rem] flex items-center gap-5 shadow-2xl z-20 justify-center transition-all
+                ${selectedTopicId === 'pronunciation'
+                  ? 'bottom-2 px-3 py-1.5 min-w-[120px] scale-75'
+                  : '-bottom-10 px-8 py-4 min-w-[240px]'}`}>
+                <div className={`flex gap-1.5 items-end ${selectedTopicId === 'pronunciation' ? 'h-3 w-5' : 'h-6 w-10'}`}>
                   {[1, 2, 3].map(i => (
                     <div key={i} className={`w-2 bg-black rounded-full transition-all duration-300 ${isTeacherSpeaking ? 'animate-bounce h-full' : 'h-2'}`} style={{ animationDelay: `${i * 0.2}s` }}></div>
                   ))}
                 </div>
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase text-slate-400 leading-none">Status</span>
-                  <span className="text-sm font-black uppercase tracking-tight">
-                    {isTeacherSpeaking ? `${currentTeacher.name.split(' ')[1]} falando` : 'Ouvindo você...'}
+                  <span className={`font-black uppercase tracking-tight ${selectedTopicId === 'pronunciation' ? 'text-[10px]' : 'text-sm'}`}>
+                    {isTeacherSpeaking ? 'Falando' : 'Ouvindo...'}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* Audio Feedback Meter */}
-            <div className={`mb-6 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-top-6 w-full max-w-xs transition-opacity duration-300 ${audioLevel > 5 ? 'opacity-100' : 'opacity-30'}`}>
+            {/* Audio Feedback Meter - Hide in Pronunciation mode to reduce clutter */}
+            <div className={`mb-4 flex flex-col items-center gap-2 animate-in fade-in slide-in-from-top-6 w-full max-w-xs transition-opacity duration-300 ${audioLevel > 5 && selectedTopicId !== 'pronunciation' ? 'opacity-100' : 'opacity-0'}`}>
               <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] text-center">
                 Iniciando Conversa
               </div>
@@ -585,29 +597,59 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="text-center space-y-2 mb-4 md:mb-12">
+            <div className={`text-center space-y-2 transition-all duration-500 ${selectedTopicId === 'pronunciation' ? 'hidden' : 'mb-4 md:mb-12'}`}>
               <h3 className="text-2xl md:text-6xl font-black tracking-tight flex items-center justify-center gap-2 md:gap-5">
                 {currentTeacher.name} <Sparkles className="w-5 h-5 md:w-10 md:h-10 text-orange-500 animate-pulse" />
               </h3>
               <p className="text-slate-500 font-bold uppercase tracking-[0.2em] md:tracking-[0.5em] text-[8px] md:text-sm">Sua Guia Linguística Imersiva</p>
             </div>
 
-            {/* Pronunciation Target UI */}
-            {selectedTopicId === 'pronunciation' && pronunciationTarget && (
-              <div className="w-full max-w-xl bg-slate-900/90 backdrop-blur-3xl border-2 border-orange-500/50 rounded-[2.5rem] p-6 mb-6 animate-in zoom-in-95 slide-in-from-bottom-4 duration-500 shadow-2xl relative overflow-hidden z-20 mx-auto">
-                <div className="text-center space-y-4">
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="text-orange-500 text-[8px] font-black uppercase tracking-[0.4em] bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20">Modo Treinamento</span>
-                    <h4 className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">Leia em voz alta:</h4>
-                  </div>
-                  <div className="py-2">
-                    <p className="text-2xl md:text-4xl font-black text-white leading-tight tracking-tight">
-                      "{pronunciationTarget}"
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-orange-400 text-[10px] font-black animate-pulse">
-                    <Sparkles className="w-4 h-4" /> PROFESSOR ANALISANDO...
-                  </div>
+            {/* Pronunciation Target UI - UPDATED FOR IDEA B */}
+            {/* Pronunciation Target UI - UPDATED FOR IDEA B */}
+            {selectedTopicId === 'pronunciation' && (
+              <div className="w-full max-w-xl bg-slate-900/95 border-2 border-orange-500 rounded-[2rem] p-8 mb-8 shadow-2xl relative z-50 mx-auto flex flex-col items-center gap-6">
+
+                {/* Header Badge */}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-orange-500 text-[10px] font-black uppercase tracking-[0.3em] bg-orange-500/10 px-4 py-1.5 rounded-full border border-orange-500/20">
+                    Modo Treinamento • {PRONUNCIATION_PHRASES[currentPhraseIndex]?.level || 'N/A'}
+                  </span>
+                  <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Leia em voz alta</p>
+                </div>
+
+                {/* Main Text */}
+                <div className="w-full text-center">
+                  <p className="text-2xl md:text-4xl font-black text-white leading-snug tracking-tight drop-shadow-lg">
+                    "{PRONUNCIATION_PHRASES[currentPhraseIndex]?.text || 'Carregando...'}"
+                  </p>
+                </div>
+
+                {/* Translation */}
+                <div className="text-slate-400 text-sm italic font-medium">
+                  "{PRONUNCIATION_PHRASES[currentPhraseIndex]?.translation || ''}"
+                </div>
+
+                {/* Controls */}
+                <div className="flex items-center justify-between w-full pt-4 border-t border-white/10 mt-2">
+                  <button
+                    onClick={() => setCurrentPhraseIndex(prev => Math.max(0, prev - 1))}
+                    disabled={currentPhraseIndex === 0}
+                    className="p-4 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+                  >
+                    <ArrowRight className="w-6 h-6 rotate-180 text-white" />
+                  </button>
+
+                  <span className="text-xs font-black text-slate-500 bg-black/30 px-3 py-1 rounded-lg">
+                    {currentPhraseIndex + 1} / {PRONUNCIATION_PHRASES.length}
+                  </span>
+
+                  <button
+                    onClick={() => setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES.length - 1, prev + 1))}
+                    disabled={currentPhraseIndex === PRONUNCIATION_PHRASES.length - 1}
+                    className="p-4 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
+                  >
+                    <ArrowRight className="w-6 h-6 text-white" />
+                  </button>
                 </div>
               </div>
             )}

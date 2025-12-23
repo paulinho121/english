@@ -107,14 +107,30 @@ export const TOPICS: Topic[] = [
     name: 'Treinamento de Pronúncia',
     icon: '🗣️',
     prompt: `
-      FOCO: Treinamento Intensivo de Pronúncia e Fonética.
-      REGRAS:
-      1. Proponha uma frase curta e desafiadora por vez no IDIOMA ALVO para o aluno ler.
-      2. Você DEVE usar a ferramenta display_pronunciation_target(phrase: "frase aqui") para mostrar a frase na tela do aluno cada vez que propor um desafio.
-      3. Quando o aluno ler, avalie a pronúncia, entonação e ritmo.
-      4. Forneça feedback técnico sobre como posicionar a língua ou soprar o ar para sons específicos (ex: 'th' no inglês, 'rr' no espanhol, 'u' no francês).
-      5. Se o aluno acertar, elogie e proponha um novo desafio chamando a ferramenta de novo.
-      6. Se errar, peça para repetir focando no feedback dado.
+      FOCO: Avaliador Implacável de Pronúncia.
+      
+      COMPORTAMENTO:
+      1. O aluno vai ler uma frase que está aparecendo na tela dele.
+      2. Eu (o sistema) vou te enviar via texto qual é a "FRASE ALVO" que ele está tentando ler.
+      3. Sua tarefa é ouvir o áudio do aluno e comparar com a FRASE ALVO.
+      4. Dê uma nota de 0 a 100 baseada na precisão fonética.
+      5. Se a nota for menor que 100, explique EXATAMENTE qual som saiu errado (ex: "Você disse 'dii' mas o correto é 'th' com a língua nos dentes").
+      6. Se a nota for 100, parabenize e peça para ele ir para a próxima.
+      7. SEJA BREVE. Feedback curto e técnico.
+      8. FERRAMENTA DE NAVEGAÇÃO: Se o aluno disser "Vamos para a próxima", "Próxima frase", ou "Next", CHAME a ferramenta 'next_phrase'. NÃO mude o assunto, apenas chame a ferramenta.
     `
   }
+];
+
+export const PRONUNCIATION_PHRASES = [
+  { id: '1', text: "The quick brown fox jumps over the lazy dog.", level: 'Básico', translation: "A raposa marrom rápida pula sobre o cachorro preguiçoso." },
+  { id: '2', text: "She sells seashells by the seashore.", level: 'Intermediário', translation: "Ela vende conchas na beira do mar." },
+  { id: '3', text: "How much wood would a woodchuck chuck if a woodchuck could chuck wood?", level: 'Avançado', translation: "Quanta madeira uma marmota jogaria se uma marmota pudesse jogar madeira?" },
+  { id: '4', text: "I would like to order a hamburger and fries, please.", level: 'Básico', translation: "Gostaria de pedir um hambúrguer e fritas, por favor." },
+  { id: '5', text: "Can you please tell me where the nearest subway station is?", level: 'Básico', translation: "Pode me dizer onde fica a estação de metrô mais próxima?" },
+  { id: '6', text: "Although it was raining, we decided to go for a walk in the park.", level: 'Intermediário', translation: "Embora estivesse chovendo, decidimos caminhar no parque." },
+  { id: '7', text: "The phenomenon of aurora borealis is best seen in high-latitude regions.", level: 'Avançado', translation: "O fenômeno da aurora boreal é melhor visto em regiões de alta latitude." },
+  { id: '8', text: "Three thick thighs.", level: 'Difícil', translation: "Três coxas grossas." },
+  { id: '9', text: "World Wide Web.", level: 'Difícil', translation: "Rede Mundial de Computadores." },
+  { id: '10', text: "Edgar Allan Poe was an American writer, poet, editor, and literary critic.", level: 'Avançado', translation: "Edgar Allan Poe foi um escritor, poeta, editor e crítico literário americano." }
 ];
