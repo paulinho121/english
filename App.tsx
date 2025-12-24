@@ -374,7 +374,7 @@ const App: React.FC = () => {
   const currentTeacher = TEACHERS.find(t => t.id === selectedTeacherId) || TEACHERS[0];
 
   return (
-    <div className="h-screen w-full flex flex-col bg-slate-950 text-white font-sans overflow-hidden">
+    <div className="h-[100dvh] w-full flex flex-col bg-slate-950 text-white font-sans overflow-hidden">
       {step === 'welcome' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-1000">
           <div className="relative group">
@@ -402,8 +402,8 @@ const App: React.FC = () => {
       )}
 
       {step === 'setup' && (
-        <div className="flex-1 flex items-center justify-center p-4 md:p-6 animate-in slide-in-from-bottom-12 duration-500 overflow-y-auto w-full">
-          <div className="max-w-7xl w-full bg-slate-950/90 backdrop-blur-2xl border border-white/5 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 space-y-8 md:space-y-12 shadow-2xl my-4 relative overflow-hidden">
+        <div className="flex-1 flex justify-center p-4 md:p-6 pb-24 md:pb-6 animate-in slide-in-from-bottom-12 duration-500 overflow-y-auto w-full">
+          <div className="max-w-7xl w-full bg-slate-950/90 backdrop-blur-2xl border border-white/5 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 space-y-8 md:space-y-12 shadow-2xl my-auto relative overflow-hidden">
             {/* Ambient Background Glows */}
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
             <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/10 rounded-full blur-[100px]"></div>
@@ -518,7 +518,7 @@ const App: React.FC = () => {
                   <BrainCircuit className="w-3 h-3 text-orange-500" /> Selecione o Professor
                 </label>
 
-                <div className="grid grid-cols-1 gap-3 overflow-y-auto px-4 -mx-4 pb-4 pt-1 custom-scrollbar flex-1 min-h-[400px]">
+                <div className="grid grid-cols-1 gap-3 md:overflow-y-auto px-4 -mx-4 pb-4 pt-1 custom-scrollbar flex-1 min-h-[400px]">
                   {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => (
                     <button
                       key={teacher.id}
