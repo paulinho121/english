@@ -193,6 +193,10 @@ export const LoginScreen: React.FC = () => {
                     </div>
                 </div>
             </div>
+
+            <div className="absolute bottom-6 text-slate-500/50 text-xs font-bold tracking-widest uppercase">
+                Criado por Paulinho Fernando
+            </div>
         </div>
     );
 };
