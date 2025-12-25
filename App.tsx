@@ -3,6 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 import { Language, Level, Teacher, Topic } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
+import { useAuth } from './contexts/AuthContext';
+import { LoginScreen } from './components/auth/LoginScreen';
 import {
   Mic, MicOff, PhoneOff, Settings, Volume2,
   Sparkles, Globe, ShieldCheck, LayoutGrid, Loader2,
@@ -37,6 +39,7 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 }
 
 const App: React.FC = () => {
+  const { user, loading, signOut } = useAuth();
   const [step, setStep] = useState<'welcome' | 'setup' | 'call'>('welcome');
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<Level>(Level.BEGINNER);
@@ -50,6 +53,18 @@ const App: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected'>('idle');
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
 
   useEffect(() => {
     if (selectedTopicId === 'pronunciation' && isConnectedRef.current) {
@@ -160,56 +175,58 @@ const App: React.FC = () => {
             text: teacher.isKidMode
               ? `
               PERSONA: Kevin
-              - Professor NATIVO dos EUA (Inglês), Espanha (Espanhol) ou França (Francês).
-              - Fala como uma criança de 9 anos (tom leve, agudo, entusiasmado), mas é um gênio da pedagogia.
+              - ⚠️ CRITICAL: VOCÊ É BRASILEIRO. SUA VOZ É 100% BRASILEIRA.
+              - NÃO FALE COM SOTAQUE AMERICANO. ISSO É PROIBIDO.
+              - Você é um professor jovem do Brasil (São Paulo ou Rio).
+              - SOTAQUE: Português do Brasil (PT-BR) totalmente nativo e natural.
               - Idioma Alvo: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}.
 
               ESTRUTURA DA AULA (3 FASES OBRIGATÓRIAS):
               
               IMPORTANTE: NÍVEL ${selectedLevel}
               ${selectedLevel === Level.BEGINNER
-                ? '⚠️ MODO BÁSICO: Explique TUDO em Português. Use o idioma alvo apenas para ensinar as frases e palavras, mas dê todas as instruções e correções em PORTUGUÊS para o aluno não se perder.'
-                : 'MODO IMERSÃO: Fale 95% no idioma alvo. Use português apenas se o aluno travar muito.'}
+                ? '⚠️ MODO BÁSICO: Fale PORTUGUÊS como um nativo do Brasil. Use gírias leves, seja natural. Explique tudo.'
+                : 'MODO IMERSÃO: Fale o idioma alvo, mas com "sotaque brasileiro". Sua "voz base" é brasileira.'}
 
               FASE 1: ACOLHIMENTO E RAPPORT
-              - Inicie em Português (especialmente se for Básico).
-              - Seja caloroso e amigável.
-              - QUANDO MUDAR: Assim que o aluno sinalizar, vá para a Fase 2.
+              - Inicie em Português: "E aí, beleza? Tudo joia?".
+              - Seja caloroso e amigável, como um brasileiro.
 
               FASE 2: AULA ESPECÍFICA (IDIOMA ALVO)
               - Tópico: ${topic.name}
               - Prompt Específico: "${topic.prompt}"
-              ${selectedLevel === Level.BEGINNER ? '- Mantenha as explicações em Português, peça para o aluno repetir as frases no idioma alvo.' : '- Fale 100% no IDIOMA ALVO.'}
+              ${selectedLevel === Level.BEGINNER ? '- Explique brincando em Português NATÍVO.' : '- Fale no IDIOMA ALVO, mas com clareza.'}
 
               FASE 3: CONVERSAÇÃO LIVRE
-              - Após concluir o exercício, converse livremente.
+              - Bata um papo descontraído.
               `
               : `
               PERSONA: ${teacher.name}
-              - Professor(a) NATIVO(A) de: ${selectedLanguage === Language.ENGLISH ? 'EUA/UK' : selectedLanguage === Language.SPANISH ? 'Espanha' : 'França'}.
+              - ⚠️ CRITICAL INSTRUCTION: YOU ARE BRAZILIAN. DO NOT SOUND AMERICAN.
+              - VOCÊ É BRASILEIRO(A). SOTAQUE: 100% PORTUGUÊS DO BRASIL (PT-BR).
+              - Proibido soar como um "gringo falando português".
+              - Você é um professor(a) nascido(a) no Brasil, falando com brasileiros.
               - Idioma Alvo: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}.
 
               ESTRUTURA DA AULA (3 FASES OBRIGATÓRIAS):
 
               IMPORTANTE: NÍVEL ${selectedLevel}
               ${selectedLevel === Level.BEGINNER
-                ? '⚠️ MODO BÁSICO ATIVADO: O aluno é iniciante. Você DEVE dar explicações, feedback e instruções em PORTUGUÊS. Fale a frase no idioma alvo, mas explique o significado em português.'
-                : 'MODO IMERSÃO: REGRA ABSOLUTA: 95% da aula deve ser conduzida em ' + (selectedLanguage === Language.ENGLISH ? 'INGLÊS' : selectedLanguage === Language.SPANISH ? 'ESPANHOL' : 'FRANCÊS') + '.'}
+                ? '⚠️ MODO BÁSICO ATIVADO: Fale Português perfeitamente, como um nativo. Sem sotaque estrangeiro.'
+                : 'MODO IMERSÃO: Use o idioma alvo, mas mantenha sua identidade brasileira.'}
 
               FASE 1: ACOLHIMENTO (PORTUGUÊS)
-              - Inicie ou responda em Português para criar conforto.
-              - TRANSIÇÃO: Quando sentir que o aluno está pronto, inicie o tópico.
+              - Cumprimente em Português Brasileiro Nativo: "Olá! Tudo bem? Como você está?".
+              - Sua entonação deve ser melódica e típica do Brasil.
 
               FASE 2: AULA ESPECÍFICA
               - Tópico: ${topic.name}
               - Instrução da Atividade: ${topic.prompt}
-              ${selectedLevel === Level.BEGINNER ? '- Explique o conceito em Português, dê o exemplo no Idioma Alvo, peça para repetir.' : '- A partir daqui, IMERSÃO TOTAL no idioma alvo.'}
 
               FASE 3: CONVERSAÇÃO LIVRE
-              - Expanda para uma conversa natural.
-              ${selectedLevel === Level.BEGINNER ? '- Mantenha o suporte em português quando necessário.' : '- Evite português a todo custo.'}
-
-              NÍVEL DO ALUNO: ${selectedLevel}
+              - Converse naturalmente.
+              
+              REGRA DE OURO: SE O ALUNO FALAR PORTUGUÊS, RESPONDA COMO UM BRASILEIRO, NÃO COMO UM AMERICANO TRADUZINDO.
               `
           }]
         },
@@ -378,10 +395,9 @@ const App: React.FC = () => {
       {step === 'welcome' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-1000">
           <div className="relative group">
-            <div className="w-32 h-32 bg-orange-600 rounded-full flex items-center justify-center shadow-2xl shadow-orange-500/40 relative z-10 transition-transform group-hover:scale-110">
-              <BrainCircuit className="w-16 h-16 text-white" />
+            <div className="w-48 h-48 md:w-64 md:h-64 flex items-center justify-center relative z-10 transition-transform group-hover:scale-105">
+              <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(249,115,22,0.6)]" />
             </div>
-            <div className="absolute inset-0 bg-orange-400 rounded-full blur-3xl opacity-20 animate-pulse"></div>
           </div>
           <div className="space-y-3">
             <h1 className="text-4xl md:text-6xl font-black tracking-tight">{currentTeacher?.name?.split(' ')[1] || 'Malina'} <span className="text-orange-500">Live</span></h1>

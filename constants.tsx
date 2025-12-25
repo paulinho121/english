@@ -6,74 +6,74 @@ export const TEACHERS: Teacher[] = [
     id: 'malina-en',
     name: 'Professora Malina',
     language: Language.ENGLISH,
-    accent: 'American Accent',
+    accent: 'Sotaque Brasileiro 🇧🇷',
     avatar: '/malina.png',
     voice: 'Aoede', // Female, energetic
     gender: 'female',
-    bio: 'Nativa dos Estados Unidos com vasta experiência em ensino internacional. Malina foca na imersão total e na confiança do aluno para falar como um nativo.'
+    bio: 'Brasileira especialista em ensino de Inglês. Malina entende as dificuldades dos brasileiros e ajuda você a superar a barreira da fala com dicas práticas.'
   },
   {
     id: 'geremy-en',
     name: 'Professor Geremy',
     language: Language.ENGLISH,
-    accent: 'British Accent',
+    accent: 'Sotaque Brasileiro 🇧🇷',
     avatar: '/geremy.png',
     voice: 'Puck', // Male, calm
     gender: 'male',
-    bio: 'Professor nativo de Londres com foco em elegância e precisão. Geremy acredita que a imersão em inglês britânico é a chave para a fluência.'
+    bio: 'Professor brasileiro com anos de experiência no exterior. Geremy foca na comunicação clara e eficaz, usando sua vivência para ensinar o inglês real.'
   },
   {
     id: 'malina-es',
     name: 'Profesora Malina',
     language: Language.SPANISH,
-    accent: 'Acento Latino',
+    accent: 'Sotaque Brasileiro 🇧🇷',
     avatar: '/malina.png',
     voice: 'Aoede', // Using Aoede (Valid)
     gender: 'female',
-    bio: 'Nativa da Espanha, Priscila traz o calor e a cultura de Madrid para a aula. Ela prioriza a comunicação em espanhol desde o primeiro minuto.'
+    bio: 'Brasileira e apaixonada pela cultura hispânica. Malina ensina espanhol focando nas semelhanças e diferenças com o português para acelerar o aprendizado.'
   },
   {
     id: 'priscila-fr',
     name: 'Professora Priscila',
     language: Language.FRENCH,
-    accent: 'Accent Français',
+    accent: 'Sotaque Brasileiro 🇧🇷',
     avatar: '/priscila.png',
     voice: 'Kore', // Using Kore (Valid)
     gender: 'female',
-    bio: 'Expert em fonética francesa e nativa de Paris. Priscila conduz suas aulas integralmente em francês para garantir fluidez e naturalidade.'
+    bio: 'Brasileira especialista em Francês. Priscila desmistifica a pronúncia francesa e ajuda alunos brasileiros a falar com confiança e naturalidade.'
   },
   {
     id: 'kevin-en',
     name: 'Professor Kevin',
     language: Language.ENGLISH,
-    accent: 'Kid Mode 🎈',
+    accent: 'Modo Kids (BR) 🇧🇷',
     avatar: '/kevin.png',
     voice: 'Puck', // Changed to Puck (Male) for Kevin
     gender: 'male',
     isKidMode: true,
-    bio: 'Nativo da Califórnia e acadêmico rigoroso. O Professor Kevin utiliza métodos pedagógicos avançados e fala integralmente no idioma alvo para máxima eficácia.'
+    bio: 'O amigo brasileiro divertido para aprender inglês! Kevin usa uma linguagem simples e brincadeiras para tornar o aprendizado leve e natural para crianças.'
   },
   {
     id: 'kevin-es',
     name: 'Professor Kevin',
     language: Language.SPANISH,
-    accent: 'Modo Niños 🎈',
+    accent: 'Modo Kids (BR) 🇧🇷',
     avatar: '/kevin.png',
     voice: 'Puck', // Puck for Spanish Kevin
     gender: 'male',
     isKidMode: true,
-    bio: 'Un académico riguroso y dedicado. El Profesor Kevin utiliza métodos pedagógicos avanzados y un lenguaje formal para garantizar el dominio técnico y gramatical del idioma.'
+    bio: 'O amigo brasileiro divertido para aprender espanhol! Kevin usa uma linguagem simples e brincadeiras para tornar o aprendizado leve e natural para crianças.'
   },
   {
     id: 'kevin-fr',
     name: 'Professor Kevin',
     language: Language.FRENCH,
-    accent: 'Mode Enfant 🎈',
+    accent: 'Modo Kids (BR) 🇧🇷',
     avatar: '/kevin.png',
     voice: 'Puck', // Puck for French Kevin
     gender: 'male',
     isKidMode: true,
-    bio: 'Un académique rigoureux et dévoué. Le Professeur Kevin utilise des méthodes pédagogiques avancées et un langage formel pour assurer la maîtrise technique et grammaticale de la langue.'
+    bio: 'O amigo brasileiro divertido para aprender francês! Kevin usa uma linguagem simples e brincadeiras para tornar o aprendizado leve e natural para crianças.'
   }
 ];
 
