@@ -431,23 +431,23 @@ const App: React.FC = () => {
               <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px]"></div>
 
               <div className="relative text-center space-y-2 z-10">
-                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3">
-                  <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-orange-500" /> Configurar Sessão
+                <h2 className="text-2xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3">
+                  <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-orange-500" /> Configurar Sessão
                 </h2>
-                <p className="text-slate-400 text-sm md:text-lg max-w-lg mx-auto leading-relaxed">Personalize sua experiência de imersão total com a tecnologia Gemini.</p>
+                <p className="text-slate-400 text-xs md:text-lg max-w-lg mx-auto leading-relaxed">Personalize sua experiência de imersão total com a tecnologia Gemini.</p>
               </div>
 
               {hasSavedStage && (
                 <button
                   onClick={loadSavedStage}
-                  className="w-full p-4 bg-orange-600/20 border border-orange-500/50 rounded-2xl text-orange-500 font-bold flex items-center justify-center gap-2 hover:bg-orange-600/30 transition-all"
+                  className="w-full p-4 bg-orange-600/20 border border-orange-500/50 rounded-2xl text-orange-500 font-bold flex items-center justify-center gap-2 hover:bg-orange-600/30 transition-all text-sm md:text-base"
                 >
                   <Bookmark className="w-5 h-5" /> Retomar Aula Anterior
                 </button>
               )}
 
               <div className="grid md:grid-cols-12 gap-8 lg:gap-16 relative z-10">
-                <div className="md:col-span-12 lg:col-span-5 space-y-8">
+                <div className="md:col-span-12 lg:col-span-5 space-y-6 md:space-y-8">
 
                   {/* Language */}
                   <div className="space-y-4">
@@ -539,7 +539,7 @@ const App: React.FC = () => {
                     <BrainCircuit className="w-3 h-3 text-orange-500" /> Selecione o Professor
                   </label>
 
-                  <div className="grid grid-cols-1 gap-3 md:overflow-y-auto px-4 -mx-4 pb-4 pt-1 custom-scrollbar flex-1 min-h-[400px]">
+                  <div className="grid grid-cols-1 gap-3 md:overflow-y-auto px-4 -mx-4 pb-4 pt-1 custom-scrollbar flex-1 min-h-[300px] md:min-h-[400px]">
                     {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => (
                       <button
                         key={teacher.id}
@@ -580,7 +580,7 @@ const App: React.FC = () => {
 
               </div>
 
-              <div className="pt-4 mt-auto">
+              <div className="pt-4 mt-auto key={selectedLanguage + selectedTeacherId}">
                 <button
                   onClick={startSession}
                   disabled={connectionStatus === 'connecting' || !selectedLanguage || !selectedTeacherId}
@@ -624,7 +624,7 @@ const App: React.FC = () => {
 
                 {/* Avatar Frame */}
                 <div className={`relative rounded-full overflow-hidden border-8 transition-all duration-700 shadow-[0_0_100px_rgba(0,0,0,0.9)] 
-                ${selectedTopicId === 'pronunciation' ? 'w-32 h-32 md:w-40 md:h-40 border-4 bg-slate-950' : 'w-64 h-64 md:w-80 md:h-80'} 
+                ${selectedTopicId === 'pronunciation' ? 'w-32 h-32 md:w-40 md:h-40 border-4 bg-slate-950' : 'w-48 h-48 md:w-80 md:h-80'} 
                 ${isTeacherSpeaking ? 'border-orange-500 scale-105 rotate-1' : 'border-white/10 scale-100 rotate-0'
                   }`}>
                   <img
@@ -638,15 +638,15 @@ const App: React.FC = () => {
                 <div className={`absolute left-1/2 -translate-x-1/2 bg-white text-black rounded-[2rem] flex items-center gap-5 shadow-2xl z-20 justify-center transition-all
                 ${selectedTopicId === 'pronunciation'
                     ? 'bottom-2 px-3 py-1.5 min-w-[120px] scale-75'
-                    : '-bottom-10 px-8 py-4 min-w-[240px]'}`}>
-                  <div className={`flex gap-1.5 items-end ${selectedTopicId === 'pronunciation' ? 'h-3 w-5' : 'h-6 w-10'}`}>
+                    : '-bottom-10 px-6 py-3 md:px-8 md:py-4 min-w-[200px] md:min-w-[240px]'}`}>
+                  <div className={`flex gap-1.5 items-end ${selectedTopicId === 'pronunciation' ? 'h-3 w-5' : 'h-4 w-8 md:h-6 md:w-10'}`}>
                     {[1, 2, 3].map(i => (
                       <div key={i} className={`w-2 bg-black rounded-full transition-all duration-300 ${isTeacherSpeaking ? 'animate-bounce h-full' : 'h-2'}`} style={{ animationDelay: `${i * 0.2}s` }}></div>
                     ))}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] font-black uppercase text-slate-400 leading-none">Status</span>
-                    <span className={`font-black uppercase tracking-tight ${selectedTopicId === 'pronunciation' ? 'text-[10px]' : 'text-sm'}`}>
+                    <span className={`font-black uppercase tracking-tight ${selectedTopicId === 'pronunciation' ? 'text-[10px]' : 'text-xs md:text-sm'}`}>
                       {isTeacherSpeaking ? 'Falando' : 'Ouvindo...'}
                     </span>
                   </div>
@@ -681,7 +681,7 @@ const App: React.FC = () => {
                   {/* Header Badge */}
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-orange-500 text-[10px] font-black uppercase tracking-[0.3em] bg-orange-500/10 px-4 py-1.5 rounded-full border border-orange-500/20">
-                      Modo Treinamento • {PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.level || 'N/A'}
+                      Modo Treinamento • {PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex]?.level || 'N/A'}
                     </span>
                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Leia em voz alta</p>
                   </div>
@@ -689,13 +689,13 @@ const App: React.FC = () => {
                   {/* Main Text */}
                   <div className="w-full text-center">
                     <p className="text-2xl md:text-4xl font-black text-white leading-snug tracking-tight drop-shadow-lg">
-                      "{PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.text || 'Carregando...'}"
+                      "{PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex]?.text || 'Carregando...'}"
                     </p>
                   </div>
 
                   {/* Translation */}
                   <div className="text-slate-400 text-sm italic font-medium">
-                    "{PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.translation || ''}"
+                    "{PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex]?.translation || ''}"
                   </div>
 
                   {/* Controls */}
@@ -709,12 +709,12 @@ const App: React.FC = () => {
                     </button>
 
                     <span className="text-xs font-black text-slate-500 bg-black/30 px-3 py-1 rounded-lg">
-                      {currentPhraseIndex + 1} / {PRONUNCIATION_PHRASES[selectedLanguage].length}
+                      {currentPhraseIndex + 1} / {PRONUNCIATION_PHRASES[selectedLanguage as Language]?.length || 0}
                     </span>
 
                     <button
-                      onClick={() => setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES[selectedLanguage].length - 1, prev + 1))}
-                      disabled={currentPhraseIndex === PRONUNCIATION_PHRASES[selectedLanguage].length - 1}
+                      onClick={() => setCurrentPhraseIndex(prev => Math.min((PRONUNCIATION_PHRASES[selectedLanguage as Language]?.length || 1) - 1, prev + 1))}
+                      disabled={currentPhraseIndex === (PRONUNCIATION_PHRASES[selectedLanguage as Language]?.length || 1) - 1}
                       className="p-4 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
                     >
                       <ArrowRight className="w-6 h-6 text-white" />
@@ -726,7 +726,7 @@ const App: React.FC = () => {
               {/* Subtitles Area */}
               <div className={`mt-auto mb-4 px-6 py-3 w-full max-w-4xl min-h-[80px] flex items-center justify-center bg-black/40 backdrop-blur-xl rounded-[2rem] border border-white/5 transition-all duration-500 ${currentCaption ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'
                 }`}>
-                <p className="text-xl md:text-3xl font-bold text-center bg-gradient-to-r from-white via-white/80 to-white bg-clip-text text-transparent leading-relaxed italic">
+                <p className="text-lg md:text-3xl font-bold text-center bg-gradient-to-r from-white via-white/80 to-white bg-clip-text text-transparent leading-relaxed italic">
                   {currentCaption ? `"${currentCaption}"` : 'Fale naturalmente...'}
                 </p>
               </div>
@@ -739,28 +739,28 @@ const App: React.FC = () => {
             </div>
 
             {/* Controls Bar */}
-            <div className="pb-6 pt-2 flex items-center justify-center gap-8 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent z-30">
-              <button className="p-6 bg-white/5 border border-white/10 rounded-[2rem] hover:bg-white/10 transition-all group">
-                <Volume2 className="w-8 h-8 text-slate-400 group-hover:text-white" />
+            <div className="pb-6 pt-2 flex items-center justify-center gap-4 md:gap-8 bg-gradient-to-t from-slate-950 via-slate-950 to-transparent z-30">
+              <button className="p-4 md:p-6 bg-white/5 border border-white/10 rounded-[2rem] hover:bg-white/10 transition-all group">
+                <Volume2 className="w-6 h-6 md:w-8 md:h-8 text-slate-400 group-hover:text-white" />
               </button>
 
               <div className="relative group">
                 <div className={`absolute inset-0 bg-orange-600 rounded-full blur-3xl transition-all ${audioLevel > 10 ? 'opacity-60 scale-125' : 'opacity-20 group-hover:opacity-40'}`}></div>
                 <div
-                  className={`relative w-24 h-24 rounded-full flex items-center justify-center shadow-2xl transition-all border-4 ${audioLevel > 10
+                  className={`relative w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center shadow-2xl transition-all border-4 ${audioLevel > 10
                     ? 'bg-orange-500 scale-95 border-white shadow-[0_0_50px_rgba(249,115,22,0.6)]'
                     : 'bg-orange-600 border-white/10'
                     }`}
                 >
-                  <Mic className={`w-12 h-12 text-white ${audioLevel > 10 ? 'animate-pulse' : ''}`} />
+                  <Mic className={`w-8 h-8 md:w-12 md:h-12 text-white ${audioLevel > 10 ? 'animate-pulse' : ''}`} />
                 </div>
               </div>
 
               <button
                 onClick={endCall}
-                className="p-6 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-[2rem] hover:bg-rose-500 hover:text-white transition-all shadow-xl group"
+                className="p-4 md:p-6 bg-rose-500/10 text-rose-500 border border-rose-500/20 rounded-[2rem] hover:bg-rose-500 hover:text-white transition-all shadow-xl group"
               >
-                <PhoneOff className="w-8 h-8 group-hover:scale-110 transition-transform" />
+                <PhoneOff className="w-6 h-6 md:w-8 md:h-8 group-hover:scale-110 transition-transform" />
               </button>
             </div>
           </div>
@@ -770,21 +770,21 @@ const App: React.FC = () => {
       {/* Persistent Info Overlay */}
       {
         step === 'call' && (
-          <div className="absolute top-10 left-10 z-40 flex items-center gap-4 bg-white/5 backdrop-blur-2xl border border-white/10 p-4 rounded-[2rem] shadow-2xl transition-all h-[80px]">
+          <div className="absolute top-4 left-4 md:top-10 md:left-10 z-40 flex items-center gap-3 md:gap-4 bg-white/5 backdrop-blur-2xl border border-white/10 p-3 md:p-4 rounded-[1.5rem] md:rounded-[2rem] shadow-2xl transition-all h-[60px] md:h-[80px]">
             <div className="relative">
-              <div className="w-12 h-12 bg-orange-600 rounded-2xl flex items-center justify-center font-black text-xl shadow-lg ring-2 ring-orange-500/20">M</div>
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-slate-950 transition-colors duration-500 ${connectionStatus === 'connected' ? 'bg-emerald-500 shadow-[0_0_15px_#10b981]' : 'bg-rose-500 animate-pulse shadow-[0_0_15px_#f43f5e]'
+              <div className="w-8 h-8 md:w-12 md:h-12 bg-orange-600 rounded-xl md:rounded-2xl flex items-center justify-center font-black text-sm md:text-xl shadow-lg ring-2 ring-orange-500/20">M</div>
+              <div className={`absolute -bottom-1 -right-1 w-3 h-3 md:w-4 md:h-4 rounded-full border-2 border-slate-950 transition-colors duration-500 ${connectionStatus === 'connected' ? 'bg-emerald-500 shadow-[0_0_15px_#10b981]' : 'bg-rose-500 animate-pulse shadow-[0_0_15px_#f43f5e]'
                 }`}></div>
             </div>
             <div className="flex flex-col justify-center">
-              <div className="text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-2 mb-0.5">
+              <div className="text-[8px] md:text-[10px] font-black text-orange-500 uppercase tracking-widest flex items-center gap-2 mb-0.5">
                 Sessão Ativa
-                <span className={`px-2 py-0.5 rounded-full text-[8px] font-black transition-all duration-500 ${connectionStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'
+                <span className={`px-1.5 py-0.5 rounded-full text-[6px] md:text-[8px] font-black transition-all duration-500 ${connectionStatus === 'connected' ? 'bg-emerald-500/20 text-emerald-500' : 'bg-rose-500/20 text-rose-500'
                   }`}>
                   {connectionStatus === 'connected' ? 'ONLINE' : 'OFFLINE'}
                 </span>
               </div>
-              <div className="text-sm font-bold text-white/90 leading-tight">
+              <div className="text-xs md:text-sm font-bold text-white/90 leading-tight">
                 {currentTeacher.name} • {
                   selectedLanguage === Language.ENGLISH ? 'Inglês' :
                     selectedLanguage === Language.SPANISH ? 'Espanhol' :
