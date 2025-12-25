@@ -401,7 +401,7 @@ const App: React.FC = () => {
             </div>
           </div>
           <div className="space-y-3">
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight">{currentTeacher?.name?.split(' ')[1] || 'Malina'} <span className="text-orange-500">Live</span></h1>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tight">Lingua<span className="text-orange-500">Flow</span></h1>
             <p className="text-slate-400 text-lg md:text-xl max-w-md mx-auto">
               Aprenda idiomas com a energia e o carisma de nossos professores. Uma experiência imersiva e real.
             </p>
