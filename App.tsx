@@ -54,31 +54,20 @@ const App: React.FC = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
 
-  if (loading) {
-    return (
-      <div className="h-screen w-full bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginScreen />;
-  }
-
   useEffect(() => {
     if (selectedTopicId === 'pronunciation' && isConnectedRef.current) {
-      const phrase = PRONUNCIATION_PHRASES[currentPhraseIndex];
-      console.log('Enviando contexto de pronúncia para IA:', phrase.text);
-      sessionRef.current?.then((session: any) => {
-        session.send({
-          parts: [{ text: `CONTEXTO ATUALIZADO: O aluno vai ler a seguinte frase agora: "${phrase.text}". Avalie com rigor.` }]
+      const phrase = PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex];
+      // Safety check in case dictionary access fails (TS fix + runtime safety)
+      if (phrase && sessionRef.current) {
+        console.log('Enviando contexto de pronúncia para IA:', phrase.text);
+        sessionRef.current.then((session: any) => {
+          session.send({
+            parts: [{ text: `CONTEXTO ATUALIZADO: O aluno vai ler a seguinte frase agora: "${phrase.text}". Avalie com rigor.` }]
+          });
         });
-      });
+      }
     }
-  }, [currentPhraseIndex, selectedTopicId]);
-
-
+  }, [currentPhraseIndex, selectedTopicId, selectedLanguage]);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -119,6 +108,18 @@ const App: React.FC = () => {
       setHasSavedStage(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full bg-slate-950 flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginScreen />;
+  }
 
   const startSession = async () => {
     const apiKey = process.env.API_KEY || '';
@@ -393,7 +394,7 @@ const App: React.FC = () => {
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-slate-950 text-white font-sans overflow-hidden">
       {step === 'welcome' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-1000">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8">
           <div className="relative group">
             <div className="w-48 h-48 md:w-64 md:h-64 flex items-center justify-center relative z-10 transition-transform group-hover:scale-105">
               <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(249,115,22,0.6)]" />
