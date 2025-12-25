@@ -69,24 +69,24 @@ export const LoginScreen: React.FC = () => {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/20 rounded-full blur-[120px]"></div>
             </div>
 
-            <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 p-8 rounded-[2rem] shadow-2xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                <div className="text-center mb-10">
-                    <div className="w-48 h-48 mx-auto mb-6 flex items-center justify-center">
+            <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 p-6 md:p-8 rounded-[2rem] shadow-2xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div className="text-center mb-6 md:mb-8">
+                    <div className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-4 flex items-center justify-center">
                         <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]" />
                     </div>
-                    <h1 className="text-3xl font-black text-white tracking-tight mb-2">Bem-vindo</h1>
+                    <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-2">Bem-vindo</h1>
                     <p className="text-slate-400 text-sm">Acesse sua conta para continuar sua jornada.</p>
                 </div>
 
                 {sessionError && (
-                    <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
+                    <div className="mb-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
                         <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
                         <p className="text-sm text-orange-200">{sessionError}</p>
                     </div>
                 )}
 
                 {message && (
-                    <div className={`mb-6 p-4 rounded-xl flex items-start gap-3 ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'}`}>
+                    <div className={`mb-4 p-4 rounded-xl flex items-start gap-3 ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'}`}>
                         <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                         <p className="text-sm">{message.text}</p>
                     </div>
@@ -104,7 +104,7 @@ export const LoginScreen: React.FC = () => {
                                         placeholder="+55 11 99999-9999"
                                         value={phoneNumber}
                                         onChange={e => setPhoneNumber(e.target.value)}
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
                                         required
                                     />
                                 </div>
@@ -117,7 +117,7 @@ export const LoginScreen: React.FC = () => {
                                     placeholder="000000"
                                     value={otp}
                                     onChange={e => setOtp(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-4 px-4 text-center text-2xl tracking-[0.5em] font-mono text-white placeholder:text-slate-700 focus:outline-none focus:border-orange-500 transition-colors"
+                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-center text-2xl tracking-[0.5em] font-mono text-white placeholder:text-slate-700 focus:outline-none focus:border-orange-500 transition-colors"
                                     maxLength={6}
                                     required
                                 />
@@ -127,7 +127,7 @@ export const LoginScreen: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-600/20"
+                            className="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-600/20"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (showOtpInput ? 'Confirmar Código' : 'Enviar SMS')}
                         </button>
@@ -141,7 +141,7 @@ export const LoginScreen: React.FC = () => {
                                 placeholder="seu@email.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
                                 required
                             />
                         </div>
@@ -154,7 +154,7 @@ export const LoginScreen: React.FC = () => {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
                                     required
                                 />
                             </div>
@@ -163,14 +163,14 @@ export const LoginScreen: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-600/20"
+                            className="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-600/20"
                         >
                             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (mode === 'signin' ? 'Entrar' : 'Criar Conta')}
                         </button>
                     </form>
                 )}
 
-                <div className="mt-8 flex flex-col gap-4">
+                <div className="mt-6 flex flex-col gap-4">
                     <div className="relative flex py-2 items-center">
                         <div className="flex-grow border-t border-white/10"></div>
                         <span className="flex-shrink-0 mx-4 text-slate-500 text-xs uppercase tracking-widest">Opções</span>
