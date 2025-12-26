@@ -42,3 +42,11 @@ export interface Topic {
   icon: string;
   prompt: string;
 }
+
+export interface SessionReportData {
+  score: number;
+  mistakes: { mistake: string; correction: string }[];
+  vocabulary: { word: string; translation: string }[];
+  tip: string;
+  continuationContext?: string;
+}

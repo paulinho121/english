@@ -1,14 +1,16 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
-import { Language, Level, Teacher, Topic } from './types';
+import { Language, Level, Teacher, Topic, SessionReportData } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
 import { useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 import { LoginScreen } from './components/auth/LoginScreen';
+import { SessionReport } from './components/SessionReport';
 import {
   Mic, MicOff, PhoneOff, Settings, Volume2,
   Sparkles, Globe, ShieldCheck, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark
+  ArrowRight, BrainCircuit, Bookmark, RefreshCw, LogOut
 } from 'lucide-react';
 
 // Auxiliares para áudio
@@ -40,8 +42,11 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const App: React.FC = () => {
   const { user, loading, signOut } = useAuth();
-  const [step, setStep] = useState<'welcome' | 'setup' | 'call'>('welcome');
+  const [step, setStep] = useState<'welcome' | 'setup' | 'call' | 'report'>('welcome');
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
+  const [reportData, setReportData] = useState<SessionReportData | null>(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [savedMemory, setSavedMemory] = useState<{ context: string, teacherId: string, level: Level, language: Language, topicId: string } | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<Level>(Level.BEGINNER);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(TOPICS[3].id); // Default to Daily Life
@@ -76,13 +81,35 @@ const App: React.FC = () => {
   const sessionRef = useRef<any>(null);
   const isConnectedRef = useRef(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const reportBufferRef = useRef('');
+
 
   useEffect(() => {
-    const saved = localStorage.getItem('linguistai_stage');
-    if (saved) {
-      setHasSavedStage(true);
+    // Carregar Memória Pedagógica do Supabase (Última Sessão)
+    if (user) {
+      const fetchLastSession = async () => {
+        const { data, error } = await supabase
+          .from('sessions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        if (data && data.continuation_context) {
+          // Mapear campos do DB para o estado da UI
+          setSavedMemory({
+            context: data.continuation_context,
+            teacherId: data.teacher_id,
+            level: data.level as Level,
+            language: data.language as Language,
+            topicId: data.topic_id
+          });
+        }
+      };
+      fetchLastSession();
     }
-  }, []);
+  }, [user]);
 
   const saveStage = () => {
     const data = {
@@ -175,6 +202,8 @@ const App: React.FC = () => {
           parts: [{
             text: teacher.isKidMode
               ? `
+              ${savedMemory && savedMemory.context ? `⚠️ CONTEXTO DE CONTINUIDADE: O aluno está retomando uma aula anterior. O contexto era: "${savedMemory.context}". Inicie a aula dizendo "Que bom te ver de novo! Vamos continuar de onde paramos?" e retome o assunto imediatamente.` : ''}
+
               PERSONA: Kevin
               - ⚠️ CRITICAL: VOCÊ É BRASILEIRO. SUA VOZ É 100% BRASILEIRA.
               - NÃO FALE COM SOTAQUE AMERICANO. ISSO É PROIBIDO.
@@ -186,11 +215,12 @@ const App: React.FC = () => {
               
               IMPORTANTE: NÍVEL ${selectedLevel}
               ${selectedLevel === Level.BEGINNER
-                ? '⚠️ MODO BÁSICO: Fale PORTUGUÊS como um nativo do Brasil. Use gírias leves, seja natural. Explique tudo.'
+                ? '⚠️ MODO BÁSICO (ZERO): O aluno está começando do ZERO. Fale em Português. Ensine palavras simples (Oi, Tudo bem). Peça para repetir. Seja muito paciente e didático, guiando passo a passo.'
                 : 'MODO IMERSÃO: Fale o idioma alvo, mas com "sotaque brasileiro". Sua "voz base" é brasileira.'}
 
               FASE 1: ACOLHIMENTO E RAPPORT
               - Inicie em Português: "E aí, beleza? Tudo joia?".
+              - MENCIONE O NÍVEL: "Vi que você escolheu o nível ${selectedLevel === Level.BEGINNER ? 'Básico' : selectedLevel === Level.INTERMEDIATE ? 'Intermediário' : 'Avançado'}. Vamos lá!"
               - Seja caloroso e amigável, como um brasileiro.
 
               FASE 2: AULA ESPECÍFICA (IDIOMA ALVO)
@@ -202,6 +232,8 @@ const App: React.FC = () => {
               - Bata um papo descontraído.
               `
               : `
+              ${savedMemory && savedMemory.context ? `⚠️ CONTEXTO DE CONTINUIDADE: O aluno está retomando uma aula anterior. O contexto era: "${savedMemory.context}". Inicie a aula dizendo "Olá novamente! Vamos continuar nosso papo sobre..." e retome o assunto imediatamente.` : ''}
+
               PERSONA: ${teacher.name}
               - ⚠️ CRITICAL INSTRUCTION: YOU ARE BRAZILIAN. DO NOT SOUND AMERICAN.
               - VOCÊ É BRASILEIRO(A). SOTAQUE: 100% PORTUGUÊS DO BRASIL (PT-BR).
@@ -213,11 +245,12 @@ const App: React.FC = () => {
 
               IMPORTANTE: NÍVEL ${selectedLevel}
               ${selectedLevel === Level.BEGINNER
-                ? '⚠️ MODO BÁSICO ATIVADO: Fale Português perfeitamente, como um nativo. Sem sotaque estrangeiro.'
+                ? '⚠️ MODO BÁSICO (ZERO): O aluno é iniciante absoluto e está começando do ZERO. Fale PRINCIPALMENTE em Português. Introduza o idioma alvo aos poucos. Diga a frase, traduza e peça para o aluno repetir. Guie-o pela mão.'
                 : 'MODO IMERSÃO: Use o idioma alvo, mas mantenha sua identidade brasileira.'}
 
               FASE 1: ACOLHIMENTO (PORTUGUÊS)
               - Cumprimente em Português Brasileiro Nativo: "Olá! Tudo bem? Como você está?".
+              - MENCIONE O NÍVEL: "Vi que você escolheu o nível ${selectedLevel === Level.BEGINNER ? 'Básico' : selectedLevel === Level.INTERMEDIATE ? 'Intermediário' : 'Avançado'}."
               - Sua entonação deve ser melódica e típica do Brasil.
 
               FASE 2: AULA ESPECÍFICA
@@ -292,11 +325,68 @@ const App: React.FC = () => {
           if (parts) {
             for (const part of parts) {
               if (part.text) {
-                const newText = part.text;
-                setCurrentCaption(prev => prev + newText);
+                if (isGeneratingReport) {
+                  reportBufferRef.current += part.text;
+                  // Tentar parsear JSON parcial (ou esperar finalizar)
+                  try {
+                    // Limpeza básica de markdown code blocks se o modelo mandar ```json
+                    const cleanJson = reportBufferRef.current.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const data = JSON.parse(cleanJson);
+
+                    // Se funcionou, finaliza
+                    console.log('Relatório Gerado com Sucesso:', data);
+                    setReportData(data);
+
+                    // Salvar Memória Pedagógica
+                    // Salvar no Supabase (Persistência Real)
+                    if (user) {
+                      try {
+                        supabase.from('sessions').insert({
+                          user_id: user.id,
+                          teacher_id: selectedTeacherId,
+                          language: selectedLanguage,
+                          level: selectedLevel,
+                          topic_id: selectedTopicId,
+                          score: data.score,
+                          mistakes: data.mistakes,
+                          vocabulary: data.vocabulary,
+                          tip: data.tip,
+                          continuation_context: data.continuationContext // O Segredo da Memória
+                        }).then(({ error }) => {
+                          if (error) console.error('Erro ao salvar sessão no Supabase:', error);
+                          else console.log('Sessão salva com sucesso no Supabase!');
+                        });
+                      } catch (err) {
+                        console.error('Erro crítico ao salvar:', err);
+                      }
+                    } else {
+                      // Fallback para LocalStorage se não tiver user (o que não deve acontecer aqui)
+                      if (data.continuationContext) {
+                        const memoryState = {
+                          teacherId: selectedTeacherId,
+                          level: selectedLevel,
+                          language: selectedLanguage,
+                          topicId: selectedTopicId,
+                          context: data.continuationContext,
+                          timestamp: Date.now()
+                        };
+                        localStorage.setItem('linguistai_pedagogical_memory', JSON.stringify(memoryState));
+                      }
+                    }
+
+                    setStep('report');
+                    setIsGeneratingReport(false);
+                    isConnectedRef.current = false; // Parar processamento
+                  } catch (e) {
+                    // JSON incompleto, continua bufferizando
+                  }
+                } else {
+                  const newText = part.text;
+                  setCurrentCaption(prev => prev + newText);
+                }
               }
 
-              if (part.inlineData?.data) {
+              if (part.inlineData?.data && !isGeneratingReport) {
                 const audioData = part.inlineData.data;
                 setIsTeacherSpeaking(true);
                 const ctx = outputAudioContextRef.current!;
@@ -353,6 +443,7 @@ const App: React.FC = () => {
           }
         },
         onclose: (ev) => {
+          if (step === 'report') return; // Ignore close se for para relatório
           console.log('Gemini Live API: Conexão fechada', ev);
           isConnectedRef.current = false;
           setConnectionStatus('idle');
@@ -386,7 +477,33 @@ const App: React.FC = () => {
   };
 
   const endCall = () => {
-    window.location.reload();
+    // Se já estiver gerando, ignora
+    if (isGeneratingReport) return;
+
+    setIsGeneratingReport(true);
+    reportBufferRef.current = '';
+
+    // Enviar comando para gerar relatório
+    if (sessionRef.current && isConnectedRef.current) {
+      sessionRef.current.then((session: any) => {
+        session.send({
+          parts: [{
+            text: `SYSTEM: A sessão acabou. Gere um relatório JSON estrito (sem markdown) com o seguinte formato:
+                    {
+                        "score": number (0-100),
+                        "mistakes": [{"mistake": "string", "correction": "string"}],
+                        "vocabulary": [{"word": "string", "translation": "string"}],
+                        "tip": "string",
+                        "continuationContext": "string (resumo curto de 1 frase sobre onde paramos e o que deve ser perguntado na próxima aula para continuar)"
+                    }.
+                    Avalie o desempenho do aluno baseado em toda a conversa.`
+          }]
+        });
+      });
+    } else {
+      // Se não tiver conexão, só reload
+      window.location.reload();
+    }
   };
 
   const currentTeacher = TEACHERS.find(t => t.id === selectedTeacherId) || TEACHERS[0];
@@ -418,6 +535,14 @@ const App: React.FC = () => {
           <div className="absolute bottom-6 text-slate-500/50 text-xs font-bold tracking-widest uppercase">
             Criado por Paulinho Fernando
           </div>
+
+          <button
+            onClick={signOut}
+            className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white hover:bg-white/10 rounded-full transition-all"
+            title="Sair"
+          >
+            <LogOut className="w-6 h-6" />
+          </button>
         </div>
       )}
 
@@ -443,6 +568,27 @@ const App: React.FC = () => {
                   className="w-full p-4 bg-orange-600/20 border border-orange-500/50 rounded-2xl text-orange-500 font-bold flex items-center justify-center gap-2 hover:bg-orange-600/30 transition-all text-sm md:text-base"
                 >
                   <Bookmark className="w-5 h-5" /> Retomar Aula Anterior
+                </button>
+              )}
+
+              {savedMemory && (
+                <button
+                  onClick={() => {
+                    setSelectedLanguage(savedMemory.language);
+                    setSelectedLevel(savedMemory.level);
+                    setSelectedTeacherId(savedMemory.teacherId);
+                    setSelectedTopicId(savedMemory.topicId);
+                    startSession(); // Já inicia direto
+                  }}
+                  className="w-full p-6 bg-gradient-to-r from-emerald-600/20 to-emerald-500/20 border border-emerald-500/50 rounded-2xl text-emerald-400 font-bold flex items-center justify-center gap-4 hover:bg-emerald-600/30 transition-all text-lg shadow-lg group"
+                >
+                  <div className="p-2 bg-emerald-500 rounded-full text-slate-950 group-hover:scale-110 transition-transform">
+                    <RefreshCw className="w-6 h-6" />
+                  </div>
+                  <div className="flex flex-col items-start">
+                    <span className="uppercase text-[10px] tracking-widest text-emerald-500/80">Memória Pedagógica</span>
+                    <span>Continuar de onde parou</span>
+                  </div>
                 </button>
               )}
 
@@ -795,6 +941,28 @@ const App: React.FC = () => {
           </div>
         )
       }
+
+
+      {
+        step === 'report' && reportData && (
+          <SessionReport
+            data={reportData}
+            onRestart={() => window.location.reload()}
+          />
+        )
+      }
+
+      {/* Loading Overlay for Report Generation */}
+      {
+        isGeneratingReport && (
+          <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center animate-in fade-in duration-500">
+            <Loader2 className="w-16 h-16 text-orange-500 animate-spin mb-4" />
+            <h2 className="text-2xl font-black text-white">Gerando seu Relatório...</h2>
+            <p className="text-slate-400">A professora está avaliando seu desempenho.</p>
+          </div>
+        )
+      }
+
     </div >
   );
 };
