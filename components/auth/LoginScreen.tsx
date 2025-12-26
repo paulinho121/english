@@ -62,9 +62,10 @@ export const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-y-auto overflow-x-hidden">
             {/* Ambient Background */}
-            <div className="absolute top-0 left-0 w-full h-full">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-orange-600/20 rounded-full blur-[120px]"></div>
                 <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/20 rounded-full blur-[120px]"></div>
             </div>
@@ -194,7 +195,7 @@ export const LoginScreen: React.FC = () => {
                 </div>
             </div>
 
-            <div className="absolute bottom-6 text-slate-500/50 text-xs font-bold tracking-widest uppercase">
+            <div className="mt-8 text-slate-500/50 text-xs font-bold tracking-widest uppercase text-center relative z-10 pb-4">
                 Criado por Paulinho Fernando
             </div>
         </div>
