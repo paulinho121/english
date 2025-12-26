@@ -122,9 +122,11 @@ const App: React.FC = () => {
   }
 
   const startSession = async () => {
-    const apiKey = process.env.API_KEY || '';
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+    console.log('DEBUG: API Key lida:', apiKey ? `${apiKey.slice(0, 4)}...${apiKey.slice(-4)}` : 'NENHUMA');
+
     if (!apiKey) {
-      setConnectionError('API Key não encontrada. Verifique o arquivo .env');
+      setConnectionError('API Key não encontrada. Verifique o arquivo .env (VITE_GEMINI_API_KEY)');
       return;
     }
 
@@ -142,7 +144,8 @@ const App: React.FC = () => {
       return;
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    // Instanciando com a versão v1beta conforme solicitado
+    const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
     const teacher = TEACHERS.find(t => t.id === selectedTeacherId)!;
     const topic = TOPICS.find(t => t.id === selectedTopicId)!;
 
@@ -150,11 +153,11 @@ const App: React.FC = () => {
     outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
 
     console.log('Gemini Live API: Iniciando conexão com config...', {
-      model: 'gemini-2.0-flash-exp',
+      model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
       modalities: [Modality.AUDIO, Modality.TEXT]
     });
     const sessionPromise = ai.live.connect({
-      model: 'gemini-2.0-flash-exp',
+      model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
       config: {
         responseModalities: [Modality.AUDIO],
         tools: [
@@ -176,58 +179,74 @@ const App: React.FC = () => {
             text: teacher.isKidMode
               ? `
               PERSONA: Kevin
-              - ⚠️ CRITICAL: VOCÊ É BRASILEIRO. SUA VOZ É 100% BRASILEIRA.
-              - NÃO FALE COM SOTAQUE AMERICANO. ISSO É PROIBIDO.
-              - Você é um professor jovem do Brasil (São Paulo ou Rio).
-              - SOTAQUE: Português do Brasil (PT-BR) totalmente nativo e natural.
-              - Idioma Alvo: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}.
+              - CRITICAL: VOCÊ É UM PROFESSOR BRASILEIRO DIVERTIDO.
+              - Sua língua nativa é Português do Brasil (PT-BR).
 
-              ESTRUTURA DA AULA (3 FASES OBRIGATÓRIAS):
+              NÍVEL SELECIONADO: ${selectedLevel}
+              DIRETRIZES POR NÍVEL:
+              ${selectedLevel === Level.BEGINNER ? `
+              1. MODO INICIANTE (90% PT-BR / 10% IDIOMA ALVO):
+                 - Explique TUDO em Português do Brasil primeiro.
+                 - Apresente o idioma alvo DEVAGAR, palavra por palavra.
+                 - Valide constantemente: "Entendeu?", "Quer que eu repita?".
+                 - Foco: Construir confiança básica.
+              ` : selectedLevel === Level.INTERMEDIATE ? `
+              1. MODO INTERMEDIÁRIO (50% PT-BR / 50% IDIOMA ALVO):
+                 - Explique conceitos novos em Português.
+                 - Dê instruções e comandos já no idioma alvo.
+                 - Foco: Frases completas, entonação e ritmo (sotaque).
+                 - Corrija a pronúncia de forma natural, repetindo a frase corretamente.
+              ` : `
+              1. MODO PRO (100% IDIOMA ALVO):
+                 - IMERSÃO TOTAL. Não fale Português, a menos que o aluno implore.
+                 - Fale em velocidade natural/nativa.
+                 - Use vocabulário avançado e expressões idiomáticas.
+                 - Se o aluno errar, peça para reformular sem traduzir.
+              `}
               
-              IMPORTANTE: NÍVEL ${selectedLevel}
-              ${selectedLevel === Level.BEGINNER
-                ? '⚠️ MODO BÁSICO: Fale PORTUGUÊS como um nativo do Brasil. Use gírias leves, seja natural. Explique tudo.'
-                : 'MODO IMERSÃO: Fale o idioma alvo, mas com "sotaque brasileiro". Sua "voz base" é brasileira.'}
+              IDIOMA ALVO: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}
+              Tópico: ${topic.name}
+              Instrução: "${topic.prompt}"
 
-              FASE 1: ACOLHIMENTO E RAPPORT
-              - Inicie em Português: "E aí, beleza? Tudo joia?".
-              - Seja caloroso e amigável, como um brasileiro.
-
-              FASE 2: AULA ESPECÍFICA (IDIOMA ALVO)
-              - Tópico: ${topic.name}
-              - Prompt Específico: "${topic.prompt}"
-              ${selectedLevel === Level.BEGINNER ? '- Explique brincando em Português NATÍVO.' : '- Fale no IDIOMA ALVO, mas com clareza.'}
-
-              FASE 3: CONVERSAÇÃO LIVRE
-              - Bata um papo descontraído.
+              Seja o amigo legal! Use gírias leves do Brasil (tipo "né", "beleza") quando falar português.
               `
               : `
               PERSONA: ${teacher.name}
-              - ⚠️ CRITICAL INSTRUCTION: YOU ARE BRAZILIAN. DO NOT SOUND AMERICAN.
-              - VOCÊ É BRASILEIRO(A). SOTAQUE: 100% PORTUGUÊS DO BRASIL (PT-BR).
-              - Proibido soar como um "gringo falando português".
-              - Você é um professor(a) nascido(a) no Brasil, falando com brasileiros.
-              - Idioma Alvo: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}.
+              - CRITICAL: VOCÊ É UM(A) PROFESSOR(A) BRASILEIRO(A).
+              - Sua voz e identidade são brasileiras.
 
-              ESTRUTURA DA AULA (3 FASES OBRIGATÓRIAS):
-
-              IMPORTANTE: NÍVEL ${selectedLevel}
-              ${selectedLevel === Level.BEGINNER
-                ? '⚠️ MODO BÁSICO ATIVADO: Fale Português perfeitamente, como um nativo. Sem sotaque estrangeiro.'
-                : 'MODO IMERSÃO: Use o idioma alvo, mas mantenha sua identidade brasileira.'}
-
-              FASE 1: ACOLHIMENTO (PORTUGUÊS)
-              - Cumprimente em Português Brasileiro Nativo: "Olá! Tudo bem? Como você está?".
-              - Sua entonação deve ser melódica e típica do Brasil.
-
-              FASE 2: AULA ESPECÍFICA
-              - Tópico: ${topic.name}
-              - Instrução da Atividade: ${topic.prompt}
-
-              FASE 3: CONVERSAÇÃO LIVRE
-              - Converse naturalmente.
+              NÍVEL SELECIONADO: ${selectedLevel}
               
-              REGRA DE OURO: SE O ALUNO FALAR PORTUGUÊS, RESPONDA COMO UM BRASILEIRO, NÃO COMO UM AMERICANO TRADUZINDO.
+              PROTOCOLO DE ENSINO (RIGOROSO):
+              ${selectedLevel === Level.BEGINNER ? `
+              --- MODO INICIANTE (FOCO: EXPLICAÇÃO CLARA) ---
+              1. IDIOMA DE COMANDO: Português do Brasil (PT-BR).
+              2. METODOLOGIA:
+                 - Fale o termo no idioma alvo LENTAMENTE e CLARAMENTE.
+                 - Traduza imediatamente para o Português.
+                 - Verifique a compreensão a cada passo.
+                 - Exemplo: "Agora vamos dizer 'Good Morning'. Repita comigo: Good... Morning."
+              3. FEEDBACK: Sempre em PT-BR, muito encorajador.
+              ` : selectedLevel === Level.INTERMEDIATE ? `
+              --- MODO INTERMEDIÁRIO (FOCO: FLUÊNCIA E SOTAQUE) ---
+              1. IDIOMA DE COMANDO: Híbrido. Use o idioma alvo para frases comuns, PT-BR para explicações gramaticais.
+              2. METODOLOGIA:
+                 - Incentive o aluno a falar frases inteiras, não só palavras soltas.
+                 - Foco total na PRONÚNCIA e ENTONAÇÃO (Accent Reduction).
+                 - Se o aluno errar, dê o modelo correto da frase inteira e peça para repetir.
+              ` : `
+              --- MODO PRO (FOCO: IMERSÃO TOTAL) ---
+              1. IDIOMA DE COMANDO: 100% IDIOMA ALVO (${selectedLanguage}).
+              2. METODOLOGIA:
+                 - Aja como um nativo que não fala português (a menos que seja emergência).
+                 - Discuta nuances, sarcasmo, cultura e expressões idiomáticas.
+                 - Velocidade de fala: Natural/Rápida.
+                 - Correções: Sutis e diretas, sem meta-explicação.
+              `}
+
+              IDIOMA ALVO: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}
+              Tópico: ${topic.name}
+              Contexto: ${topic.prompt}
               `
           }]
         },
@@ -237,6 +256,20 @@ const App: React.FC = () => {
           console.log('Gemini Live API: Conexão aberta');
           isConnectedRef.current = true;
           setConnectionStatus('connected');
+
+          // START MODIFICATION: Send initial phrase context if in pronunciation mode
+          if (selectedTopicId === 'pronunciation') {
+            const firstPhrase = PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[0];
+            if (firstPhrase) {
+              console.log('Sending initial pronunciation phrase:', firstPhrase.text);
+              sessionPromise.then(session => {
+                session.send({
+                  parts: [{ text: `CONTEXTO INICIAL: A primeira frase que o aluno vai ler é: "${firstPhrase.text}". Aguarde ele ler. NÃO invente outra frase.` }]
+                });
+              });
+            }
+          }
+          // END MODIFICATION
           setTimeout(() => {
             if (!isConnectedRef.current) return;
             try {
@@ -293,7 +326,10 @@ const App: React.FC = () => {
             for (const part of parts) {
               if (part.text) {
                 const newText = part.text;
-                setCurrentCaption(prev => prev + newText);
+                // Filtrar "pensamentos" que aparecem entre asteriscos ou parecem logs internos.
+                if (!newText.startsWith('*') && !newText.includes('**')) {
+                  setCurrentCaption(prev => prev + newText);
+                }
               }
 
               if (part.inlineData?.data) {

@@ -82,25 +82,43 @@ export const TOPICS: Topic[] = [
     id: 'job-interview',
     name: 'Entrevista de Emprego',
     icon: '💼',
-    prompt: 'Conduza uma simulação de entrevista de emprego INTEGRALMENTE no idioma alvo. Faça perguntas sobre experiência e habilidades, oferecendo feedback linguístico ocasional em português se necessário.'
+    prompt: 'Conduza uma simulação de entrevista de emprego. O foco é fazer perguntas sobre experiência e habilidades. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
   },
   {
     id: 'travel',
     name: 'Viagem e Turismo',
     icon: '✈️',
-    prompt: 'Imagine que estamos em um aeroporto ou hotel. Conduza a interação no IDIOMA ALVO. Ajude o aluno a fazer o check-in e pedir informações turísticas, mantendo a imersão.'
+    prompt: 'Imagine que estamos em um aeroporto ou hotel. Ajude o aluno a fazer o check-in e pedir informações turísticas. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
   },
   {
     id: 'restaurant',
     name: 'Restaurante',
     icon: '🍽️',
-    prompt: 'Simule um jantar em um restaurante sofisticado, falando APENAS no idioma alvo. O aluno deve pedir a comida, fazer perguntas sobre o menu e pagar a conta.'
+    prompt: 'Simule um jantar em um restaurante sofisticado. O aluno deve pedir a comida, fazer perguntas sobre o menu e pagar a conta. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
   },
   {
     id: 'daily-life',
     name: 'Vida Diária',
     icon: '🏠',
-    prompt: 'Uma conversa casual sobre hobbies, família e rotina diária conduzida no IDIOMA ALVO para praticar a fluidez cotidiana.'
+    prompt: 'Uma conversa casual sobre hobbies, família e rotina diária para praticar a fluidez cotidiana. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+  },
+  {
+    id: 'university',
+    name: 'Faculdade / Estudos',
+    icon: '🎓',
+    prompt: 'Simule uma interação no campus de uma universidade (biblioteca, café ou sala de aula). Discuta projetos, provas e vida acadêmica. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+  },
+  {
+    id: 'work',
+    name: 'Ambiente de Trabalho',
+    icon: '🏢',
+    prompt: 'Simule uma reunião de trabalho ou uma conversa no escritório. Foco em vocabulário profissional, prazos e colaboração. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+  },
+  {
+    id: 'school',
+    name: 'Escola / Sala de Aula',
+    icon: '🎒',
+    prompt: 'Simule um dia de aula na escola. A conversa pode ser sobre matérias, dever de casa ou interação com colegas/professores. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
   },
   {
     id: 'pronunciation',
