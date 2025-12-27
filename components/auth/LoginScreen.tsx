@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -107,63 +106,64 @@ export const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-y-auto overflow-x-hidden">
-            {/* Ambient Background */}
-            {/* Ambient Background */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-orange-600/20 rounded-full blur-[120px]"></div>
-                <div className="absolute bottom-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/20 rounded-full blur-[120px]"></div>
+        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
+            {/* Ambient Animated Background */}
+            <div className="bg-animated">
+                <div className="blob blob-1"></div>
+                <div className="blob blob-2"></div>
+                <div className="blob blob-3"></div>
             </div>
 
-            <div className="w-full max-w-md bg-white/5 backdrop-blur-2xl border border-white/10 p-6 md:p-8 rounded-[2rem] shadow-2xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                <div className="text-center mb-6 md:mb-8">
-                    <div className="w-24 h-24 md:w-32 md:h-32 mx-auto mb-4 flex items-center justify-center">
-                        <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]" />
+            <div className="w-full max-w-md glass-premium p-8 md:p-10 rounded-[2.5rem] relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                <div className="text-center mb-8 md:mb-10">
+                    <div className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-6 flex items-center justify-center group">
+                        <div className="absolute w-32 h-32 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/30 transition-all duration-500"></div>
+                        <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(249,115,22,0.6)] relative z-10 transform group-hover:scale-110 transition-transform duration-500" />
                     </div>
-                    <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight mb-2">Bem-vindo</h1>
-                    <p className="text-slate-400 text-sm">Acesse sua conta para continuar sua jornada.</p>
+                    <h1 className="text-3xl md:text-4xl font-display font-black text-white tracking-tight mb-2 text-glow">Bem-vindo</h1>
+                    <p className="text-slate-300 font-medium">Acesse sua conta para continuar.</p>
                 </div>
 
                 {sessionError && (
-                    <div className="mb-4 p-4 bg-orange-500/10 border border-orange-500/20 rounded-xl flex items-start gap-3">
+                    <div className="mb-6 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl flex items-start gap-3 backdrop-blur-sm">
                         <AlertCircle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-                        <p className="text-sm text-orange-200">{sessionError}</p>
+                        <p className="text-sm text-orange-200 font-medium">{sessionError}</p>
                     </div>
                 )}
 
                 {message && (
-                    <div className={`mb-4 p-4 rounded-xl flex items-start gap-3 ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'}`}>
+                    <div className={`mb-6 p-4 rounded-2xl flex items-start gap-3 backdrop-blur-sm ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-200' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'}`}>
                         <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                        <p className="text-sm">{message.text}</p>
+                        <p className="text-sm font-medium">{message.text}</p>
                     </div>
                 )}
 
                 {mode === 'phone' ? (
-                    <form onSubmit={handlePhoneLogin} className="space-y-4">
+                    <form onSubmit={handlePhoneLogin} className="space-y-5">
                         {!showOtpInput ? (
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Celular (com DDD)</label>
-                                <div className="relative">
-                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Celular (com DDD)</label>
+                                <div className="relative group">
+                                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
                                     <input
                                         type="tel"
                                         placeholder="+55 11 99999-9999"
                                         value={phoneNumber}
                                         onChange={e => setPhoneNumber(e.target.value)}
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                         required
                                     />
                                 </div>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Código SMS</label>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Código SMS</label>
                                 <input
                                     type="text"
                                     placeholder="000000"
                                     value={otp}
                                     onChange={e => setOtp(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-center text-2xl tracking-[0.5em] font-mono text-white placeholder:text-slate-700 focus:outline-none focus:border-orange-500 transition-colors"
+                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-center text-3xl tracking-[0.5em] font-mono font-bold text-white placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                     maxLength={6}
                                     required
                                 />
@@ -173,60 +173,60 @@ export const LoginScreen: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-600/20"
+                            className="btn-primary w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-500/20"
                         >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (showOtpInput ? 'Confirmar Código' : 'Enviar SMS')}
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (showOtpInput ? 'Confirmar Código' : 'Enviar SMS')}
                         </button>
                     </form>
                 ) : (
-                    <form onSubmit={handleEmailLogin} className="space-y-4">
+                    <form onSubmit={handleEmailLogin} className="space-y-5">
                         {mode === 'signup' && (
                             <>
                                 <div className="space-y-2 animate-in slide-in-from-top-4 duration-300">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nome Completo</label>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                                     <input
                                         type="text"
                                         placeholder="Seu nome"
                                         value={fullName}
                                         onChange={e => setFullName(e.target.value)}
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                         required
                                     />
                                 </div>
                                 <div className="space-y-2 animate-in slide-in-from-top-4 duration-500">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Celular</label>
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Celular</label>
                                     <input
                                         type="tel"
                                         placeholder="(11) 99999-9999"
                                         value={signupPhone}
                                         onChange={e => setSignupPhone(e.target.value)}
-                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                         required
                                     />
                                 </div>
                             </>
                         )}
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email</label>
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
                             <input
                                 type="email"
                                 placeholder="seu@email.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                 required
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Senha</label>
-                            <div className="relative">
-                                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Senha</label>
+                            <div className="relative group">
+                                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-orange-500 transition-colors" />
                                 <input
                                     type="password"
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                     required
                                 />
                             </div>
@@ -235,30 +235,30 @@ export const LoginScreen: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-600/20"
+                            className="btn-primary w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-500/20"
                         >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (mode === 'signin' ? 'Entrar' : 'Criar Conta')}
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (mode === 'signin' ? 'Entrar' : 'Criar Conta')}
                         </button>
                     </form>
                 )}
 
-                <div className="mt-6 flex flex-col gap-4">
+                <div className="mt-8 flex flex-col gap-4">
                     <div className="relative flex py-2 items-center">
                         <div className="flex-grow border-t border-white/10"></div>
-                        <span className="flex-shrink-0 mx-4 text-slate-500 text-xs uppercase tracking-widest">Opções</span>
+                        <span className="flex-shrink-0 mx-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest">Ou entre com</span>
                         <div className="flex-grow border-t border-white/10"></div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => { setMode(mode === 'phone' ? 'signin' : 'phone'); setMessage(null); }}
-                            className="py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                            className="py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-2 hover:border-orange-500/30 active:scale-95"
                         >
                             {mode === 'phone' ? <><LogIn className="w-4 h-4" /> Email</> : <><Phone className="w-4 h-4" /> Celular</>}
                         </button>
                         <button
                             onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setMessage(null); }}
-                            className="py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-2"
+                            className="py-3 px-4 rounded-xl border border-white/10 hover:bg-white/5 text-slate-300 text-xs font-bold transition-all flex items-center justify-center gap-2 hover:border-orange-500/30 active:scale-95"
                         >
                             {mode === 'signup' ? 'Tenho Conta' : 'Criar Conta'}
                         </button>
@@ -266,7 +266,7 @@ export const LoginScreen: React.FC = () => {
                 </div>
             </div>
 
-            <div className="mt-8 text-slate-500/50 text-xs font-bold tracking-widest uppercase text-center relative z-10 pb-4">
+            <div className="mt-8 text-slate-500/40 text-[10px] font-black tracking-[0.2em] uppercase text-center relative z-10 pb-4 mix-blend-plus-lighter">
                 Criado por Paulinho Fernando
             </div>
         </div>

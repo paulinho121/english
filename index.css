@@ -1,71 +1,172 @@
-/* Base Reset & Setup */
-body {
-    margin: 0;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@300;400;500;700;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+    --font-sans: 'Inter', sans-serif;
+    --font-display: 'Outfit', sans-serif;
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --primary-gradient: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
 }
 
-/* Glassmorphism Utilities - Pure CSS Implementation */
-.glass-panel {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+body {
+    margin: 0;
+    font-family: var(--font-sans);
+    background: #020617;
+    /* Slate 950 base */
+    color: #f8fafc;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    /* Prevent horizontal scroll from animations */
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.font-display {
+    font-family: var(--font-display);
+}
+
+/* --- Premium Glassmorphism --- */
+.glass-premium {
+    background: rgba(15, 23, 42, 0.6);
+    /* Slate 900 with opacity */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--glass-border);
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    box-shadow:
+        0 4px 6px -1px rgba(0, 0, 0, 0.1),
+        0 2px 4px -1px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    /* Inner highlight */
 }
 
 .glass-card {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.05);
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-card:hover {
-    border-color: rgba(0, 240, 255, 0.3);
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.1);
-    transform: translateY(-2px);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-color: rgba(249, 115, 22, 0.3);
+    /* Orange accent */
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.4);
 }
 
-/* Typography & gradients */
+/* --- Text Effects --- */
 .text-gradient {
-    background: linear-gradient(to right, #ffffff, #94a3b8);
+    background: linear-gradient(to right, #ffffff, #cbd5e1);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
 }
 
-.text-accent {
-    color: var(--color-accent);
-    text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+.text-gradient-primary {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
-/* Buttons */
+.text-glow {
+    text-shadow: 0 0 20px rgba(249, 115, 22, 0.4);
+}
+
+/* --- Buttons --- */
 .btn-primary {
     position: relative;
     overflow: hidden;
-    background: var(--color-accent);
-    color: #000;
+    background: var(--primary-gradient);
+    color: white;
     font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
     transition: all 0.3s ease;
-    box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.3);
     border: none;
 }
 
 .btn-primary:hover {
-    box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
-    transform: scale(1.02);
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.5);
+    transform: translateY(-1px);
 }
 
 .btn-primary:active {
-    transform: scale(0.98);
+    transform: translateY(1px);
 }
 
-/* Animations */
+/* --- Background Animations --- */
+.bg-animated {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
+    overflow: hidden;
+    background: #020617;
+}
+
+.blob {
+    position: absolute;
+    filter: blur(80px);
+    opacity: 0.4;
+    animation: float-blob 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 50%;
+}
+
+.blob-1 {
+    top: -10%;
+    left: -10%;
+    width: 50vw;
+    height: 50vw;
+    background: #4f46e5;
+    /* Indigo */
+    animation-delay: 0s;
+}
+
+.blob-2 {
+    bottom: -10%;
+    right: -10%;
+    width: 50vw;
+    height: 50vw;
+    background: #ea580c;
+    /* Orange */
+    animation-delay: -5s;
+}
+
+.blob-3 {
+    top: 40%;
+    left: 40%;
+    width: 30vw;
+    height: 30vw;
+    background: #db2777;
+    /* Pink */
+    opacity: 0.2;
+    animation-delay: -10s;
+}
+
+@keyframes float-blob {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(30px, 50px) scale(1.1);
+    }
+}
+
 @keyframes float {
     0% {
         transform: translateY(0px);
@@ -84,20 +185,20 @@ body {
     animation: float 6s ease-in-out infinite;
 }
 
-/* Custom Scrollbar for sleek look */
+/* --- Scrollbar --- */
 ::-webkit-scrollbar {
-    width: 8px;
+    width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: #050511;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #334;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-accent);
+    background: rgba(255, 255, 255, 0.2);
 }
