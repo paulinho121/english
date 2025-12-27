@@ -53,6 +53,9 @@ const App: React.FC = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
 
+  // New State for Mute
+  const [isMuted, setIsMuted] = useState(false);
+
   useEffect(() => {
     if (selectedTopicId === 'pronunciation' && isConnectedRef.current) {
       const phrase = PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex];
@@ -108,6 +111,15 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleMute = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+      setIsMuted(!isMuted);
+    }
+  };
+
   if (loading) {
     return (
       <div className="h-screen w-full bg-slate-950 flex items-center justify-center">
@@ -133,6 +145,8 @@ const App: React.FC = () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
+      // Ensure mute state is respected if toggled before connection
+      stream.getAudioTracks().forEach(track => track.enabled = !isMuted);
     } catch (micErr) {
       console.error('Microfone negado:', micErr);
       setConnectionError('Permissão de microfone negada. Ative para continuar.');
@@ -689,7 +703,7 @@ const App: React.FC = () => {
                 <div className={`absolute left-1/2 -translate-x-1/2 glass-premium border-white/10 rounded-full flex items-center gap-4 justify-center transition-all px-6 py-2
                 ${selectedTopicId === 'pronunciation'
                     ? 'bottom-0 translate-y-1/2 scale-75'
-                    : '-bottom-8 min-w-[160px]'}`}>
+                    : '-bottom-10 min-w-[160px]'}`}>
 
                   <div className={`flex gap-1 items-end h-4`}>
                     {[1, 2, 3, 4].map(i => (
@@ -758,10 +772,47 @@ const App: React.FC = () => {
               )}
             </div>
 
+            {/* Call Controls - Floating Bottom Bar (NEW) */}
+            <div className="absolute bottom-6 left-0 w-full flex justify-center z-50">
+              <div className="glass-premium px-8 py-4 rounded-full flex items-center gap-8 shadow-2xl transform hover:scale-105 transition-all duration-300">
+
+                {/* Mute Button */}
+                <button
+                  onClick={toggleMute}
+                  className={`p-4 rounded-full transition-all duration-300 ${isMuted
+                    ? 'bg-red-500/20 text-red-500 ring-2 ring-red-500/50'
+                    : 'bg-white/5 text-white hover:bg-white/10 ring-1 ring-white/10'
+                    }`}
+                  title={isMuted ? "Ligar Microfone" : "Silenciar Microfone"}
+                >
+                  {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                </button>
+
+                {/* Audio Visualizer (Mini) - Shows user is active */}
+                {!isMuted && (
+                  <div className="flex gap-1 h-6 items-center">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="w-1 bg-green-500 rounded-full animate-bounce" style={{ height: `${Math.max(20, audioLevel)}%`, animationDelay: `${i * 0.1}s` }}></div>
+                    ))}
+                  </div>
+                )}
+                {isMuted && <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Mudo</span>}
+
+                {/* End Call Button */}
+                <button
+                  onClick={endCall}
+                  className="p-4 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all active:scale-95"
+                  title="Encerrar Chamada"
+                >
+                  <PhoneOff className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
             {/* Caption */}
             {currentCaption && (
-              <div className="absolute bottom-10 left-0 w-full px-6 flex justify-center z-50">
-                <div className="bg-black/80 backdrop-blur-md px-8 py-4 rounded-2xl max-w-4xl text-center border-l-4 border-orange-500 shadow-2xl animate-in slide-in-from-bottom-5">
+              <div className="absolute bottom-28 left-0 w-full px-6 flex justify-center z-50">
+                <div className="bg-black/90 backdrop-blur-md px-8 py-4 rounded-2xl max-w-4xl text-center border-l-4 border-orange-500 shadow-2xl animate-in slide-in-from-bottom-5">
                   <p className="text-lg md:text-2xl text-white font-medium leading-relaxed">
                     {currentCaption}
                   </p>

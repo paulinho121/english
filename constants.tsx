@@ -7,7 +7,7 @@ export const TEACHERS: Teacher[] = [
     name: 'Professora Malina',
     language: Language.ENGLISH,
     accent: 'Sotaque Brasileiro 🇧🇷',
-    avatar: '/malina.png',
+    avatar: '/malina-new.png',
     voice: 'Aoede', // Female, energetic
     gender: 'female',
     bio: 'Brasileira especialista em ensino de Inglês. Malina entende as dificuldades dos brasileiros e ajuda você a superar a barreira da fala com dicas práticas.'
@@ -27,7 +27,7 @@ export const TEACHERS: Teacher[] = [
     name: 'Profesora Malina',
     language: Language.SPANISH,
     accent: 'Sotaque Brasileiro 🇧🇷',
-    avatar: '/malina.png',
+    avatar: '/malina-new.png',
     voice: 'Aoede', // Using Aoede (Valid)
     gender: 'female',
     bio: 'Brasileira e apaixonada pela cultura hispânica. Malina ensina espanhol focando nas semelhanças e diferenças com o português para acelerar o aprendizado.'
