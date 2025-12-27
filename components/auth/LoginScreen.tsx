@@ -12,6 +12,10 @@ export const LoginScreen: React.FC = () => {
     const [mode, setMode] = useState<'signin' | 'signup' | 'phone'>('signin');
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
+    // Signup specific states
+    const [fullName, setFullName] = useState('');
+    const [signupPhone, setSignupPhone] = useState('');
+
     // Phone Auth States
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
@@ -22,13 +26,41 @@ export const LoginScreen: React.FC = () => {
         setLoading(true);
         setMessage(null);
         try {
-            const { error } = mode === 'signin'
-                ? await supabase.auth.signInWithPassword({ email, password })
-                : await supabase.auth.signUp({ email, password });
-
-            if (error) throw error;
             if (mode === 'signup') {
-                setMessage({ type: 'success', text: 'Verifique seu email para confirmar a conta!' });
+                // 1. Sign Up
+                const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            full_name: fullName,
+                            phone_number: signupPhone
+                        }
+                    }
+                });
+
+                if (signUpError) throw signUpError;
+
+                if (user) {
+                    // 2. Create Profile Record explicitly to ensure consistency
+                    const { error: profileError } = await supabase.from('profiles').insert({
+                        id: user.id,
+                        full_name: fullName,
+                        phone_number: signupPhone,
+                        current_session_id: Math.random().toString(36).substring(7),
+                        last_seen: new Date().toISOString()
+                    });
+
+                    if (profileError) {
+                        console.error('Profile creation warning:', profileError);
+                    }
+
+                    setMessage({ type: 'success', text: 'Conta criada! Verifique seu email.' });
+                }
+            } else {
+                // Sign In
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
             }
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
@@ -44,15 +76,28 @@ export const LoginScreen: React.FC = () => {
         try {
             if (!showOtpInput) {
                 // Send OTP
-                const { error } = await supabase.auth.signInWithOtp({ phone: phoneNumber });
+                const { error } = await supabase.auth.signInWithOtp({
+                    phone: phoneNumber,
+                    // We can also upsert profile here if needed, but usually phone auth creates user first 
+                });
                 if (error) throw error;
                 setShowOtpInput(true);
                 setMessage({ type: 'success', text: 'Código enviado por SMS!' });
             } else {
                 // Verify OTP
-                const { error } = await supabase.auth.verifyOtp({ phone: phoneNumber, token: otp, type: 'sms' });
+                const { data: { session }, error } = await supabase.auth.verifyOtp({ phone: phoneNumber, token: otp, type: 'sms' });
                 if (error) throw error;
-                // Success - AuthContext will pick up the user
+
+                // Ensure profile exists for phone user too
+                if (session?.user) {
+                    const { error: profileError } = await supabase.from('profiles').upsert({
+                        id: session.user.id,
+                        phone_number: phoneNumber,
+                        current_session_id: Math.random().toString(36).substring(7),
+                        last_seen: new Date().toISOString()
+                    });
+                    if (profileError) console.error(profileError);
+                }
             }
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
@@ -135,6 +180,32 @@ export const LoginScreen: React.FC = () => {
                     </form>
                 ) : (
                     <form onSubmit={handleEmailLogin} className="space-y-4">
+                        {mode === 'signup' && (
+                            <>
+                                <div className="space-y-2 animate-in slide-in-from-top-4 duration-300">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Nome Completo</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Seu nome"
+                                        value={fullName}
+                                        onChange={e => setFullName(e.target.value)}
+                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2 animate-in slide-in-from-top-4 duration-500">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Celular</label>
+                                    <input
+                                        type="tel"
+                                        placeholder="(11) 99999-9999"
+                                        value={signupPhone}
+                                        onChange={e => setSignupPhone(e.target.value)}
+                                        className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3.5 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500 transition-colors"
+                                        required
+                                    />
+                                </div>
+                            </>
+                        )}
                         <div className="space-y-2">
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Email</label>
                             <input

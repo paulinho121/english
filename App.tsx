@@ -8,7 +8,7 @@ import { LoginScreen } from './components/auth/LoginScreen';
 import {
   Mic, MicOff, PhoneOff, Settings, Volume2,
   Sparkles, Globe, ShieldCheck, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark
+  ArrowRight, BrainCircuit, Bookmark, Key
 } from 'lucide-react';
 
 // Auxiliares para áudio
@@ -228,10 +228,11 @@ const App: React.FC = () => {
                  - Exemplo: "Agora vamos dizer 'Good Morning'. Repita comigo: Good... Morning."
               3. FEEDBACK: Sempre em PT-BR, muito encorajador.
               ` : selectedLevel === Level.INTERMEDIATE ? `
-              --- MODO INTERMEDIÁRIO (FOCO: FLUÊNCIA E SOTAQUE) ---
-              1. IDIOMA DE COMANDO: Híbrido. Use o idioma alvo para frases comuns, PT-BR para explicações gramaticais.
+              --- MODO INTERMEDIÁRIO (50% PT-BR / 50% IDIOMA ALVO) ---
+              1. IDIOMA DE COMANDO: Híbrido (50% Português / 50% Idioma Alvo).
               2. METODOLOGIA:
-                 - Incentive o aluno a falar frases inteiras, não só palavras soltas.
+                 - Use o idioma alvo para interações sociais e frases comuns.
+                 - Use Português do Brasil para explicar erros complexos ou gramática.
                  - Foco total na PRONÚNCIA e ENTONAÇÃO (Accent Reduction).
                  - Se o aluno errar, dê o modelo correto da frase inteira e peça para repetir.
               ` : `
@@ -430,29 +431,57 @@ const App: React.FC = () => {
   return (
     <div className="h-[100dvh] w-full flex flex-col bg-slate-950 text-white font-sans overflow-hidden">
       {step === 'welcome' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center space-y-8">
-          <div className="relative group">
-            <div className="w-48 h-48 md:w-64 md:h-64 flex items-center justify-center relative z-10 transition-transform group-hover:scale-105">
-              <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(249,115,22,0.6)]" />
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+
+          {/* Header / Logout */}
+          <div className="absolute top-6 left-6 z-50">
+            <button
+              onClick={signOut}
+              className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-2xl text-xs font-bold border border-white/5 transition-all flex items-center gap-2.5 backdrop-blur-md active:scale-95"
+            >
+              <Key className="w-3.5 h-3.5" /> Sair da Conta
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex flex-col items-center justify-center space-y-8 md:space-y-12 max-w-2xl w-full z-10 mt-[-40px]">
+
+            {/* Logo */}
+            <div className="relative group cursor-default">
+              <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-[60px] md:blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
+              <div className="w-32 h-32 md:w-56 md:h-56 flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]" />
+              </div>
             </div>
+
+            {/* Text */}
+            <div className="space-y-4 md:space-y-6">
+              <h1 className="text-5xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-white to-slate-500 drop-shadow-2xl">
+                Lingua<span className="text-orange-500">Flow</span>
+              </h1>
+              <p className="text-slate-400 text-lg md:text-2xl font-medium max-w-md md:max-w-xl mx-auto leading-relaxed">
+                Aprenda idiomas com a energia de professores nativos. <span className="text-slate-200">Imersão real.</span>
+              </p>
+            </div>
+
+            {/* CTA Button */}
+            <button
+              onClick={() => {
+                setStep('setup');
+                setSelectedTeacherId(TEACHERS[0].id);
+              }}
+              className="group relative px-8 py-4 md:px-12 md:py-6 bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white rounded-full font-black text-lg md:text-2xl flex items-center gap-3 md:gap-4 transition-all hover:scale-105 shadow-[0_20px_40px_-10px_rgba(249,115,22,0.4)] hover:shadow-[0_25px_50px_-10px_rgba(249,115,22,0.5)] active:scale-95"
+            >
+              <span className="relative z-10">Começar Experiência</span>
+              <ArrowRight className="w-6 h-6 md:w-8 md:h-8 group-hover:translate-x-1 transition-transform relative z-10" />
+            </button>
           </div>
-          <div className="space-y-3">
-            <h1 className="text-4xl md:text-6xl font-black tracking-tight">Lingua<span className="text-orange-500">Flow</span></h1>
-            <p className="text-slate-400 text-lg md:text-xl max-w-md mx-auto">
-              Aprenda idiomas com a energia e o carisma de nossos professores. Uma experiência imersiva e real.
+
+          {/* Footer */}
+          <div className="absolute bottom-8 left-0 w-full text-center z-10">
+            <p className="text-slate-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em] hover:text-slate-500 transition-colors cursor-default">
+              Criado por Paulinho Fernando
             </p>
-          </div>
-          <button
-            onClick={() => {
-              setStep('setup');
-              setSelectedTeacherId(TEACHERS[0].id); // Default to Malina
-            }}
-            className="px-10 py-5 bg-orange-600 hover:bg-orange-500 text-white rounded-full font-black text-xl flex items-center gap-3 transition-all hover:gap-5 shadow-2xl shadow-orange-600/30"
-          >
-            Começar Experiência <ArrowRight className="w-6 h-6" />
-          </button>
-          <div className="absolute bottom-6 text-slate-500/50 text-xs font-bold tracking-widest uppercase">
-            Criado por Paulinho Fernando
           </div>
         </div>
       )}
@@ -460,37 +489,53 @@ const App: React.FC = () => {
       {
         step === 'setup' && (
           <div className="flex-1 flex justify-center p-4 md:p-6 pb-24 md:pb-6 animate-in slide-in-from-bottom-12 duration-500 overflow-y-auto w-full">
-            <div className="max-w-7xl w-full bg-slate-950/90 backdrop-blur-2xl border border-white/5 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 space-y-8 md:space-y-12 shadow-2xl my-auto relative overflow-hidden">
-              {/* Ambient Background Glows */}
+            <div className="max-w-7xl w-full bg-slate-950/90 backdrop-blur-2xl border border-white/5 rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 space-y-8 shadow-2xl my-auto relative overflow-hidden flex flex-col">
+
+              {/* Background FX */}
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-orange-500/50 to-transparent"></div>
               <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/10 rounded-full blur-[100px]"></div>
-              <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px]"></div>
 
-              <div className="relative text-center space-y-2 z-10">
-                <h2 className="text-2xl md:text-5xl font-black text-white tracking-tight flex items-center justify-center gap-3">
-                  <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-orange-500" /> Configurar Sessão
-                </h2>
-                <p className="text-slate-400 text-xs md:text-lg max-w-lg mx-auto leading-relaxed">Personalize sua experiência de imersão total com a tecnologia Gemini.</p>
+              {/* Header */}
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+                <div className="w-full md:w-auto flex justify-center md:justify-start">
+                  <h2 className="text-2xl md:text-5xl font-black text-white tracking-tight flex items-center gap-3">
+                    <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-orange-500" /> Configurar Sessão
+                  </h2>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  {hasSavedStage && (
+                    <button
+                      onClick={loadSavedStage}
+                      className="px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-orange-500/20"
+                    >
+                      <Bookmark className="w-3.5 h-3.5" /> Retomar Aula
+                    </button>
+                  )}
+                  <button
+                    onClick={signOut}
+                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl text-xs font-bold border border-white/5 transition-all flex items-center gap-2"
+                  >
+                    <Key className="w-3.5 h-3.5" /> Sair
+                  </button>
+                </div>
               </div>
+              <p className="text-slate-400 text-sm md:text-lg max-w-2xl leading-relaxed z-10 text-center md:text-left">
+                Personalize sua experiência de imersão. Escolha idioma, nível, tópico e seu professor ideal.
+              </p>
 
-              {hasSavedStage && (
-                <button
-                  onClick={loadSavedStage}
-                  className="w-full p-4 bg-orange-600/20 border border-orange-500/50 rounded-2xl text-orange-500 font-bold flex items-center justify-center gap-2 hover:bg-orange-600/30 transition-all text-sm md:text-base"
-                >
-                  <Bookmark className="w-5 h-5" /> Retomar Aula Anterior
-                </button>
-              )}
+              {/* Main Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10 flex-1">
 
-              <div className="grid md:grid-cols-12 gap-8 lg:gap-16 relative z-10">
-                <div className="md:col-span-12 lg:col-span-5 space-y-6 md:space-y-8">
+                {/* Left Column: Settings */}
+                <div className="lg:col-span-5 space-y-8">
 
                   {/* Language */}
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                      <Globe className="w-3 h-3 text-orange-500" /> Idioma
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5 text-orange-500" /> Idioma
                     </label>
-                    <div className="flex flex-col gap-2">
+                    <div className="grid grid-cols-1 gap-2.5">
                       {[
                         { id: Language.ENGLISH, label: 'Inglês', native: 'English', flagUrl: 'https://flagcdn.com/w80/us.png' },
                         { id: Language.SPANISH, label: 'Espanhol', native: 'Español', flagUrl: 'https://flagcdn.com/w80/es.png' },
@@ -500,19 +545,20 @@ const App: React.FC = () => {
                           key={lang.id}
                           onClick={() => {
                             setSelectedLanguage(lang.id);
-                            setCurrentPhraseIndex(0); // Reset phrase index
+                            setCurrentPhraseIndex(0);
                             const firstTeacher = TEACHERS.find(t => t.language === lang.id);
                             if (firstTeacher) setSelectedTeacherId(firstTeacher.id);
                           }}
-                          className={`p-3 rounded-xl border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedLanguage === lang.id
+                          className={`p-3.5 rounded-xl border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedLanguage === lang.id
                             ? 'border-orange-500/50 bg-gradient-to-r from-orange-500/10 to-transparent'
                             : 'border-white/5 bg-white/5 hover:bg-white/10'
                             }`}
                         >
                           <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all ${selectedLanguage === lang.id ? 'bg-orange-500' : 'bg-transparent'}`}></div>
-                          <img src={lang.flagUrl} alt={lang.label} className="w-8 h-6 object-cover rounded shadow-sm" />
+                          <img src={lang.flagUrl} alt={lang.label} className="w-10 h-7 object-cover rounded shadow-sm" />
                           <div className="flex flex-col items-start">
                             <span className={`font-bold text-sm ${selectedLanguage === lang.id ? 'text-white' : 'text-slate-300'}`}>{lang.label}</span>
+                            <span className="text-[10px] text-slate-500">{lang.native}</span>
                           </div>
                         </button>
                       ))}
@@ -520,11 +566,11 @@ const App: React.FC = () => {
                   </div>
 
                   {/* Level */}
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                      <Settings className="w-3 h-3 text-orange-500" /> Nível
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Settings className="w-3.5 h-3.5 text-orange-500" /> Nível
                     </label>
-                    <div className="flex bg-white/5 p-1 rounded-xl border border-white/5">
+                    <div className="flex bg-white/5 p-1.5 rounded-xl border border-white/5">
                       {[
                         { id: Level.BEGINNER, label: 'BÁSICO' },
                         { id: Level.INTERMEDIATE, label: 'MÉDIO' },
@@ -533,7 +579,7 @@ const App: React.FC = () => {
                         <button
                           key={lvl.id}
                           onClick={() => setSelectedLevel(lvl.id)}
-                          className={`flex-1 py-3 px-2 rounded-lg text-[10px] font-black transition-all ${selectedLevel === lvl.id
+                          className={`flex-1 py-2.5 rounded-lg text-[10px] font-black transition-all ${selectedLevel === lvl.id
                             ? 'bg-orange-500 text-white shadow-lg'
                             : 'text-slate-400 hover:text-white hover:bg-white/5'
                             }`}
@@ -542,101 +588,107 @@ const App: React.FC = () => {
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-slate-500 text-center italic">
-                      {selectedLevel === Level.BEGINNER ? 'Explicações em Português' : selectedLevel === Level.INTERMEDIATE ? 'Imersão (95% Idioma Alvo)' : 'Nativo (100% Idioma Alvo)'}
+                    <p className="text-xs text-slate-500/80 italic pl-1">
+                      {selectedLevel === Level.BEGINNER ? 'Explicações em Português' : selectedLevel === Level.INTERMEDIATE ? 'Imersão Híbrida (50/50)' : 'Imersão Total (Nativo)'}
                     </p>
                   </div>
 
                   {/* Topic */}
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                      <LayoutGrid className="w-3 h-3 text-orange-500" /> Tópico
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                      <LayoutGrid className="w-3.5 h-3.5 text-orange-500" /> Tópico
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 gap-2.5">
                       {TOPICS.map(t => (
                         <button
                           key={t.id}
                           onClick={() => setSelectedTopicId(t.id)}
-                          className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-2 ${selectedTopicId === t.id
+                          className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1.5 ${selectedTopicId === t.id
                             ? 'border-orange-500 bg-orange-500/10 text-white'
                             : 'border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'
                             }`}
                         >
-                          <span className="text-xl">{t.icon}</span>
-                          <span className="font-bold text-[10px] uppercase leading-tight">{t.name}</span>
+                          <span className="text-lg">{t.icon}</span>
+                          <span className="font-bold text-[10px] uppercase leading-tight line-clamp-1">{t.name}</span>
                         </button>
                       ))}
                     </div>
                   </div>
+
                 </div>
 
-                <div className="md:col-span-12 lg:col-span-7 space-y-4 flex flex-col h-full lg:pl-16">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2 ml-1">
-                    <BrainCircuit className="w-3 h-3 text-orange-500" /> Selecione o Professor
-                  </label>
+                {/* Right Column: Teacher & Action */}
+                <div className="lg:col-span-7 flex flex-col h-full space-y-6">
+                  <div className="flex-1 flex flex-col min-h-[400px] bg-slate-900/50 rounded-3xl border border-white/5 overflow-hidden">
+                    <div className="p-4 border-b border-white/5 bg-white/5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
+                        <BrainCircuit className="w-3.5 h-3.5 text-orange-500" /> Professores Disponíveis
+                      </label>
+                    </div>
 
-                  <div className="grid grid-cols-1 gap-3 md:overflow-y-auto px-4 -mx-4 pb-4 pt-1 custom-scrollbar flex-1 min-h-[300px] md:min-h-[400px]">
-                    {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => (
-                      <button
-                        key={teacher.id}
-                        onClick={() => setSelectedTeacherId(teacher.id)}
-                        className={`relative group transition-all duration-300 ${selectedTeacherId === teacher.id ? 'scale-[1.02]' : 'hover:scale-[1.01]'}`}
-                      >
-                        <div className={`p-4 rounded-2xl border flex items-start gap-4 transition-all ${selectedTeacherId === teacher.id
-                          ? 'bg-slate-900 border-orange-500 shadow-xl shadow-orange-900/20'
-                          : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
-                          }`}>
+                    <div className="p-4 space-y-3 overflow-y-auto custom-scrollbar flex-1">
+                      {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => (
+                        <button
+                          key={teacher.id}
+                          onClick={() => setSelectedTeacherId(teacher.id)}
+                          className={`w-full relative group transition-all duration-300 text-left`}
+                        >
+                          <div className={`p-4 rounded-2xl border flex items-start gap-4 transition-all ${selectedTeacherId === teacher.id
+                            ? 'bg-slate-800 border-orange-500/50 shadow-lg'
+                            : 'bg-white/5 border-white/5 hover:bg-white/10'
+                            }`}>
 
-                          <div className={`relative w-16 h-16 rounded-full overflow-hidden border-2 shrink-0 ${selectedTeacherId === teacher.id ? 'border-orange-500' : 'border-white/10 group-hover:border-white/30'}`}>
-                            <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
-                            {selectedTeacherId === teacher.id && <div className="absolute inset-0 bg-orange-500/10 mix-blend-overlay"></div>}
-                          </div>
-
-                          <div className="flex-1 text-left min-w-0">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className={`font-bold text-base ${selectedTeacherId === teacher.id ? 'text-white' : 'text-slate-200'}`}>{teacher.name}</span>
-                              {selectedTeacherId === teacher.id && <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>}
+                            <div className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden border-2 shrink-0 ${selectedTeacherId === teacher.id ? 'border-orange-500' : 'border-white/10'}`}>
+                              <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider block mb-2">{teacher.accent}</span>
-                            <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{teacher.bio}</p>
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`font-bold text-sm md:text-base ${selectedTeacherId === teacher.id ? 'text-white' : 'text-slate-200'}`}>{teacher.name}</span>
+                                {selectedTeacherId === teacher.id && <div className="px-2 py-0.5 bg-orange-500 text-white text-[9px] font-bold uppercase rounded-full">Selecionado</div>}
+                              </div>
+                              <span className="text-[10px] text-orange-400/80 font-bold uppercase tracking-wider block mb-1.5">{teacher.accent}</span>
+                              <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">{teacher.bio}</p>
+                            </div>
                           </div>
+                        </button>
+                      ))}
+                      {TEACHERS.filter(t => t.language === selectedLanguage).length === 0 && (
+                        <div className="py-20 text-center text-slate-500 flex flex-col items-center justify-center gap-4">
+                          <div className="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                            <Globe className="w-6 h-6 opacity-30" />
+                          </div>
+                          <p>Selecione um idioma para ver os professores</p>
                         </div>
-                      </button>
-                    ))}
-                    {TEACHERS.filter(t => t.language === selectedLanguage).length === 0 && (
-                      <div className="py-12 text-center text-slate-500 border border-dashed border-white/10 rounded-3xl">
-                        Selecione um idioma para ver os professores
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
-                </div>
 
+                  {/* Start Button */}
+                  <div key={selectedLanguage + selectedTeacherId}>
+                    <button
+                      onClick={startSession}
+                      disabled={connectionStatus === 'connecting' || !selectedLanguage || !selectedTeacherId}
+                      className="w-full py-5 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-2xl font-black text-xl flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-orange-600/20 hover:shadow-orange-600/40 disabled:opacity-50 disabled:cursor-not-allowed group"
+                    >
+                      {connectionStatus === 'connecting' ? (
+                        <>
+                          <Loader2 className="w-6 h-6 animate-spin" /> Conectando...
+                        </>
+                      ) : (
+                        <>
+                          Iniciar Sessão <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-
-
-              </div>
-
-              <div className="pt-4 mt-auto key={selectedLanguage + selectedTeacherId}">
-                <button
-                  onClick={startSession}
-                  disabled={connectionStatus === 'connecting' || !selectedLanguage || !selectedTeacherId}
-                  className="w-full py-5 bg-gradient-to-r from-orange-600 to-orange-500 text-white rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all hover:gap-5 shadow-lg shadow-orange-600/20 hover:shadow-orange-600/40 disabled:opacity-50 disabled:cursor-not-allowed group"
-                >
-                  {connectionStatus === 'connecting' ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" /> Conectando...
-                    </>
-                  ) : (
-                    <>
-                      Iniciar Sessão <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </>
+                  {connectionError && (
+                    <div className="w-full mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center text-xs font-medium">
+                      {connectionError}
+                    </div>
                   )}
-                </button>
-                {connectionError && (
-                  <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-center text-xs font-medium">
-                    {connectionError}
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
