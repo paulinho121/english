@@ -106,15 +106,15 @@ export const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-hidden">
+        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-y-auto no-scrollbar">
             {/* Ambient Animated Background */}
-            <div className="bg-animated">
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="blob blob-1"></div>
                 <div className="blob blob-2"></div>
                 <div className="blob blob-3"></div>
             </div>
 
-            <div className="w-full max-w-md glass-premium p-8 md:p-10 rounded-[2.5rem] relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            <div className="w-full max-w-md glass-premium p-8 md:p-10 rounded-[2.5rem] relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700 my-auto">
                 <div className="text-center mb-8 md:mb-10">
                     <div className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-6 flex items-center justify-center group">
                         <div className="absolute w-32 h-32 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/30 transition-all duration-500"></div>

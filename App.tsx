@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
+import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { Language, Level, Teacher, Topic } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
 import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
+import { supabase } from './lib/supabase';
+import { JourneyMap } from './components/JourneyMap';
 import {
-  Mic, MicOff, PhoneOff, Settings, Volume2,
-  Sparkles, Globe, ShieldCheck, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag
+  Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame
 } from 'lucide-react';
 
-// Auxiliares para áudio
 function encode(bytes: Uint8Array) {
   let binary = '';
   const len = bytes.byteLength;
@@ -43,33 +43,19 @@ const App: React.FC = () => {
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<Level>(Level.BEGINNER);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
-  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(TOPICS[3].id); // Default to Daily Life
+  const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [isTeacherSpeaking, setIsTeacherSpeaking] = useState(false);
-  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [hasSavedStage, setHasSavedStage] = useState(false);
   const [currentCaption, setCurrentCaption] = useState('');
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected'>('idle');
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-
-  // New State for Mute
   const [isMuted, setIsMuted] = useState(false);
 
-  useEffect(() => {
-    if (selectedTopicId === 'pronunciation' && isConnectedRef.current) {
-      const phrase = PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex];
-      // Safety check in case dictionary access fails (TS fix + runtime safety)
-      if (phrase && sessionRef.current) {
-        console.log('Enviando contexto de pronúncia para IA:', phrase.text);
-        sessionRef.current.then((session: any) => {
-          session.send({
-            parts: [{ text: `CONTEXTO ATUALIZADO: O aluno vai ler a seguinte frase agora: "${phrase.text}". Avalie com rigor.` }]
-          });
-        });
-      }
-    }
-  }, [currentPhraseIndex, selectedTopicId, selectedLanguage]);
+  // New Progress States
+  const [streak, setStreak] = useState(0);
+  const [topicProgress, setTopicProgress] = useState<Record<string, 'locked' | 'unlocked' | 'completed'>>({});
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -81,75 +67,45 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const saved = localStorage.getItem('linguistai_stage');
-    if (saved) {
-      setHasSavedStage(true);
-    }
+    if (saved) setHasSavedStage(true);
+
+    // Load Progress Placeholder (Mock for now, would be from Supabase)
+    // For manual testing, let's unlock the first 2 and 'free-conversation'
+    setTopicProgress({
+      'introduction': 'completed',
+      'travel': 'unlocked',
+      'free-conversation': 'unlocked' // Always unlocked
+    });
+    setStreak(3); // Mock Streak
   }, []);
-
-  const saveStage = () => {
-    const data = {
-      language: selectedLanguage,
-      level: selectedLevel,
-      teacherId: selectedTeacherId,
-      topicId: selectedTopicId,
-      timestamp: Date.now()
-    };
-    localStorage.setItem('linguistai_stage', JSON.stringify(data));
-    setShowSaveSuccess(true);
-    setTimeout(() => setShowSaveSuccess(false), 3000);
-  };
-
-  const loadSavedStage = () => {
-    const saved = localStorage.getItem('linguistai_stage');
-    if (saved) {
-      const data = JSON.parse(saved);
-      setSelectedLanguage(data.language);
-      setSelectedLevel(data.level);
-      setSelectedTeacherId(data.teacherId);
-      setSelectedTopicId(data.topicId);
-      setHasSavedStage(false);
-    }
-  };
-
-  const toggleMute = () => {
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getAudioTracks().forEach(track => {
-        track.enabled = !track.enabled;
-      });
-      setIsMuted(!isMuted);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="h-screen w-full bg-slate-950 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <LoginScreen />;
-  }
 
   const startSession = async () => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
     if (!apiKey) {
-      setConnectionError('API Key não encontrada. Verifique o arquivo .env (VITE_GEMINI_API_KEY)');
+      setConnectionError('API Key não encontrada.');
       return;
     }
+
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    audioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
+    outputAudioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
+
+    try {
+      if (audioContextRef.current.state === 'suspended') await audioContextRef.current.resume();
+      if (outputAudioContextRef.current.state === 'suspended') await outputAudioContextRef.current.resume();
+    } catch (e) { console.warn(e); }
 
     setConnectionError(null);
     setConnectionStatus('connecting');
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      });
       mediaStreamRef.current = stream;
-      // Ensure mute state is respected if toggled before connection
       stream.getAudioTracks().forEach(track => track.enabled = !isMuted);
     } catch (micErr) {
-      console.error('Microfone negado:', micErr);
-      setConnectionError('Permissão de microfone negada. Ative para continuar.');
+      setConnectionError('Permissão de microfone negada.');
       setConnectionStatus('idle');
       return;
     }
@@ -158,103 +114,23 @@ const App: React.FC = () => {
     const teacher = TEACHERS.find(t => t.id === selectedTeacherId)!;
     const topic = TOPICS.find(t => t.id === selectedTopicId)!;
 
-    audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-    outputAudioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-
     console.log('Gemini Live API: Iniciando conexão...');
+
     const sessionPromise = ai.live.connect({
       model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
       config: {
         responseModalities: [Modality.AUDIO],
-        tools: [
-          {
-            functionDeclarations: [
-              {
-                name: 'next_phrase',
-                description: 'Moves to the next pronunciation practice phrase.',
-              }
-            ]
-          }
-        ],
-
-        speechConfig: {
-          voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } }
-        },
+        tools: [{ functionDeclarations: [{ name: 'next_phrase', description: 'Next phrase' }] }],
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } },
         systemInstruction: {
           parts: [{
-            text: teacher.isKidMode
-              ? `
-              PERSONA: Kevin
-              - CRITICAL: VOCÊ É UM PROFESSOR BRASILEIRO DIVERTIDO.
-              - Sua língua nativa é Português do Brasil (PT-BR).
-
-              NÍVEL SELECIONADO: ${selectedLevel}
-              DIRETRIZES POR NÍVEL:
-              ${selectedLevel === Level.BEGINNER ? `
-              1. MODO INICIANTE (90% PT-BR / 10% IDIOMA ALVO):
-                 - Explique TUDO em Português do Brasil primeiro.
-                 - Apresente o idioma alvo DEVAGAR, palavra por palavra.
-                 - Valide constantemente: "Entendeu?", "Quer que eu repita?".
-                 - Foco: Construir confiança básica.
-              ` : selectedLevel === Level.INTERMEDIATE ? `
-              1. MODO INTERMEDIÁRIO (50% PT-BR / 50% IDIOMA ALVO):
-                 - Explique conceitos novos em Português.
-                 - Dê instruções e comandos já no idioma alvo.
-                 - Foco: Frases completas, entonação e ritmo (sotaque).
-                 - Corrija a pronúncia de forma natural, repetindo a frase corretamente.
-              ` : `
-              1. MODO PRO (100% IDIOMA ALVO):
-                 - IMERSÃO TOTAL. Não fale Português, a menos que o aluno implore.
-                 - Fale em velocidade natural/nativa.
-                 - Use vocabulário avançado e expressões idiomáticas.
-                 - Se o aluno errar, peça para reformular sem traduzir.
-              `}
-              
-              IDIOMA ALVO: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}
-              Tópico: ${topic.name}
-              Instrução: "${topic.prompt}"
-
-              Seja o amigo legal! Use gírias leves do Brasil (tipo "né", "beleza") quando falar português.
-              `
-              : `
-              PERSONA: ${teacher.name}
-              - CRITICAL: VOCÊ É UM(A) PROFESSOR(A) BRASILEIRO(A).
-              - Sua voz e identidade são brasileiras.
-
-              NÍVEL SELECIONADO: ${selectedLevel}
-              
-              PROTOCOLO DE ENSINO (RIGOROSO):
-              ${selectedLevel === Level.BEGINNER ? `
-              --- MODO INICIANTE (FOCO: EXPLICAÇÃO CLARA) ---
-              1. IDIOMA DE COMANDO: Português do Brasil (PT-BR).
-              2. METODOLOGIA:
-                 - Fale o termo no idioma alvo LENTAMENTE e CLARAMENTE.
-                 - Traduza imediatamente para o Português.
-                 - Verifique a compreensão a cada passo.
-                 - Exemplo: "Agora vamos dizer 'Good Morning'. Repita comigo: Good... Morning."
-              3. FEEDBACK: Sempre em PT-BR, muito encorajador.
-              ` : selectedLevel === Level.INTERMEDIATE ? `
-              --- MODO INTERMEDIÁRIO (50% PT-BR / 50% IDIOMA ALVO) ---
-              1. IDIOMA DE COMANDO: Híbrido (50% Português / 50% Idioma Alvo).
-              2. METODOLOGIA:
-                 - Use o idioma alvo para interações sociais e frases comuns.
-                 - Use Português do Brasil para explicar erros complexos ou gramática.
-                 - Foco total na PRONÚNCIA e ENTONAÇÃO (Accent Reduction).
-                 - Se o aluno errar, dê o modelo correto da frase inteira e peça para repetir.
-              ` : `
-              --- MODO PRO (FOCO: IMERSÃO TOTAL) ---
-              1. IDIOMA DE COMANDO: 100% IDIOMA ALVO (${selectedLanguage}).
-              2. METODOLOGIA:
-                 - Aja como um nativo que não fala português (a menos que seja emergência).
-                 - Discuta nuances, sarcasmo, cultura e expressões idiomáticas.
-                 - Velocidade de fala: Natural/Rápida.
-                 - Correções: Sutis e diretas, sem meta-explicação.
-              `}
-
-              IDIOMA ALVO: ${selectedLanguage === Language.ENGLISH ? 'Inglês' : selectedLanguage === Language.SPANISH ? 'Espanhol' : 'Francês'}
-              Tópico: ${topic.name}
-              Contexto: ${topic.prompt}
-              `
+            text: `
+              PERSONA: ${teacher.name} (${teacher.language}).
+              NÍVEL: ${selectedLevel}.
+              TÓPICO: ${topic.name} (${topic.id === 'free-conversation' ? 'MODO LIVRE' : 'AULA ESTRUTURADA'}).
+              CONTEXTO: ${topic.prompt}
+              ${selectedLevel === Level.BEGINNER ? 'Fale 80% Português.' : 'Fale 100% Idioma Alvo.'}
+            `
           }]
         },
       },
@@ -264,564 +140,300 @@ const App: React.FC = () => {
           isConnectedRef.current = true;
           setConnectionStatus('connected');
 
-          if (selectedTopicId === 'pronunciation') {
-            const firstPhrase = PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[0];
-            if (firstPhrase) {
-              sessionPromise.then(session => {
-                session.send({
-                  parts: [{ text: `CONTEXTO INICIAL: A primeira frase que o aluno vai ler é: "${firstPhrase.text}". Aguarde ele ler. NÃO invente outra frase.` }]
-                });
-              });
-            }
-          }
           setTimeout(() => {
-            if (!isConnectedRef.current) return;
-            try {
-              const stream = mediaStreamRef.current!;
-              const source = audioContextRef.current!.createMediaStreamSource(stream);
-              const processor = audioContextRef.current!.createScriptProcessor(4096, 1, 1);
-              processor.onaudioprocess = (e) => {
-                if (!isConnectedRef.current) return;
+            if (!isConnectedRef.current || !mediaStreamRef.current || !audioContextRef.current) return;
+            const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+            const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
-                const inputData = e.inputBuffer.getChannelData(0);
+            processor.onaudioprocess = (e) => {
+              if (!isConnectedRef.current) return;
+              const inputData = e.inputBuffer.getChannelData(0);
+              let sum = 0;
+              for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
+              setAudioLevel(Math.min(100, Math.sqrt(sum / inputData.length) * 1500));
 
-                let sum = 0;
-                for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
-                const rms = Math.sqrt(sum / inputData.length);
-                const level = Math.min(100, rms * 1500);
+              const int16 = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
 
-                setAudioLevel(level);
+              sessionPromise.then(session => {
+                session.sendRealtimeInput({ media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' } });
+              });
+            };
 
-                const int16 = new Int16Array(inputData.length);
-                for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
-                sessionPromise.then(session => {
-                  if (isConnectedRef.current) {
-                    try {
-                      session.sendRealtimeInput({
-                        media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' }
-                      });
-                    } catch (e) {
-                      console.error('Erro ao enviar áudio:', e);
-                    }
-                  }
-                });
-              };
-              source.connect(processor);
-              processor.connect(audioContextRef.current!.destination);
-              console.log('Gemini Live API: Microfone iniciado');
-            } catch (err) {
-              console.error('Erro ao iniciar processamento de áudio:', err);
-            }
-          }, 1000);
+            const muteGain = audioContextRef.current.createGain();
+            muteGain.gain.value = 0;
+            source.connect(processor);
+            processor.connect(muteGain); // Prevent feedback loop (Mute local playback)
+            muteGain.connect(audioContextRef.current.destination);
+          }, 500);
         },
         onmessage: async (msg: LiveServerMessage) => {
           const parts = msg.serverContent?.modelTurn?.parts;
           if (parts) {
             for (const part of parts) {
-              if (part.text) {
-                const newText = part.text;
-                if (!newText.startsWith('*') && !newText.includes('**')) {
-                  setCurrentCaption(prev => prev + newText);
-                }
-              }
-
+              if (part.text && !part.text.startsWith('*')) setCurrentCaption(p => p + part.text);
               if (part.inlineData?.data) {
-                const audioData = part.inlineData.data;
                 setIsTeacherSpeaking(true);
                 const ctx = outputAudioContextRef.current!;
-                nextStartTimeRef.current = Math.max(nextStartTimeRef.current, ctx.currentTime);
-                const buffer = await decodeAudioData(decode(audioData), ctx, 24000, 1);
+                const buffer = await decodeAudioData(decode(part.inlineData.data), ctx, 24000, 1);
                 const source = ctx.createBufferSource();
                 source.buffer = buffer;
                 source.connect(ctx.destination);
                 source.onended = () => {
                   sourcesRef.current.delete(source);
-                  if (sourcesRef.current.size === 0) {
-                    setIsTeacherSpeaking(false);
-                    setTimeout(() => {
-                      if (sourcesRef.current.size === 0) setCurrentCaption('');
-                    }, 2000);
-                  }
+                  if (sourcesRef.current.size === 0) setIsTeacherSpeaking(false);
                 };
-                source.start(nextStartTimeRef.current);
-                nextStartTimeRef.current += buffer.duration;
+                source.start(0);
                 sourcesRef.current.add(source);
               }
             }
           }
-
-          if (msg.toolCall) {
-            for (const call of msg.toolCall.functionCalls) {
-              if (call.name === 'next_phrase') {
-                setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES[selectedLanguage].length - 1, prev + 1));
-                sessionRef.current?.then((session: any) => {
-                  session.sendToolResponse({
-                    functionResponses: [{
-                      name: 'next_phrase',
-                      response: { result: 'Frase alterada com sucesso' },
-                      id: call.id
-                    }]
-                  });
-                });
-              }
-            }
-          }
-
-          if (msg.serverContent?.interrupted) {
-            sourcesRef.current.forEach(s => s.stop());
-            sourcesRef.current.clear();
-            setIsTeacherSpeaking(false);
-            setCurrentCaption('');
-          }
         },
-        onclose: (ev) => {
-          console.log('Gemini Live API: Conexão fechada', ev);
-          isConnectedRef.current = false;
-          setConnectionStatus('idle');
-          if (ev.code !== 1000) {
-            setConnectionError(`Conexão perdida (Erro ${ev.code}). Verifique sua API Key ou região.`);
-          }
-        },
-        onerror: (e) => {
-          console.error('Gemini Live API: Erro:', e);
-          isConnectedRef.current = false;
-          setConnectionStatus('idle');
-          setConnectionError('Erro de conexão com a IA.');
-        }
+        onclose: () => { isConnectedRef.current = false; setConnectionStatus('idle'); }
       }
-    });
-
-    sessionPromise.catch(e => {
-      console.error('Gemini Live API: Falha na conexão:', e);
-      setConnectionError('Falha ao iniciar sessão: ' + (e.message || 'Erro desconhecido'));
     });
     sessionRef.current = sessionPromise;
     setStep('call');
   };
 
   const endCall = () => {
+    // Unlock next level logic (simple simulation)
+    if (selectedTopicId && topicProgress[selectedTopicId] !== 'completed') {
+      setTopicProgress(prev => ({ ...prev, [selectedTopicId!]: 'completed' }));
+    }
     window.location.reload();
   };
 
-  const currentTeacher = TEACHERS.find(t => t.id === selectedTeacherId) || TEACHERS[0];
+  const toggleMute = () => {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getAudioTracks().forEach(t => t.enabled = !t.enabled);
+      setIsMuted(m => !m);
+    }
+  }
+
+  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
+  if (!user) return <LoginScreen />;
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col font-sans overflow-hidden relative">
-      <div className="bg-animated">
+    <div className="h-[100dvh] w-full flex flex-col font-sans overflow-hidden relative bg-slate-950 text-white">
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
-        <div className="blob blob-3"></div>
       </div>
 
       {step === 'welcome' && (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden animate-in fade-in duration-1000">
-
-          {/* Header / Logout */}
-          <div className="absolute top-6 left-6 z-50">
-            <button
-              onClick={signOut}
-              className="px-5 py-2.5 glass-premium rounded-full text-slate-300 text-xs font-bold transition-all flex items-center gap-2.5 hover:text-white"
-            >
-              <Key className="w-3.5 h-3.5" /> Sair
-            </button>
+        <div className="flex-1 flex flex-col items-center justify-center relative p-6 text-center animate-in fade-in duration-700">
+          {/* Header Streak */}
+          <div className="absolute top-6 right-6 flex items-center gap-2 bg-slate-900/50 px-4 py-2 rounded-full border border-orange-500/20">
+            <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
+            <span className="font-bold text-orange-100">{streak} Dias</span>
           </div>
 
-          {/* Main Content */}
-          <div className="flex flex-col items-center justify-center space-y-10 md:space-y-14 max-w-2xl w-full z-10 mt-[-40px]">
-
-            {/* Logo */}
-            <div className="relative group cursor-default">
-              <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-[80px] group-hover:opacity-100 opacity-60 transition-opacity duration-1000"></div>
-              <div className="w-32 h-32 md:w-56 md:h-56 flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-105 group-hover:rotate-2">
-                <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_10px_40px_rgba(0,0,0,0.5)]" />
-              </div>
-            </div>
-
-            {/* Text */}
-            <div className="space-y-4 md:space-y-6">
-              <h1 className="text-6xl md:text-9xl font-display font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400 drop-shadow-2xl">
-                Lingua<span className="text-gradient-primary">Flow</span>
-              </h1>
-              <p className="text-slate-400 text-lg md:text-2xl font-light max-w-md md:max-w-xl mx-auto leading-relaxed">
-                Imersão real com professores nativos de IA. <br />
-                <span className="text-white font-medium">Fale como se estivesse lá.</span>
-              </p>
-            </div>
-
-            {/* CTA Button */}
+          <div className="space-y-8 z-10 max-w-2xl">
+            <img src="/logo.png" className="w-40 h-40 mx-auto drop-shadow-[0_0_30px_rgba(249,115,22,0.4)]" />
+            <h1 className="text-5xl md:text-7xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
+              Lingua<span className="text-orange-500">Flow</span>
+            </h1>
             <button
-              onClick={() => {
-                setStep('setup');
-                setSelectedTeacherId(TEACHERS[0].id);
-              }}
-              className="btn-primary px-10 py-5 rounded-full text-xl md:text-3xl flex items-center gap-4 hover:scale-105"
+              onClick={() => { setStep('setup'); setSelectedTeacherId(TEACHERS[0].id); }}
+              className="btn-primary px-12 py-5 rounded-full text-2xl font-bold flex items-center gap-3 mx-auto hover:scale-105 transition-transform"
             >
-              <span>Começar Experiência</span>
-              <ArrowRight className="w-6 h-6 md:w-8 md:h-8" />
+              Continuar Jornada <ArrowRight className="w-6 h-6" />
             </button>
-          </div>
-
-          {/* Footer */}
-          <div className="absolute bottom-8 left-0 w-full text-center z-10">
-            <p className="text-slate-600 font-bold text-[10px] md:text-xs uppercase tracking-[0.3em] hover:text-slate-500 transition-colors cursor-default">
-              Criado por Paulinho Fernando
-            </p>
           </div>
         </div>
       )}
 
-      {
-        step === 'setup' && (
-          <div className="flex-1 flex justify-center p-4 md:p-6 pb-24 md:pb-6 animate-in slide-in-from-bottom-12 duration-500 overflow-y-auto w-full">
-            <div className="max-w-7xl w-full glass-premium rounded-[3rem] p-6 md:p-12 space-y-8 my-auto relative overflow-hidden flex flex-col">
+      {step === 'setup' && (
+        <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar p-4 md:p-8">
+          <div className="max-w-5xl w-full mx-auto space-y-8 pb-20">
 
-              {/* Header */}
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
-                <div className="w-full md:w-auto text-center md:text-left">
-                  <h2 className="text-3xl md:text-5xl font-display font-black text-white tracking-tight flex items-center justify-center md:justify-start gap-3">
-                    <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-orange-500" /> Configurar Sessão
-                  </h2>
-                  <p className="text-slate-400 text-sm md:text-lg mt-2 font-light">
-                    Personalize sua imersão. Escolha idioma, nível e mentor.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  {hasSavedStage && (
-                    <button
-                      onClick={loadSavedStage}
-                      className="px-4 py-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-orange-500/20"
-                    >
-                      <Bookmark className="w-3.5 h-3.5" /> Retomar
-                    </button>
-                  )}
-                  <button
-                    onClick={signOut}
-                    className="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-400 rounded-xl text-xs font-bold border border-white/5 transition-all flex items-center gap-2"
-                  >
-                    <Key className="w-3.5 h-3.5" /> Sair
-                  </button>
-                </div>
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-display font-black flex items-center gap-3">
+                  <Sparkles className="text-orange-500" /> Mapa de Progresso
+                </h2>
+                <p className="text-slate-400">Complete as missões para desbloquear novos tópicos.</p>
               </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 rounded-xl border border-orange-500/20">
+                  <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+                  <span className="font-bold text-sm text-orange-200">{streak} Dias Seguidos</span>
+                </div>
+                <button
+                  onClick={signOut}
+                  className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
+                  title="Sair"
+                >
+                  <Key className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
 
-              {/* Main Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 relative z-10 flex-1">
+            {/* Language Selector */}
+            <div className="grid grid-cols-3 gap-3">
+              {[Language.ENGLISH, Language.SPANISH, Language.FRENCH].map(lang => (
+                <button
+                  key={lang}
+                  onClick={() => setSelectedLanguage(lang)}
+                  className={`p-4 rounded-2xl border font-bold uppercase transition-all ${selectedLanguage === lang ? 'bg-orange-500 text-white border-orange-500' : 'bg-white/5 border-white/10 text-slate-400'}`}
+                >
+                  {lang}
+                </button>
+              ))}
+            </div>
 
-                {/* Left Column: Settings */}
-                <div className="lg:col-span-5 space-y-8">
-
-                  {/* Language */}
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Globe className="w-3.5 h-3.5 text-orange-500" /> Idioma
-                    </label>
-                    <div className="grid grid-cols-1 gap-3">
-                      {[
-                        { id: Language.ENGLISH, label: 'Inglês', native: 'English', flagUrl: 'https://flagcdn.com/w80/us.png' },
-                        { id: Language.SPANISH, label: 'Espanhol', native: 'Español', flagUrl: 'https://flagcdn.com/w80/es.png' },
-                        { id: Language.FRENCH, label: 'Francês', native: 'Français', flagUrl: 'https://flagcdn.com/w80/fr.png' }
-                      ].map(lang => (
-                        <button
-                          key={lang.id}
-                          onClick={() => {
-                            setSelectedLanguage(lang.id);
-                            setCurrentPhraseIndex(0);
-                            const firstTeacher = TEACHERS.find(t => t.language === lang.id);
-                            if (firstTeacher) setSelectedTeacherId(firstTeacher.id);
-                          }}
-                          className={`p-4 rounded-2xl border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedLanguage === lang.id
-                            ? 'border-orange-500/50 bg-white/5'
-                            : 'border-transparent bg-white/5 hover:bg-white/10'
-                            }`}
-                        >
-                          <div className={`absolute left-0 top-0 bottom-0 w-1 transition-all ${selectedLanguage === lang.id ? 'bg-orange-500' : 'bg-transparent'}`}></div>
-                          <img src={lang.flagUrl} alt={lang.label} className="w-12 h-8 object-cover rounded-md shadow-sm opacity-80 group-hover:opacity-100 transition-opacity" />
-                          <div className="flex flex-col items-start z-10">
-                            <span className={`font-display font-bold text-lg ${selectedLanguage === lang.id ? 'text-white' : 'text-slate-300'}`}>{lang.label}</span>
-                            <span className="text-xs text-slate-500 font-medium">{lang.native}</span>
-                          </div>
-                          {selectedLanguage === lang.id && <Sparkles className="w-5 h-5 text-orange-500 ml-auto animate-pulse" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Level */}
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Settings className="w-3.5 h-3.5 text-orange-500" /> Nível
-                    </label>
-                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 backdrop-blur-sm">
-                      {[
-                        { id: Level.BEGINNER, label: 'BÁSICO' },
-                        { id: Level.INTERMEDIATE, label: 'MÉDIO' },
-                        { id: Level.ADVANCED, label: 'PRO' }
-                      ].map(lvl => (
-                        <button
-                          key={lvl.id}
-                          onClick={() => setSelectedLevel(lvl.id)}
-                          className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${selectedLevel === lvl.id
-                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
-                            : 'text-slate-400 hover:text-white hover:bg-white/5'
-                            }`}
-                        >
-                          {lvl.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-500/80 italic pl-1 text-center font-medium">
-                      {selectedLevel === Level.BEGINNER ? 'Explicações em Português' : selectedLevel === Level.INTERMEDIATE ? 'Imersão Híbrida (50/50)' : 'Imersão Total (Nativo)'}
-                    </p>
-                  </div>
-
-                  {/* Topic */}
-                  <div className="space-y-4">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                      <LayoutGrid className="w-3.5 h-3.5 text-orange-500" /> Tópico
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {TOPICS.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => setSelectedTopicId(t.id)}
-                          className={`p-4 rounded-2xl border text-left transition-all flex flex-col gap-2 ${selectedTopicId === t.id
-                            ? 'border-orange-500/50 bg-orange-500/10 text-white'
-                            : 'border-white/5 bg-white/5 text-slate-400 hover:bg-white/10'
-                            }`}
-                        >
-                          <span className="text-2xl">{t.icon}</span>
-                          <span className="font-bold text-xs uppercase leading-tight">{t.name}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
+            {selectedLanguage ? (
+              <div className="flex flex-col lg:flex-row gap-8">
+                {/* Journey Map */}
+                <div className="flex-1">
+                  <JourneyMap
+                    topics={TOPICS}
+                    progress={topicProgress}
+                    onSelectTopic={(id) => setSelectedTopicId(id)}
+                  />
                 </div>
 
-                {/* Right Column: Teacher & Action */}
-                <div className="lg:col-span-7 flex flex-col h-full space-y-6">
-                  <div className="flex-1 flex flex-col min-h-[400px] bg-white/5 rounded-3xl border border-white/5 overflow-hidden backdrop-blur-sm">
-                    <div className="p-6 border-b border-white/5 bg-white/5">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] flex items-center gap-2">
-                        <BrainCircuit className="w-3.5 h-3.5 text-orange-500" /> Professores Disponíveis
+                {/* Right Panel: Teacher Selection */}
+                <div className="lg:w-1/3 space-y-6 sticky top-8 h-fit">
+                  <div className="glass-premium p-6 rounded-3xl border border-white/10 flex flex-col max-h-[80vh]">
+                    {/* Level Selector */}
+                    <div className="mb-6">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2 mb-3">
+                        <Settings className="w-4 h-4 text-orange-500" /> Nível de Dificuldade
+                      </label>
+                      <div className="flex bg-white/5 p-1 rounded-xl">
+                        {[
+                          { id: Level.BEGINNER, label: 'Básico' },
+                          { id: Level.INTERMEDIATE, label: 'Médio' },
+                          { id: Level.ADVANCED, label: 'Pro' }
+                        ].map(lvl => (
+                          <button
+                            key={lvl.id}
+                            onClick={() => setSelectedLevel(lvl.id)}
+                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${selectedLevel === lvl.id
+                              ? 'bg-slate-700 text-white shadow-md'
+                              : 'text-slate-400 hover:text-white hover:bg-white/5'
+                              }`}
+                          >
+                            {lvl.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Free Conversation Shortcut */}
+                    <button
+                      onClick={() => setSelectedTopicId('free-conversation')}
+                      className={`w-full mb-8 p-4 rounded-2xl border-2 transition-all flex items-center gap-4 group ${selectedTopicId === 'free-conversation'
+                        ? 'bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border-indigo-500'
+                        : 'bg-white/5 border-transparent hover:border-indigo-500/50'
+                        }`}
+                    >
+                      <div className={`p-3 rounded-xl ${selectedTopicId === 'free-conversation' ? 'bg-indigo-500 text-white' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700'} transition-colors`}>
+                        <Sparkles className="w-6 h-6" />
+                      </div>
+                      <div className="text-left">
+                        <span className={`font-bold block ${selectedTopicId === 'free-conversation' ? 'text-white' : 'text-slate-300'}`}>Conversa Livre</span>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-wider">Pratique sem roteiro</span>
+                      </div>
+                    </button>
+
+                    <div className="mb-4">
+                      <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <BrainCircuit className="w-4 h-4 text-orange-500" /> Escolha seu Mentor
                       </label>
                     </div>
 
-                    <div className="p-4 space-y-3 overflow-y-auto custom-scrollbar flex-1 relative">
+                    {/* Teachers List */}
+                    <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-2 mb-6">
                       {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => (
                         <button
                           key={teacher.id}
                           onClick={() => setSelectedTeacherId(teacher.id)}
-                          className={`w-full relative group transition-all duration-300 text-left rounded-2xl overflow-hidden`}
+                          className={`w-full group relative flex items-center gap-4 p-3 rounded-2xl border transition-all ${selectedTeacherId === teacher.id
+                            ? 'bg-orange-500/10 border-orange-500/50'
+                            : 'bg-white/5 border-transparent hover:bg-white/10'
+                            }`}
                         >
-                          <div className={`p-4 flex items-start gap-5 transition-all ${selectedTeacherId === teacher.id
-                            ? 'bg-white/10 border border-orange-500/30'
-                            : 'bg-transparent border border-transparent hover:bg-white/5'
-                            }`}>
-
-                            <div className={`relative w-16 h-16 rounded-full overflow-hidden border-2 shrink-0 shadow-lg ${selectedTeacherId === teacher.id ? 'border-orange-500 shadow-orange-500/20' : 'border-white/10'}`}>
-                              <img src={teacher.avatar} alt={teacher.name} className="w-full h-full object-cover" />
+                          <img src={teacher.avatar} className={`w-12 h-12 rounded-full object-cover border-2 ${selectedTeacherId === teacher.id ? 'border-orange-500' : 'border-slate-700'}`} />
+                          <div className="text-left flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className={`font-bold text-sm ${selectedTeacherId === teacher.id ? 'text-white' : 'text-slate-300'}`}>{teacher.name}</span>
+                              {selectedTeacherId === teacher.id && <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>}
                             </div>
-
-                            <div className="flex-1 min-w-0 py-1">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className={`font-display font-bold text-lg ${selectedTeacherId === teacher.id ? 'text-white' : 'text-slate-200'}`}>{teacher.name}</span>
-                                {selectedTeacherId === teacher.id && <div className="px-3 py-1 bg-orange-500 text-white text-[9px] font-black uppercase rounded-full">Selecionado</div>}
-                              </div>
-                              <span className="text-[10px] text-orange-400 font-bold uppercase tracking-wider block mb-2">{teacher.accent}</span>
-                              <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed font-medium">{teacher.bio}</p>
-                            </div>
+                            <span className="text-[10px] text-slate-500 uppercase tracking-wider block truncate">{teacher.accent}</span>
                           </div>
                         </button>
                       ))}
-                      {TEACHERS.filter(t => t.language === selectedLanguage).length === 0 && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 gap-4">
-                          <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center animate-pulse">
-                            <Globe className="w-8 h-8 opacity-30" />
+                    </div>
+
+                    {/* Selected Mission Preview (Footer) */}
+                    {selectedTopicId && (
+                      <div className="pt-6 border-t border-white/10 animate-in slide-in-from-bottom-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Pronto para iniciar?</label>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="p-3 bg-white/5 rounded-xl text-2xl">{TOPICS.find(t => t.id === selectedTopicId)?.icon}</div>
+                          <div>
+                            <div className="font-bold text-white leading-tight">{TOPICS.find(t => t.id === selectedTopicId)?.name}</div>
+                            <div className="text-xs text-orange-400 font-medium">Nível {selectedLevel === Level.BEGINNER ? 'Básico' : selectedLevel === Level.INTERMEDIATE ? 'Médio' : 'Pro'}</div>
                           </div>
-                          <p className="font-medium">Selecione um idioma</p>
                         </div>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Start Button */}
-                  <div key={selectedLanguage + selectedTeacherId}>
-                    <button
-                      onClick={startSession}
-                      disabled={connectionStatus === 'connecting' || !selectedLanguage || !selectedTeacherId}
-                      className="btn-primary w-full py-6 rounded-2xl text-xl flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed group shadow-2xl shadow-orange-900/40"
-                    >
-                      {connectionStatus === 'connecting' ? (
-                        <>
-                          <Loader2 className="w-6 h-6 animate-spin" /> Conectando...
-                        </>
-                      ) : (
-                        <>
-                          Iniciar Sessão <ArrowRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {connectionError && (
-                    <div className="w-full p-4 bg-red-500/10 border border-red-500/20 text-red-200 rounded-2xl text-center text-sm font-medium backdrop-blur-md">
-                      {connectionError}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
-
-      {
-        step === 'call' && (
-          <div className="flex-1 flex flex-col relative overflow-hidden">
-            <div className="flex-1 flex flex-col items-center justify-center p-4 md:p-8 z-10 w-full max-w-6xl mx-auto overflow-hidden">
-
-              {/* Teacher Display */}
-              <div className={`relative transition-all duration-500 z-40 ${selectedTopicId === 'pronunciation' ? '-mb-12 scale-90' : 'mb-8 md:mb-16'}`}>
-                {/* Dynamic Aura - More subtle and premium */}
-                <div className={`absolute inset-[-40px] rounded-full blur-[60px] transition-all duration-1000 ${isTeacherSpeaking ? 'bg-orange-500/20 opacity-100 scale-110' : 'bg-transparent opacity-0 scale-95'
-                  }`}></div>
-
-                {/* Avatar Frame */}
-                <div className={`relative rounded-full overflow-hidden border-4 transition-all duration-700 shadow-[0_0_60px_rgba(0,0,0,0.5)] 
-                ${selectedTopicId === 'pronunciation' ? 'w-32 h-32 md:w-40 md:h-40 bg-slate-950' : 'w-48 h-48 md:w-80 md:h-80'} 
-                ${isTeacherSpeaking ? 'border-orange-500 scale-105' : 'border-white/10 scale-100'
-                  }`}>
-                  <img
-                    src={currentTeacher.avatar}
-                    alt={currentTeacher.name}
-                    className="w-full h-full object-cover transition-all duration-700"
-                  />
-                </div>
-
-                {/* Status Indicator */}
-                <div className={`absolute left-1/2 -translate-x-1/2 glass-premium border-white/10 rounded-full flex items-center gap-4 justify-center transition-all px-6 py-2
-                ${selectedTopicId === 'pronunciation'
-                    ? 'bottom-0 translate-y-1/2 scale-75'
-                    : '-bottom-10 min-w-[160px]'}`}>
-
-                  <div className={`flex gap-1 items-end h-4`}>
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i} className={`w-1 bg-orange-500 rounded-full transition-all duration-150 ${isTeacherSpeaking ? 'animate-[bounce_0.8s_infinite]' : 'h-1 opacity-30'}`} style={{ height: isTeacherSpeaking ? '100%' : '20%', animationDelay: `${i * 0.1}s` }}></div>
-                    ))}
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-white">
-                    {isTeacherSpeaking ? 'Falando' : 'Ouvindo'}
-                  </span>
-                </div>
-              </div>
-
-              {/* Teacher Info */}
-              <div className={`text-center space-y-2 transition-all duration-500 ${selectedTopicId === 'pronunciation' ? 'hidden' : 'mb-4 md:mb-12'}`}>
-                <h3 className="text-3xl md:text-6xl font-display font-black tracking-tight text-white flex items-center justify-center gap-3">
-                  {currentTeacher.name} <Sparkles className="w-5 h-5 md:w-8 md:h-8 text-orange-500 animate-pulse" />
-                </h3>
-                <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] md:text-xs">Sua Guia Linguística Imersiva</p>
-              </div>
-
-              {/* Pronunciation Target UI */}
-              {selectedTopicId === 'pronunciation' && (
-                <div className="w-full max-w-xl glass-premium border border-orange-500/30 rounded-[2.5rem] p-8 mb-8 shadow-2xl relative z-30 mx-auto flex flex-col items-center gap-8 animate-in slide-in-from-bottom-24">
-
-                  {/* Header Badge */}
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-orange-400 text-[10px] font-black uppercase tracking-[0.3em] bg-orange-500/10 px-4 py-2 rounded-full border border-orange-500/20">
-                      Modo Treinamento
-                    </span>
-                  </div>
-
-                  {/* Main Text */}
-                  <div className="w-full text-center space-y-4">
-                    <p className="text-3xl md:text-5xl font-display font-black text-white leading-tight tracking-tight drop-shadow-lg text-glow">
-                      "{PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex]?.text || 'Carregando...'}"
-                    </p>
-                    <div className="text-slate-400 text-lg italic font-medium">
-                      "{PRONUNCIATION_PHRASES[selectedLanguage as Language]?.[currentPhraseIndex]?.translation || ''}"
-                    </div>
-                  </div>
-
-                  {/* Controls */}
-                  <div className="flex items-center justify-between w-full pt-6 border-t border-white/5">
-                    <button
-                      onClick={() => setCurrentPhraseIndex(prev => Math.max(0, prev - 1))}
-                      disabled={currentPhraseIndex === 0}
-                      className="p-4 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95"
-                    >
-                      <ArrowRight className="w-6 h-6 rotate-180 text-white" />
-                    </button>
-
-                    <div className="flex flex-col items-center">
-                      <span className="text-2xl font-black text-white">{currentPhraseIndex + 1}</span>
-                      <span className="text-[10px] uppercase tracking-widest text-slate-500">de {PRONUNCIATION_PHRASES[selectedLanguage as Language]?.length || 0}</span>
-                    </div>
-
-                    <button
-                      onClick={() => setCurrentPhraseIndex(prev => Math.min(PRONUNCIATION_PHRASES[selectedLanguage]?.length - 1, prev + 1))}
-                      disabled={currentPhraseIndex === (PRONUNCIATION_PHRASES[selectedLanguage]?.length || 0) - 1}
-                      className="p-4 rounded-full bg-orange-500 hover:bg-orange-400 text-white disabled:opacity-30 disabled:bg-slate-700 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-orange-500/20"
-                    >
-                      <ArrowRight className="w-6 h-6" />
-                    </button>
+                        <button
+                          onClick={startSession}
+                          disabled={!selectedTopicId || connectionStatus === 'connecting'}
+                          className="btn-primary w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 disabled:opacity-50 text-white shadow-lg hover:shadow-orange-500/20"
+                        >
+                          {connectionStatus === 'connecting' ? <Loader2 className="animate-spin" /> : 'Iniciar Missão'} <ArrowRight className="w-5 h-5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-
-            {/* Call Controls - Floating Bottom Bar (NEW) */}
-            <div className="absolute bottom-6 left-0 w-full flex justify-center z-50">
-              <div className="glass-premium px-8 py-4 rounded-full flex items-center gap-8 shadow-2xl transform hover:scale-105 transition-all duration-300">
-
-                {/* Mute Button */}
-                <button
-                  onClick={toggleMute}
-                  className={`p-4 rounded-full transition-all duration-300 ${isMuted
-                    ? 'bg-red-500/20 text-red-500 ring-2 ring-red-500/50'
-                    : 'bg-white/5 text-white hover:bg-white/10 ring-1 ring-white/10'
-                    }`}
-                  title={isMuted ? "Ligar Microfone" : "Silenciar Microfone"}
-                >
-                  {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-                </button>
-
-                {/* Audio Visualizer (Mini) - Shows user is active */}
-                {!isMuted && (
-                  <div className="flex gap-1 h-6 items-center">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="w-1 bg-green-500 rounded-full animate-bounce" style={{ height: `${Math.max(20, audioLevel)}%`, animationDelay: `${i * 0.1}s` }}></div>
-                    ))}
-                  </div>
-                )}
-                {isMuted && <span className="text-xs font-bold text-red-500 uppercase tracking-wider">Mudo</span>}
-
-                {/* End Call Button */}
-                <button
-                  onClick={endCall}
-                  className="p-4 rounded-full bg-red-600 hover:bg-red-500 text-white shadow-lg shadow-red-600/30 transition-all active:scale-95"
-                  title="Encerrar Chamada"
-                >
-                  <PhoneOff className="w-6 h-6" />
-                </button>
               </div>
-            </div>
-
-            {/* Caption */}
-            {currentCaption && (
-              <div className="absolute bottom-28 left-0 w-full px-6 flex justify-center z-50">
-                <div className="bg-black/90 backdrop-blur-md px-8 py-4 rounded-2xl max-w-4xl text-center border-l-4 border-orange-500 shadow-2xl animate-in slide-in-from-bottom-5">
-                  <p className="text-lg md:text-2xl text-white font-medium leading-relaxed">
-                    {currentCaption}
-                  </p>
-                </div>
-              </div>
+            ) : (
+              <div className="text-center py-20 text-slate-500">Selecione um idioma para ver o seu mapa.</div>
             )}
           </div>
-        )
-      }
+        </div>
+      )}
+
+      {step === 'call' && (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+          <div className="relative mb-8">
+            <div className={`w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-orange-500 shadow-[0_0_60px_rgba(249,115,22,0.4)] overflow-hidden transition-transform ${isTeacherSpeaking ? 'scale-105' : 'scale-100'}`}>
+              <img src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar} className="w-full h-full object-cover" />
+            </div>
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 glass-premium px-6 py-2 rounded-full border border-white/10 flex items-center gap-3">
+              <div className="flex gap-1 h-3 items-end">
+                {[1, 2, 3, 4].map(i => <div key={i} className={`w-1 bg-orange-500 rounded-full ${isTeacherSpeaking ? 'animate-bounce h-full' : 'h-1.5'}`} style={{ animationDelay: `${i * 0.1}s` }}></div>)}
+              </div>
+              <span className="text-[10px] uppercase font-black tracking-widest">{isTeacherSpeaking ? 'Ouvindo...' : 'Fale agora'}</span>
+            </div>
+          </div>
+
+          {/* Dynamic Transcript */}
+          {currentCaption && (
+            <div className="absolute bottom-32 max-w-2xl text-center px-4 animate-in slide-in-from-bottom-4">
+              <p className="text-xl md:text-2xl font-medium text-white drop-shadow-md bg-black/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5">{currentCaption}</p>
+            </div>
+          )}
+
+          {/* Controls */}
+          <div className="absolute bottom-8 flex items-center gap-6">
+            <button onClick={toggleMute} className={`p-5 rounded-full ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/10 text-white'} hover:scale-105 transition-all`}>
+              {isMuted ? <MicOff /> : <Mic />}
+            </button>
+            <button onClick={endCall} className="p-5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg hover:scale-105 transition-all">
+              <PhoneOff />
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
