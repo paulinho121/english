@@ -55,7 +55,7 @@ const App: React.FC = () => {
 
   // New Progress States
   const [streak, setStreak] = useState(0);
-  const [topicProgress, setTopicProgress] = useState<Record<string, 'locked' | 'unlocked' | 'completed'>>({});
+  const [topicProgress, setTopicProgress] = useState<Record<string, number>>({});
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -69,17 +69,35 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('linguistai_stage');
     if (saved) setHasSavedStage(true);
 
-    // Load Progress Placeholder (Mock for now, would be from Supabase)
-    // For manual testing, let's unlock the first 2 and 'free-conversation'
-    setTopicProgress({
-      'introduction': 'completed',
-      'travel': 'unlocked',
-      'free-conversation': 'unlocked' // Always unlocked
-    });
-    setStreak(3); // Mock Streak
-  }, []);
+    const loadProgress = async () => {
+      if (!user) return;
+
+      const { data: profile } = await supabase.from('profiles').select('streak_count').eq('id', user.id).single();
+      if (profile) setStreak(profile.streak_count || 0);
+
+      const { data: progressData } = await supabase.from('user_progress').select('topic_id, score').eq('user_id', user.id);
+
+      const newProgress: Record<string, number> = {};
+      if (progressData) {
+        progressData.forEach(p => {
+          newProgress[p.topic_id] = p.score || 0;
+        });
+      }
+      setTopicProgress(newProgress);
+    };
+
+    loadProgress();
+  }, [user]);
 
   const startSession = async () => {
+    // Check if topic is locked (unless it's the first one 'introduction' or 'free-conversation')
+    // Logic: If previous topic < 100, current is locked? 
+    // For now, valid logic: everything starts at 0. All visible. 
+    // We enforce sequentiality by checking index if we want, but 'introduction' is first.
+    // Let's assume JourneyMap handles 'locked' visual if 0 and previous is not 100?
+    // Actually, requested behavior: "start at 0 and progress as they use".
+
+    // ... rest of startSession logic remains ...
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
     if (!apiKey) {
       setConnectionError('API Key não encontrada.');
@@ -122,6 +140,14 @@ const App: React.FC = () => {
         responseModalities: [Modality.AUDIO],
         tools: [{ functionDeclarations: [{ name: 'next_phrase', description: 'Next phrase' }] }],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } },
+        generationConfig: {
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } }
+        },
+        // @ts-ignore - The SDK types might not be fully updated yet
+        voiceActivityDetection: {
+          silenceDurationMs: 2000,
+          minimizeNoise: true
+        },
         systemInstruction: {
           parts: [{
             text: `
@@ -196,10 +222,21 @@ const App: React.FC = () => {
     setStep('call');
   };
 
-  const endCall = () => {
-    // Unlock next level logic (simple simulation)
-    if (selectedTopicId && topicProgress[selectedTopicId] !== 'completed') {
-      setTopicProgress(prev => ({ ...prev, [selectedTopicId!]: 'completed' }));
+  const endCall = async () => {
+    // Update Progress
+    if (selectedTopicId && user) {
+      const currentProgress = topicProgress[selectedTopicId] || 0;
+      const newProgress = Math.min(100, currentProgress + 20); // Increment by 20%
+
+      setTopicProgress(prev => ({ ...prev, [selectedTopicId]: newProgress }));
+
+      // Save to Supabase
+      await supabase.from('user_progress').upsert({
+        user_id: user.id,
+        topic_id: selectedTopicId,
+        score: newProgress,
+        status: newProgress === 100 ? 'completed' : 'unlocked'
+      }, { onConflict: 'user_id, topic_id' });
     }
     window.location.reload();
   };

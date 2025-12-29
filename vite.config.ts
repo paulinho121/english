@@ -18,6 +18,13 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       }
+    },
+    build: {
+      sourcemap: false, // Disable source maps for IP protection
+      minify: 'esbuild',
+      esbuild: {
+        drop: ['console', 'debugger'], // Remove console logs and debugger
+      }
     }
   };
 });
