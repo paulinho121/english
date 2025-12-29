@@ -106,7 +106,7 @@ export const LoginScreen: React.FC = () => {
     };
 
     return (
-        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center justify-center p-4 md:p-6 relative overflow-y-auto no-scrollbar">
+        <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center p-4 md:p-6 relative overflow-y-auto custom-scrollbar">
             {/* Ambient Animated Background */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="blob blob-1"></div>
@@ -114,9 +114,9 @@ export const LoginScreen: React.FC = () => {
                 <div className="blob blob-3"></div>
             </div>
 
-            <div className="w-full max-w-md glass-premium p-8 md:p-10 rounded-[2.5rem] relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700 my-auto">
+            <div className="w-full max-w-md glass-premium p-6 md:p-10 rounded-[2.5rem] relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700 my-auto">
                 <div className="text-center mb-8 md:mb-10">
-                    <div className="w-28 h-28 md:w-36 md:h-36 mx-auto mb-6 flex items-center justify-center group">
+                    <div className="w-24 h-24 md:w-36 md:h-36 mx-auto mb-4 md:mb-6 flex items-center justify-center group">
                         <div className="absolute w-32 h-32 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/30 transition-all duration-500"></div>
                         <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(249,115,22,0.6)] relative z-10 transform group-hover:scale-110 transition-transform duration-500" />
                     </div>
@@ -150,7 +150,7 @@ export const LoginScreen: React.FC = () => {
                                         placeholder="+55 11 99999-9999"
                                         value={phoneNumber}
                                         onChange={e => setPhoneNumber(e.target.value)}
-                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                         required
                                     />
                                 </div>
@@ -163,7 +163,7 @@ export const LoginScreen: React.FC = () => {
                                     placeholder="000000"
                                     value={otp}
                                     onChange={e => setOtp(e.target.value)}
-                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-center text-3xl tracking-[0.5em] font-mono font-bold text-white placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 px-4 text-center text-3xl tracking-[0.5em] font-mono font-bold text-white placeholder:text-slate-700 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                     maxLength={6}
                                     required
                                 />
@@ -189,7 +189,7 @@ export const LoginScreen: React.FC = () => {
                                         placeholder="Seu nome"
                                         value={fullName}
                                         onChange={e => setFullName(e.target.value)}
-                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                         required
                                     />
                                 </div>
@@ -200,7 +200,7 @@ export const LoginScreen: React.FC = () => {
                                         placeholder="(11) 99999-9999"
                                         value={signupPhone}
                                         onChange={e => setSignupPhone(e.target.value)}
-                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                        className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                         required
                                     />
                                 </div>
@@ -213,7 +213,7 @@ export const LoginScreen: React.FC = () => {
                                 placeholder="seu@email.com"
                                 value={email}
                                 onChange={e => setEmail(e.target.value)}
-                                className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                 required
                             />
                         </div>
@@ -226,7 +226,7 @@ export const LoginScreen: React.FC = () => {
                                     placeholder="••••••••"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
-                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
                                     required
                                 />
                             </div>
@@ -235,7 +235,7 @@ export const LoginScreen: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="btn-primary w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-500/20"
+                            className="btn-primary w-full py-3 md:py-4 rounded-2xl flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-500/20"
                         >
                             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (mode === 'signin' ? 'Entrar' : 'Criar Conta')}
                         </button>
