@@ -305,7 +305,37 @@ const App: React.FC = () => {
         status: newProgress === 100 ? 'completed' : 'unlocked'
       }, { onConflict: 'user_id, topic_id' });
     }
-    window.location.reload();
+
+    // Cleanup Resources
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    if (sessionRef.current) {
+      try {
+        const session = await sessionRef.current;
+        // Attempt to close the session gracefully
+        if (session.disconnect) session.disconnect();
+        else if (session.close) session.close();
+      } catch (e) {
+        console.warn("Error closing session:", e);
+      }
+      sessionRef.current = null;
+    }
+
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      try { await audioContextRef.current.close(); } catch (e) { console.warn(e); }
+    }
+    if (outputAudioContextRef.current && outputAudioContextRef.current.state !== 'closed') {
+      try { await outputAudioContextRef.current.close(); } catch (e) { console.warn(e); }
+    }
+
+    // Reset UI State
+    setIsTeacherSpeaking(false);
+    setCurrentCaption('');
+    setConnectionStatus('idle');
+    setStep('setup');
   };
 
   const toggleMute = () => {
