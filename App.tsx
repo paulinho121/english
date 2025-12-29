@@ -105,7 +105,7 @@ const App: React.FC = () => {
     }
 
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    audioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
+    audioContextRef.current = new AudioContextClass(); // Use native sample rate (often 44.1k or 48k)
     outputAudioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
 
     try {
@@ -140,9 +140,6 @@ const App: React.FC = () => {
         responseModalities: [Modality.AUDIO],
         tools: [{ functionDeclarations: [{ name: 'next_phrase', description: 'Next phrase' }] }],
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } },
-        generationConfig: {
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } }
-        },
         // @ts-ignore - The SDK types might not be fully updated yet
         voiceActivityDetection: {
           silenceDurationMs: 2000,
@@ -153,9 +150,16 @@ const App: React.FC = () => {
             text: `
               PERSONA: ${teacher.name} (${teacher.language}).
               NÍVEL: ${selectedLevel}.
-              TÓPICO: ${topic.name} (${topic.id === 'free-conversation' ? 'MODO LIVRE' : 'AULA ESTRUTURADA'}).
+              TÓPICO: ${topic.name} (${topic.id === 'free-conversation' ? 'CONVERSA LIVRE E ESPONTÂNEA' : 'AULA ESTRUTURADA'}).
               CONTEXTO: ${topic.prompt}
               ${selectedLevel === Level.BEGINNER ? 'Fale 80% Português.' : 'Fale 100% Idioma Alvo.'}
+              
+              VOCÊ DEVE INICIAR A CONVERSA IMEDIATAMENTE.
+              Assim que conectar, apresente-se brevemente.
+              ${topic.id === 'free-conversation'
+                ? 'Pergunte sobre o que o aluno quer conversar hoje (hobbies, dia, interesses).'
+                : 'Faça a primeira pergunta do cenário/tópico.'}
+              NÃO ESPERE O ALUNO FALAR.
             `
           }]
         },
@@ -166,30 +170,76 @@ const App: React.FC = () => {
           isConnectedRef.current = true;
           setConnectionStatus('connected');
 
+          // Trigger Teacher Initiative via Text
+          sessionPromise.then(session => {
+            // Sends a text turn to force generation
+            // @ts-ignore
+            session.sendRealtimeInput({
+              turns: [{
+                role: 'user',
+                parts: [{ text: `[[SISTEMA]] O aluno entrou. Comece a aula agora. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.` }]
+              }],
+              turnComplete: true
+            } as any);
+          });
+
           setTimeout(() => {
             if (!isConnectedRef.current || !mediaStreamRef.current || !audioContextRef.current) return;
             const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
             const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
+            const inputSampleRate = audioContextRef.current.sampleRate;
+            const targetSampleRate = 16000;
+
             processor.onaudioprocess = (e) => {
               if (!isConnectedRef.current) return;
               const inputData = e.inputBuffer.getChannelData(0);
+
+              // Audio Level Vis
               let sum = 0;
               for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
               setAudioLevel(Math.min(100, Math.sqrt(sum / inputData.length) * 1500));
 
-              const int16 = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
+              // Downsampling Logic (Averaging)
+              if (inputSampleRate !== targetSampleRate) {
+                const ratio = inputSampleRate / targetSampleRate;
+                const newLength = Math.floor(inputData.length / ratio);
+                const result = new Int16Array(newLength);
 
-              sessionPromise.then(session => {
-                session.sendRealtimeInput({ media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' } });
-              });
+                for (let i = 0; i < newLength; i++) {
+                  const startOffset = Math.floor(i * ratio);
+                  const endOffset = Math.floor((i + 1) * ratio);
+                  let sampleSum = 0;
+                  let sampleCount = 0;
+
+                  for (let j = startOffset; j < endOffset && j < inputData.length; j++) {
+                    sampleSum += inputData[j];
+                    sampleCount++;
+                  }
+
+                  const avgSample = sampleCount > 0 ? sampleSum / sampleCount : 0;
+
+                  const clamped = Math.max(-1, Math.min(1, avgSample));
+                  result[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+                }
+
+                sessionPromise.then(session => {
+                  session.sendRealtimeInput({ media: { data: encode(new Uint8Array(result.buffer)), mimeType: 'audio/pcm;rate=16000' } });
+                });
+              } else {
+                // Native 16k handling
+                const int16 = new Int16Array(inputData.length);
+                for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
+                sessionPromise.then(session => {
+                  session.sendRealtimeInput({ media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' } });
+                });
+              }
             };
 
             const muteGain = audioContextRef.current.createGain();
             muteGain.gain.value = 0;
             source.connect(processor);
-            processor.connect(muteGain); // Prevent feedback loop (Mute local playback)
+            processor.connect(muteGain); // Prevent feedback loop
             muteGain.connect(audioContextRef.current.destination);
           }, 500);
         },
@@ -202,20 +252,37 @@ const App: React.FC = () => {
                 setIsTeacherSpeaking(true);
                 const ctx = outputAudioContextRef.current!;
                 const buffer = await decodeAudioData(decode(part.inlineData.data), ctx, 24000, 1);
+
                 const source = ctx.createBufferSource();
                 source.buffer = buffer;
                 source.connect(ctx.destination);
+
+                // Audio Queue Logic
+                // Ensure we don't schedule in the past
+                const currentTime = ctx.currentTime;
+                // Add a small buffer (50ms) if starting fresh to avoid glitch
+                const startTime = Math.max(currentTime, nextStartTimeRef.current);
+
+                source.start(startTime);
+                nextStartTimeRef.current = startTime + buffer.duration;
+
                 source.onended = () => {
                   sourcesRef.current.delete(source);
-                  if (sourcesRef.current.size === 0) setIsTeacherSpeaking(false);
+                  // Only set not speaking if queue is empty (approx check)
+                  if (ctx.currentTime >= nextStartTimeRef.current - 0.1) {
+                    setIsTeacherSpeaking(false);
+                  }
                 };
-                source.start(0);
                 sourcesRef.current.add(source);
               }
             }
           }
         },
-        onclose: () => { isConnectedRef.current = false; setConnectionStatus('idle'); }
+        onclose: () => {
+          isConnectedRef.current = false;
+          setConnectionStatus('idle');
+          nextStartTimeRef.current = 0; // Reset queue on close
+        }
       }
     });
     sessionRef.current = sessionPromise;
@@ -269,12 +336,12 @@ const App: React.FC = () => {
 
           <div className="space-y-8 z-10 max-w-2xl">
             <img src="/logo.png" className="w-40 h-40 mx-auto drop-shadow-[0_0_30px_rgba(249,115,22,0.4)]" />
-            <h1 className="text-5xl md:text-7xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
+            <h1 className="hidden md:block text-5xl md:text-7xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
               Lingua<span className="text-orange-500">Flow</span>
             </h1>
             <button
               onClick={() => { setStep('setup'); setSelectedTeacherId(TEACHERS[0].id); }}
-              className="btn-primary px-12 py-5 rounded-full text-2xl font-bold flex items-center gap-3 mx-auto hover:scale-105 transition-transform"
+              className="btn-primary px-8 py-4 md:px-12 md:py-5 rounded-full text-xl md:text-2xl font-bold flex items-center gap-3 mx-auto hover:scale-105 transition-transform shadow-lg shadow-orange-500/20"
             >
               Continuar Jornada <ArrowRight className="w-6 h-6" />
             </button>
@@ -315,9 +382,14 @@ const App: React.FC = () => {
                 <button
                   key={lang}
                   onClick={() => setSelectedLanguage(lang)}
-                  className={`p-4 rounded-2xl border font-bold uppercase transition-all ${selectedLanguage === lang ? 'bg-orange-500 text-white border-orange-500' : 'bg-white/5 border-white/10 text-slate-400'}`}
+                  className={`p-4 rounded-2xl border font-bold uppercase transition-all flex flex-col items-center gap-2 ${selectedLanguage === lang ? 'bg-orange-500 text-white border-orange-500' : 'bg-white/5 border-white/10 text-slate-400'}`}
                 >
-                  {lang}
+                  <img
+                    src={lang === Language.ENGLISH ? 'https://flagcdn.com/w80/us.png' : lang === Language.SPANISH ? 'https://flagcdn.com/w80/es.png' : 'https://flagcdn.com/w80/fr.png'}
+                    alt={lang}
+                    className="w-10 h-auto rounded shadow-sm object-cover"
+                  />
+                  <span>{lang}</span>
                 </button>
               ))}
             </div>
@@ -445,8 +517,17 @@ const App: React.FC = () => {
               <img src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar} className="w-full h-full object-cover" />
             </div>
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 glass-premium px-6 py-2 rounded-full border border-white/10 flex items-center gap-3">
-              <div className="flex gap-1 h-3 items-end">
-                {[1, 2, 3, 4].map(i => <div key={i} className={`w-1 bg-orange-500 rounded-full ${isTeacherSpeaking ? 'animate-bounce h-full' : 'h-1.5'}`} style={{ animationDelay: `${i * 0.1}s` }}></div>)}
+              <div className="flex gap-1 h-8 items-end justify-center">
+                {[1, 2, 3, 4].map(i => (
+                  <div
+                    key={i}
+                    className={`w-1.5 bg-orange-500 rounded-full transition-all duration-75 ${isTeacherSpeaking ? 'animate-pulse h-2 opacity-50' : ''}`}
+                    style={{
+                      height: isTeacherSpeaking ? undefined : `${Math.max(6, audioLevel * (0.5 + (i % 2) * 0.4))}px`,
+                      opacity: isTeacherSpeaking ? 0.5 : 1
+                    }}
+                  ></div>
+                ))}
               </div>
               <span className="text-[10px] uppercase font-black tracking-widest">{isTeacherSpeaking ? 'Ouvindo...' : 'Fale agora'}</span>
             </div>

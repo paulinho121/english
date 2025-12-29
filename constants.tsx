@@ -79,6 +79,12 @@ export const TEACHERS: Teacher[] = [
 
 export const TOPICS: Topic[] = [
   {
+    id: 'free-conversation',
+    name: 'Conversa Livre',
+    icon: '✨',
+    prompt: 'Mantenha uma conversa aberta e natural sobre qualquer assunto que o aluno quiser. Seja amigável, curioso e corrija erros sutilmente. Pergunte sobre interesses, hobbies ou o dia do aluno.'
+  },
+  {
     id: 'job-interview',
     name: 'Entrevista de Emprego',
     icon: '💼',

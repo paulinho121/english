@@ -22,9 +22,7 @@ export default defineConfig(({ mode }) => {
     build: {
       sourcemap: false, // Disable source maps for IP protection
       minify: 'esbuild',
-      esbuild: {
-        drop: ['console', 'debugger'], // Remove console logs and debugger
-      }
+      // Console logs enabled for debugging
     }
   };
 });
