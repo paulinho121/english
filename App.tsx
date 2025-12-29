@@ -335,6 +335,7 @@ const App: React.FC = () => {
     setIsTeacherSpeaking(false);
     setCurrentCaption('');
     setConnectionStatus('idle');
+    setSelectedTopicId(null); // Reset selection
     setStep('setup');
   };
 
@@ -542,6 +543,54 @@ const App: React.FC = () => {
 
       {step === 'call' && (
         <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+
+          {/* Pronunciation Card Overlay */}
+          {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (
+            <div className="absolute top-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[600px] z-20">
+              <div className="glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="flex gap-2">
+                    <span className="px-3 py-1 bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-orange-500/20">
+                      Frase {currentPhraseIndex + 1} de {PRONUNCIATION_PHRASES[selectedLanguage].length}
+                    </span>
+                    <span className="px-3 py-1 bg-slate-700/50 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/5">
+                      {PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.level || 'Geral'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
+                      disabled={currentPhraseIndex === 0}
+                      className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <ArrowRight className="w-4 h-4 rotate-180" />
+                    </button>
+                    <button
+                      onClick={() => setCurrentPhraseIndex(p => Math.min(PRONUNCIATION_PHRASES[selectedLanguage!].length - 1, p + 1))}
+                      disabled={currentPhraseIndex === PRONUNCIATION_PHRASES[selectedLanguage].length - 1}
+                      className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <h3 className="text-2xl md:text-3xl font-display font-medium text-white mb-3 leading-snug">
+                  "{PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.text}"
+                </h3>
+
+                <p className="text-slate-400 font-medium text-lg">
+                  {PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.translation}
+                </p>
+
+                <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
+                  <span>Diga a frase em voz alta</span>
+                  <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-500" /> IA Ouvindo</span>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="relative mb-8">
             <div className={`w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-orange-500 shadow-[0_0_60px_rgba(249,115,22,0.4)] overflow-hidden transition-transform ${isTeacherSpeaking ? 'scale-105' : 'scale-100'}`}>
               <img src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar} className="w-full h-full object-cover" />
@@ -563,9 +612,9 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          {/* Dynamic Transcript */}
+          {/* Dynamic Transcript - Only show if NO card to avoid clutter, or position lower */}
           {currentCaption && (
-            <div className="absolute bottom-32 max-w-2xl text-center px-4 animate-in slide-in-from-bottom-4">
+            <div className={`absolute bottom-32 max-w-2xl text-center px-4 animate-in slide-in-from-bottom-4 ${selectedTopicId === 'pronunciation' ? 'opacity-50 pointer-events-none' : ''}`}>
               <p className="text-xl md:text-2xl font-medium text-white drop-shadow-md bg-black/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5">{currentCaption}</p>
             </div>
           )}
