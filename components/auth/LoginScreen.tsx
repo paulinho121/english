@@ -267,7 +267,7 @@ export const LoginScreen: React.FC = () => {
             </div>
 
             <div className="mt-8 text-slate-500/40 text-[10px] font-black tracking-[0.2em] uppercase text-center relative z-10 pb-4 mix-blend-plus-lighter">
-                Criado por Paulinho Fernando
+                &copy; 2025 Paulinho Fernando. Todos os direitos reservados.
             </div>
         </div>
     );

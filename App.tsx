@@ -631,6 +631,12 @@ const App: React.FC = () => {
         </div>
       )}
 
+      {step !== 'call' && (
+        <div className="py-4 text-center text-xs text-slate-600 font-medium z-10">
+          &copy; 2025 Paulinho Fernando. Todos os direitos reservados.
+        </div>
+      )}
+
     </div>
   );
 };
