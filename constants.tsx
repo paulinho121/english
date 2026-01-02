@@ -7,7 +7,7 @@
  * Unauthorized reproduction or distribution is strictly prohibited.
  */
 
-import { Teacher, Language, Topic } from './types';
+import { Teacher, Language, Topic, PronunciationPhrase } from './types';
 
 export const TEACHERS: Teacher[] = [
   {
@@ -238,8 +238,16 @@ export const TOPICS: Topic[] = [
   }
 ];
 
-export const PRONUNCIATION_PHRASES = {
+export const PRONUNCIATION_PHRASES: Record<Language, PronunciationPhrase[]> = {
   [Language.ENGLISH]: [
+    // Kids Mode Phrases (Images)
+    { id: 'en-k1', text: "Apple", level: 'Kids', translation: "Maçã", image: '/kids/apple.png' },
+    { id: 'en-k2', text: "Dog", level: 'Kids', translation: "Cachorro", image: '/kids/dog.png' },
+    { id: 'en-k3', text: "Cat", level: 'Kids', translation: "Gato", image: '/kids/cat.png' },
+    { id: 'en-k4', text: "Ball", level: 'Kids', translation: "Bola", image: '/kids/ball.png' },
+    { id: 'en-k5', text: "Sun", level: 'Kids', translation: "Sol", image: '/kids/sun.png' },
+
+    // Regular Phrases
     { id: '1', text: "The quick brown fox jumps over the lazy dog.", level: 'Básico', translation: "A raposa marrom rápida pula sobre o cachorro preguiçoso." },
     { id: '2', text: "She sells seashells by the seashore.", level: 'Intermediário', translation: "Ela vende conchas na beira do mar." },
     { id: '3', text: "How much wood would a woodchuck chuck if a woodchuck could chuck wood?", level: 'Avançado', translation: "Quanta madeira uma marmota jogaria se uma marmota pudesse jogar madeira?" },
@@ -252,6 +260,13 @@ export const PRONUNCIATION_PHRASES = {
     { id: '10', text: "Edgar Allan Poe was an American writer, poet, editor, and literary critic.", level: 'Avançado', translation: "Edgar Allan Poe foi um escritor, poeta, editor e crítico literário americano." }
   ],
   [Language.SPANISH]: [
+    // Kids Mode Phrases (Images)
+    { id: 'es-k1', text: "Manzana", level: 'Kids', translation: "Maçã", image: '/kids/apple.png' },
+    { id: 'es-k2', text: "Perro", level: 'Kids', translation: "Cachorro", image: '/kids/dog.png' },
+    { id: 'es-k3', text: "Gato", level: 'Kids', translation: "Gato", image: '/kids/cat.png' },
+    { id: 'es-k4', text: "Pelota", level: 'Kids', translation: "Bola", image: '/kids/ball.png' },
+    { id: 'es-k5', text: "Sol", level: 'Kids', translation: "Sol", image: '/kids/sun.png' },
+
     { id: 'es-1', text: "Hola, ¿cómo estás?", level: 'Básico', translation: "Olá, como você está?" },
     { id: 'es-2', text: "Me gustaría ordenar una paella, por favor.", level: 'Básico', translation: "Gostaria de pedir uma paella, por favor." },
     { id: 'es-3', text: "El perro corre por el parque rápidamente.", level: 'Intermediário', translation: "O cachorro corre pelo parque rapidamente." },
@@ -262,6 +277,13 @@ export const PRONUNCIATION_PHRASES = {
     { id: 'es-8', text: "Pablito clavó un clavito.", level: 'Difícil', translation: "Pablito pregou um preguinho." }
   ],
   [Language.FRENCH]: [
+    // Kids Mode Phrases (Images)
+    { id: 'fr-k1', text: "Pomme", level: 'Kids', translation: "Maçã", image: '/kids/apple.png' },
+    { id: 'fr-k2', text: "Chien", level: 'Kids', translation: "Cachorro", image: '/kids/dog.png' },
+    { id: 'fr-k3', text: "Chat", level: 'Kids', translation: "Gato", image: '/kids/cat.png' },
+    { id: 'fr-k4', text: "Balle", level: 'Kids', translation: "Bola", image: '/kids/ball.png' },
+    { id: 'fr-k5', text: "Soleil", level: 'Kids', translation: "Sol", image: '/kids/sun.png' },
+
     { id: 'fr-1', text: "Bonjour, comment ça va?", level: 'Básico', translation: "Olá, como vai?" },
     { id: 'fr-2', text: "Je voudrais un croissant et un café, s'il vous plaît.", level: 'Básico', translation: "Eu gostaria de um croissant e um café, por favor." },
     { id: 'fr-3', text: "Le chat noir dort sur le canapé.", level: 'Básico', translation: "O gato preto dorme no sofá." },

@@ -51,3 +51,11 @@ export interface SessionReportData {
   tip: string;
   continuationContext?: string;
 }
+
+export interface PronunciationPhrase {
+  id: string;
+  text: string;
+  level: string;
+  translation: string;
+  image?: string; // Optional image for Kids Mode
+}

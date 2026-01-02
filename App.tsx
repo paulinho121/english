@@ -275,9 +275,9 @@ const App: React.FC = () => {
 
               ${selectedLevel === Level.BEGINNER ? `
               - NÍVEL BÁSICO (Protocolo "Safe Path"):
-                1. Use 80% Português e 20% ${teacher.language}.
-                2. Fale frases curtas e pausadas.
-                3. Se o aluno errar, corrija IMEDIATAMENTE de forma gentil em português, explique a regra brevemente e peça para ele repetir.
+                1. Use 70% Português (explicações) e 30% ${teacher.language} (prática).
+                2. Explique o conceito em português, mas peça para o aluno repetir a frase curta em ${teacher.language}.
+                3. Se o aluno errar, corrija IMEDIATAMENTE de forma gentil em português.
                 4. Encoraje o tempo todo ("Muito bem!", "Isso mesmo!").
                 5. Use vocabulário do dia a dia.
               ` : ''}
@@ -1015,51 +1015,79 @@ const App: React.FC = () => {
           <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
 
             {/* Pronunciation Card Overlay */}
-            {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (
-              <div className="absolute top-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[600px] z-20">
-                <div className="glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex gap-2">
-                      <span className="px-3 py-1 bg-orange-500/20 text-orange-400 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-orange-500/20">
-                        Frase {currentPhraseIndex + 1} de {PRONUNCIATION_PHRASES[selectedLanguage].length}
-                      </span>
-                      <span className="px-3 py-1 bg-slate-700/50 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/5">
-                        {PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.level || 'Geral'}
+            {/* Pronunciation Card Overlay */}
+            {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (() => {
+              const allPhrases = PRONUNCIATION_PHRASES[selectedLanguage];
+              const filteredPhrases = allPhrases.filter(p => isKidsMode ? p.level === 'Kids' : p.level !== 'Kids');
+              const currentPhrase = filteredPhrases[currentPhraseIndex];
+
+              if (!currentPhrase) return null;
+
+              return (
+                <div className="absolute top-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[600px] z-20">
+                  <div className={`glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 ${isKidsMode ? 'bg-white/90 border-[#4ecdc4]/30' : ''}`}>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex gap-2">
+                        <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${isKidsMode ? 'bg-[#ff6b6b]/20 text-[#ff6b6b] border-[#ff6b6b]/20' : 'bg-orange-500/20 text-orange-400 border-orange-500/20'}`}>
+                          Frase {currentPhraseIndex + 1} de {filteredPhrases.length}
+                        </span>
+                        <span className="px-3 py-1 bg-slate-700/50 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/5">
+                          {currentPhrase.level || 'Geral'}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
+                          disabled={currentPhraseIndex === 0}
+                          className={`p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
+                        >
+                          <ArrowRight className="w-4 h-4 rotate-180" />
+                        </button>
+                        <button
+                          onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
+                          disabled={currentPhraseIndex === filteredPhrases.length - 1}
+                          className={`p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
+                        >
+                          <ArrowRight className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {isKidsMode && currentPhrase.image ? (
+                      <div className="flex flex-col items-center gap-4">
+                        <div className="w-40 h-40 relative animate-bounce-slow">
+                          <img
+                            src={currentPhrase.image}
+                            alt={currentPhrase.text}
+                            className="w-full h-full object-contain filter drop-shadow-xl"
+                          />
+                        </div>
+                        <h3 className="text-3xl md:text-4xl font-display font-black text-[#2d3748] mb-1">
+                          {currentPhrase.text}
+                        </h3>
+                        {/* <p className="text-slate-400 font-medium text-sm">{currentPhrase.translation}</p> */}
+                      </div>
+                    ) : (
+                      <>
+                        <h3 className="text-2xl md:text-3xl font-display font-medium text-white mb-3 leading-snug">
+                          "{currentPhrase.text}"
+                        </h3>
+                        <p className="text-slate-400 font-medium text-lg">
+                          {currentPhrase.translation}
+                        </p>
+                      </>
+                    )}
+
+                    <div className={`mt-6 flex items-center justify-between text-xs ${isKidsMode ? 'text-slate-600' : 'text-slate-500'}`}>
+                      <span>{isKidsMode ? 'Diga o nome do desenho!' : 'Diga a frase em voz alta'}</span>
+                      <span className="flex items-center gap-1">
+                        <Sparkles className={`w-3 h-3 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> IA Ouvindo
                       </span>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
-                        disabled={currentPhraseIndex === 0}
-                        className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ArrowRight className="w-4 h-4 rotate-180" />
-                      </button>
-                      <button
-                        onClick={() => setCurrentPhraseIndex(p => Math.min(PRONUNCIATION_PHRASES[selectedLanguage!].length - 1, p + 1))}
-                        disabled={currentPhraseIndex === PRONUNCIATION_PHRASES[selectedLanguage].length - 1}
-                        className="p-2 hover:bg-white/10 rounded-lg disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <h3 className="text-2xl md:text-3xl font-display font-medium text-white mb-3 leading-snug">
-                    "{PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.text}"
-                  </h3>
-
-                  <p className="text-slate-400 font-medium text-lg">
-                    {PRONUNCIATION_PHRASES[selectedLanguage][currentPhraseIndex]?.translation}
-                  </p>
-
-                  <div className="mt-6 flex items-center justify-between text-xs text-slate-500">
-                    <span>Diga a frase em voz alta</span>
-                    <span className="flex items-center gap-1"><Sparkles className="w-3 h-3 text-orange-500" /> IA Ouvindo</span>
                   </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             <div className="relative mb-8">
               <div className={`w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-orange-500 shadow-[0_0_60px_rgba(249,115,22,0.4)] overflow-hidden transition-transform ${isTeacherSpeaking ? 'scale-105' : 'scale-100'}`}>
