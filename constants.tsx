@@ -1,3 +1,11 @@
+/**
+ * LINGUAFLOW AI - PEDAGOGICAL CONSTANTS
+ * Copyright (c) 2026 Paulinho Fernando. All rights reserved.
+ * 
+ * This file contains proprietary instructional prompts and pedagogical 
+ * methodology developed specifically for the LinguaFlow AI platform.
+ * Unauthorized reproduction or distribution is strictly prohibited.
+ */
 
 import { Teacher, Language, Topic } from './types';
 

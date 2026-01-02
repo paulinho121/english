@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+/**
+ * LINGUAFLOW AI - Main Application
+ * Copyright (c) 2026 Paulinho Fernando. All rights reserved.
+ * Proprietary and Confidential.
+ */
+
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
 import { Language, Level, Teacher, Topic, SessionReportData } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
@@ -9,6 +15,7 @@ import { JourneyMap } from './components/JourneyMap';
 import { hotmartService } from './lib/hotmart_integration';
 import { AdminDashboard } from './components/AdminDashboard';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
+import { PrivacyPolicy, TermsOfService } from './components/LegalModals';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
   ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield
@@ -71,6 +78,7 @@ const App: React.FC = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -1035,8 +1043,13 @@ const App: React.FC = () => {
       }
 
       {step !== 'call' && (
-        <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-1 pointer-events-none">
-          <p>&copy; 2026 Paulinho Fernando. Todos os direitos reservados.</p>
+        <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-2 pointer-events-auto">
+          <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
+            <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
+            <div className="w-[1px] h-2 bg-slate-800"></div>
+            <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
+          </div>
+          <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
           {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
         </div>
       )}
@@ -1103,6 +1116,9 @@ const App: React.FC = () => {
       {showTutorial && (
         <OnboardingTutorial onComplete={completeTutorial} />
       )}
+
+      {activeLegalModal === 'privacy' && <PrivacyPolicy onClose={() => setActiveLegalModal(null)} />}
+      {activeLegalModal === 'terms' && <TermsOfService onClose={() => setActiveLegalModal(null)} />}
     </main>
   );
 };

@@ -1,3 +1,8 @@
+/**
+ * LINGUAFLOW AI - Onboarding Tutorial Component
+ * Copyright (c) 2026 Paulinho Fernando. All rights reserved.
+ */
+
 import React, { useState, useEffect } from 'react';
 import {
     Sparkles,
