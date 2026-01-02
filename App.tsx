@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { GoogleGenAI, Modality, LiveServerMessage, Type } from "@google/genai";
+import { type LiveServerMessage } from "@google/genai";
 import { Language, Level, Teacher, Topic, SessionReportData } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
 import { useAuth } from './contexts/AuthContext';
@@ -209,14 +209,8 @@ const App: React.FC = () => {
       return;
     }
 
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-    if (!apiKey) {
-      setConnectionError('API Key não encontrada.');
-      return;
-    }
-
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    audioContextRef.current = new AudioContextClass(); // Use native sample rate (often 44.1k or 48k)
+    audioContextRef.current = new AudioContextClass();
     outputAudioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
 
     try {
@@ -245,63 +239,32 @@ const App: React.FC = () => {
       return;
     }
 
-    const ai = new GoogleGenAI({ apiKey, apiVersion: 'v1beta' });
     const teacher = TEACHERS.find(t => t.id === selectedTeacherId)!;
     const topic = TOPICS.find(t => t.id === selectedTopicId)!;
 
-    console.log('Gemini Live API: Iniciando conexão...');
+    console.log('Proxy Connection: Iniciando conexão...');
 
     try {
-      const sessionPromise = ai.live.connect({
-        model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
-        config: {
-          responseModalities: [Modality.AUDIO],
-          tools: [
-            { functionDeclarations: [{ name: 'next_phrase', description: 'Next phrase' }] },
-            {
-              functionDeclarations: [{
-                name: 'save_session_report',
-                description: 'Saves the student performance report at the end of the session.',
-                parameters: {
-                  type: Type.OBJECT,
-                  properties: {
-                    score: { type: Type.NUMBER, description: 'Overall score from 0 to 100' },
-                    mistakes: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          mistake: { type: Type.STRING },
-                          correction: { type: Type.STRING }
-                        }
-                      }
-                    },
-                    vocabulary: {
-                      type: Type.ARRAY,
-                      items: {
-                        type: Type.OBJECT,
-                        properties: {
-                          word: { type: Type.STRING },
-                          translation: { type: Type.STRING }
-                        }
-                      }
-                    },
-                    tip: { type: Type.STRING, description: 'A helpful tip from the teacher' }
-                  },
-                  required: ['score', 'mistakes', 'vocabulary', 'tip']
-                }
-              }]
-            }
-          ],
-          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } },
-          // @ts-ignore - The SDK types might not be fully updated yet
-          voiceActivityDetection: {
-            silenceDurationMs: 1500, // Reduced from 2000 to be more responsive/detect ends faster
-            minimizeNoise: true
-          },
-          systemInstruction: {
-            parts: [{
-              text: `
+      // Connect to Proxy (Production or Local)
+      // const ws = new WebSocket('ws://localhost:8080'); // Localhost Fallback
+      const ws = new WebSocket('wss://linguaflow-proxy-885367892979.us-central1.run.app');
+
+      ws.onopen = () => {
+        console.log('Proxy conectado');
+        isConnectedRef.current = true;
+        setConnectionStatus('connected');
+
+        // 1. Send Setup Message
+        const setupMessage = {
+          setup: {
+            model: 'models/gemini-2.0-flash-exp',
+            generation_config: {
+              response_modalities: ['AUDIO'],
+              speech_config: { voice_config: { prebuilt_voice_config: { voice_name: teacher.voice } } },
+            },
+            system_instruction: {
+              parts: [{
+                text: `
               VOCÊ É UM PROFESSOR REAL DE IDIOMAS. Sua missão é ensinar, encorajar e guiar o aluno para a fluência.
               
               PERSONA: ${teacher.name} (${teacher.language}).
@@ -350,183 +313,230 @@ const App: React.FC = () => {
               ` : ''}
 
               - ENCERRAMENTO: Quando o aluno quiser parar, você DEVE gerar o relatório técnico final via 'save_session_report'.
+              `
+              }]
+            },
+            tools: [
+              { function_declarations: [{ name: 'next_phrase', description: 'Next phrase' }] },
+              {
+                function_declarations: [{
+                  name: 'save_session_report',
+                  description: 'Saves the student performance report at the end of the session.',
+                  parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                      score: { type: 'NUMBER', description: 'Overall score from 0 to 100' },
+                      mistakes: {
+                        type: 'ARRAY',
+                        items: {
+                          type: 'OBJECT',
+                          properties: {
+                            mistake: { type: 'STRING' },
+                            correction: { type: 'STRING' }
+                          }
+                        }
+                      },
+                      vocabulary: {
+                        type: 'ARRAY',
+                        items: {
+                          type: 'OBJECT',
+                          properties: {
+                            word: { type: 'STRING' },
+                            translation: { type: 'STRING' }
+                          }
+                        }
+                      },
+                      tip: { type: 'STRING', description: 'A helpful tip from the teacher' }
+                    },
+                    required: ['score', 'mistakes', 'vocabulary', 'tip']
+                  }
+                }]
+              }
+            ]
+          }
+        };
+        ws.send(JSON.stringify(setupMessage));
 
-            `
-            }]
-          },
-        },
-        callbacks: {
-          onopen: async () => {
-            console.log('Gemini Live API: Conexão aberta');
-            isConnectedRef.current = true;
-            setConnectionStatus('connected');
+        // 2. Send Initial Text to Trigger Turn
+        const triggerMessage = {
+          client_content: {
+            turns: [{
+              role: 'user',
+              parts: [{
+                text: isKidsMode
+                  ? `[[SISTEMA]] A criança entrou na sala mágica! Comece a aventura agora com MUITA ENERGIA. Apresente-se como seu amigo ${teacher.name} e inicie a brincadeira no tema ${topic.name}. TOME A INICIATIVA E LIDERE A CONVERSA!`
+                  : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
+              }]
+            }],
+            turn_complete: true
+          }
+        };
+        ws.send(JSON.stringify(triggerMessage));
 
-            // Trigger Teacher Initiative via Text
-            sessionPromise.then(session => {
-              // Sends a text turn to force generation
-              // @ts-ignore
-              session.sendRealtimeInput({
-                turns: [{
-                  role: 'user',
-                  parts: [{
-                    text: isKidsMode
-                      ? `[[SISTEMA]] A criança entrou na sala mágica! Comece a aventura agora com MUITA ENERGIA. Apresente-se como seu amigo ${teacher.name} e inicie a brincadeira no tema ${topic.name}. TOME A INICIATIVA E LIDERE A CONVERSA!`
-                      : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
-                  }]
-                }],
-                turnComplete: true
-              } as any);
-            });
+        // 3. Start Audio Stream
+        setTimeout(() => {
+          if (!isConnectedRef.current || !mediaStreamRef.current || !audioContextRef.current) return;
+          const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+          const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
 
-            setTimeout(() => {
-              if (!isConnectedRef.current || !mediaStreamRef.current || !audioContextRef.current) return;
-              const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-              const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+          const inputSampleRate = audioContextRef.current.sampleRate;
+          const targetSampleRate = 16000;
 
-              const inputSampleRate = audioContextRef.current.sampleRate;
-              const targetSampleRate = 16000;
+          processor.onaudioprocess = (e) => {
+            if (!isConnectedRef.current || ws.readyState !== WebSocket.OPEN) return;
+            const inputData = e.inputBuffer.getChannelData(0);
 
-              processor.onaudioprocess = (e) => {
-                if (!isConnectedRef.current) return;
-                const inputData = e.inputBuffer.getChannelData(0);
+            // Audio Level Vis
+            let sum = 0;
+            for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
+            setAudioLevel(Math.min(100, Math.sqrt(sum / inputData.length) * 1500));
 
-                // Audio Level Vis
-                let sum = 0;
-                for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
-                setAudioLevel(Math.min(100, Math.sqrt(sum / inputData.length) * 1500));
+            // Downsampling Logic
+            let pcmData;
+            if (inputSampleRate !== targetSampleRate) {
+              const ratio = inputSampleRate / targetSampleRate;
+              const newLength = Math.floor(inputData.length / ratio);
+              const result = new Int16Array(newLength);
 
-                // Downsampling Logic (Averaging)
-                if (inputSampleRate !== targetSampleRate) {
-                  const ratio = inputSampleRate / targetSampleRate;
-                  const newLength = Math.floor(inputData.length / ratio);
-                  const result = new Int16Array(newLength);
+              for (let i = 0; i < newLength; i++) {
+                const startOffset = Math.floor(i * ratio);
+                const endOffset = Math.floor((i + 1) * ratio);
+                let sampleSum = 0;
+                let sampleCount = 0;
+                for (let j = startOffset; j < endOffset && j < inputData.length; j++) {
+                  sampleSum += inputData[j];
+                  sampleCount++;
+                }
+                const avgSample = sampleCount > 0 ? sampleSum / sampleCount : 0;
+                const clamped = Math.max(-1, Math.min(1, avgSample));
+                result[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+              }
+              pcmData = encode(new Uint8Array(result.buffer));
+            } else {
+              const int16 = new Int16Array(inputData.length);
+              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
+              pcmData = encode(new Uint8Array(int16.buffer));
+            }
 
-                  for (let i = 0; i < newLength; i++) {
-                    const startOffset = Math.floor(i * ratio);
-                    const endOffset = Math.floor((i + 1) * ratio);
-                    let sampleSum = 0;
-                    let sampleCount = 0;
+            // Send Realtime Input
+            ws.send(JSON.stringify({
+              realtime_input: {
+                media_chunks: [{
+                  mime_type: 'audio/pcm;rate=16000',
+                  data: pcmData
+                }]
+              }
+            }));
+          };
 
-                    for (let j = startOffset; j < endOffset && j < inputData.length; j++) {
-                      sampleSum += inputData[j];
-                      sampleCount++;
-                    }
+          const muteGain = audioContextRef.current.createGain();
+          muteGain.gain.value = 0;
+          source.connect(processor);
+          processor.connect(muteGain);
+          muteGain.connect(audioContextRef.current.destination);
+        }, 500);
 
-                    const avgSample = sampleCount > 0 ? sampleSum / sampleCount : 0;
+      };
 
-                    const clamped = Math.max(-1, Math.min(1, avgSample));
-                    result[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
+      ws.onmessage = async (event) => {
+        try {
+          let msg;
+          if (event.data instanceof Blob) {
+            msg = JSON.parse(await event.data.text());
+          } else {
+            msg = JSON.parse(event.data as string);
+          }
+
+          // Handle Server Content (Audio)
+          const parts = msg.serverContent?.modelTurn?.parts;
+          if (parts) {
+            for (const part of parts) {
+              if (part.text && !part.text.startsWith('*')) setCurrentCaption(p => p + part.text);
+
+              if (part.inlineData?.data) {
+                setIsTeacherSpeaking(true);
+                const ctx = outputAudioContextRef.current!;
+                const buffer = await decodeAudioData(decode(part.inlineData.data), ctx, 24000, 1);
+
+                const source = ctx.createBufferSource();
+                source.buffer = buffer;
+                source.connect(ctx.destination);
+
+                const currentTime = ctx.currentTime;
+                const startTime = Math.max(currentTime, nextStartTimeRef.current);
+
+                source.start(startTime);
+                nextStartTimeRef.current = startTime + buffer.duration;
+
+                source.onended = () => {
+                  sourcesRef.current.delete(source);
+                  if (ctx.currentTime >= nextStartTimeRef.current - 0.1) {
+                    setIsTeacherSpeaking(false);
+                  }
+                };
+                sourcesRef.current.add(source);
+              }
+            }
+          }
+
+          // Handle Tool Calls
+          const toolCall = msg.toolCall;
+          if (toolCall) {
+            const functionCalls = toolCall.functionCalls;
+            if (functionCalls) {
+              for (const call of functionCalls) {
+                if (call.name === 'save_session_report') {
+                  const report = call.args as unknown as SessionReportData;
+                  setSessionReport(report);
+
+                  if (selectedTopicId && user) {
+                    await supabase.from('user_progress').upsert({
+                      user_id: user.id,
+                      topic_id: selectedTopicId,
+                      score: report.score,
+                      mistakes: report.mistakes,
+                      vocabulary: report.vocabulary,
+                      tip: report.tip,
+                      status: report.score >= 80 ? 'completed' : 'unlocked'
+                    }, { onConflict: 'user_id, topic_id' });
+                    setTopicProgress(prev => ({ ...prev, [selectedTopicId]: report.score }));
                   }
 
-                  sessionPromise.then(session => {
-                    session.sendRealtimeInput({ media: { data: encode(new Uint8Array(result.buffer)), mimeType: 'audio/pcm;rate=16000' } });
-                  });
-                } else {
-                  // Native 16k handling
-                  const int16 = new Int16Array(inputData.length);
-                  for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
-                  sessionPromise.then(session => {
-                    session.sendRealtimeInput({ media: { data: encode(new Uint8Array(int16.buffer)), mimeType: 'audio/pcm;rate=16000' } });
-                  });
-                }
-              };
-
-              const muteGain = audioContextRef.current.createGain();
-              muteGain.gain.value = 0;
-              source.connect(processor);
-              processor.connect(muteGain); // Prevent feedback loop
-              muteGain.connect(audioContextRef.current.destination);
-            }, 500);
-          },
-          onmessage: async (msg: LiveServerMessage) => {
-            const parts = msg.serverContent?.modelTurn?.parts;
-            if (parts) {
-              for (const part of parts) {
-                if (part.text && !part.text.startsWith('*')) setCurrentCaption(p => p + part.text);
-
-                // Handle Function Calls
-                const call = part.functionCall;
-                if (call) {
-                  if (call.name === 'save_session_report') {
-                    const report = call.args as unknown as SessionReportData;
-                    setSessionReport(report);
-
-                    // Automatically save real score to Supabase
-                    if (selectedTopicId && user) {
-                      await supabase.from('user_progress').upsert({
-                        user_id: user.id,
-                        topic_id: selectedTopicId,
-                        score: report.score,
-                        mistakes: report.mistakes,
-                        vocabulary: report.vocabulary,
-                        tip: report.tip,
-                        status: report.score >= 80 ? 'completed' : 'unlocked'
-                      }, { onConflict: 'user_id, topic_id' });
-
-                      setTopicProgress(prev => ({ ...prev, [selectedTopicId]: report.score }));
+                  // Send Tool Response
+                  ws.send(JSON.stringify({
+                    tool_response: {
+                      function_responses: [{
+                        name: 'save_session_report',
+                        id: call.id,
+                        response: { result: 'success' }
+                      }]
                     }
-
-                    // Respond to the tool call so the model knows it was successful
-                    sessionPromise.then(session => {
-                      session.sendRealtimeInput({
-                        turns: [{
-                          role: 'user',
-                          parts: [{
-                            functionResponse: {
-                              name: 'save_session_report',
-                              id: (call as any).id || '',
-                              response: { result: 'success' }
-                            }
-                          }]
-                        }],
-                        turnComplete: true
-                      } as any);
-                    });
-                  }
-                }
-
-                if (part.inlineData?.data) {
-                  setIsTeacherSpeaking(true);
-                  const ctx = outputAudioContextRef.current!;
-                  const buffer = await decodeAudioData(decode(part.inlineData.data), ctx, 24000, 1);
-
-                  const source = ctx.createBufferSource();
-                  source.buffer = buffer;
-                  source.connect(ctx.destination);
-
-                  // Audio Queue Logic
-                  // Ensure we don't schedule in the past
-                  const currentTime = ctx.currentTime;
-                  // Add a small buffer (50ms) if starting fresh to avoid glitch
-                  const startTime = Math.max(currentTime, nextStartTimeRef.current);
-
-                  source.start(startTime);
-                  nextStartTimeRef.current = startTime + buffer.duration;
-
-                  source.onended = () => {
-                    sourcesRef.current.delete(source);
-                    // Only set not speaking if queue is empty (approx check)
-                    if (ctx.currentTime >= nextStartTimeRef.current - 0.1) {
-                      setIsTeacherSpeaking(false);
-                    }
-                  };
-                  sourcesRef.current.add(source);
+                  }));
                 }
               }
             }
-          },
-          onclose: () => {
-            isConnectedRef.current = false;
-            setConnectionStatus('idle');
-            nextStartTimeRef.current = 0; // Reset queue on close
           }
+        } catch (e) {
+          console.error("Error parsing websocket message", e);
         }
-      });
-      sessionRef.current = sessionPromise;
+      };
+
+      ws.onclose = () => {
+        console.log("Proxy disconnected");
+        isConnectedRef.current = false;
+        setConnectionStatus('idle');
+        nextStartTimeRef.current = 0;
+      };
+
+      sessionRef.current = {
+        disconnect: () => ws.close(),
+        close: () => ws.close()
+      };
       setStep('call');
+
     } catch (err: any) {
-      console.error('Erro ao conectar Gemini:', err);
-      setConnectionError('Falha ao conectar com a IA: ' + (err.message || 'Erro desconhecido'));
+      console.error('Erro ao conectar Proxy:', err);
+      setConnectionError('Falha na conexão: ' + (err.message || 'Erro desconhecido'));
       setConnectionStatus('idle');
     }
   };
