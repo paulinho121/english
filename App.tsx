@@ -257,7 +257,7 @@ const App: React.FC = () => {
         // 1. Send Setup Message
         const setupMessage = {
           setup: {
-            model: 'models/gemini-2.0-flash-exp',
+            model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
             generation_config: {
               response_modalities: ['AUDIO'],
               speech_config: { voice_config: { prebuilt_voice_config: { voice_name: teacher.voice } } },
@@ -266,6 +266,8 @@ const App: React.FC = () => {
               parts: [{
                 text: `
               VOCÊ É UM PROFESSOR REAL DE IDIOMAS. Sua missão é ensinar, encorajar e guiar o aluno para a fluência.
+              
+              IMPORTANTE: SUA VOZ DEVE SOAR COM SOTAQUE NATIVO DO BRASIL QUANDO FALAR PORTUGUÊS. VOCÊ É BRASILEIRO.
               
               PERSONA: ${teacher.name} (${teacher.language}).
               NÍVEL DO ALUNO: ${selectedLevel}.

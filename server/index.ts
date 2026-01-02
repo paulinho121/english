@@ -27,7 +27,7 @@ wss.on('connection', (clientWs: WebSocket) => {
     console.log('Cliente conectado ao Proxy');
 
     // Conectar ao Gemini
-    const geminiUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
+    const geminiUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
 
     let geminiWs: WebSocket | null = new WebSocket(geminiUrl);
 
