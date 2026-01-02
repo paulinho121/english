@@ -58,7 +58,9 @@ const App: React.FC = () => {
   const [streak, setStreak] = useState(0);
   const [topicProgress, setTopicProgress] = useState<Record<string, number>>({});
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isKidsMode, setIsKidsMode] = useState(false);
   const [sessionReport, setSessionReport] = useState<SessionReportData | null>(null);
+
 
   // Monetization States
   const [isPremium, setIsPremium] = useState(false);
@@ -321,7 +323,17 @@ const App: React.FC = () => {
               - CONTEXTO: ${topic.prompt}.
               - SEJA PROATIVO: Inicie a conversa imediatamente. Não espere o aluno.
               - FOCO AUDITIVO: Ignore ruídos secundários (TV, trânsito). Foque apenas na voz ativa do aluno.
+
+              ${isKidsMode ? `
+              KIDS MODE ACTIVE:
+              - Sua linguagem deve ser extremamente simples, lúdica e encorajadora.
+              - Use metáforas de desenhos animados e jogos.
+              - Se o aluno errar, diga "Ops! Quase lá! Vamos tentar de novo?" em vez de apenas corrigir.
+              - Seja um amigo imaginário divertido, não apenas um professor.
+              ` : ''}
+
               - ENCERRAMENTO: Quando o aluno quiser parar, você DEVE gerar o relatório técnico final via 'save_session_report'.
+
             `
             }]
           },
@@ -567,7 +579,8 @@ const App: React.FC = () => {
   if (!user) return <LoginScreen />;
 
   return (
-    <main className="h-[100dvh] w-full flex flex-col font-sans overflow-hidden relative bg-slate-950 text-white">
+    <main className={`h-[100dvh] w-full flex flex-col font-sans overflow-hidden relative bg-slate-950 text-white ${isKidsMode ? 'kids-mode' : ''}`}>
+
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="blob blob-1"></div>
@@ -596,16 +609,28 @@ const App: React.FC = () => {
       {step === 'welcome' && (
         <div className="flex-1 flex flex-col items-center justify-center relative p-6 text-center bg-mesh overflow-hidden">
           {/* Background Blobs - Enhanced */}
-          <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="blob blob-1 mix-blend-screen" style={{ width: '60vw', height: '60vw', left: '-10%', top: '-20%' }}></div>
             <div className="blob blob-2 mix-blend-overlay" style={{ width: '50vw', height: '50vw', right: '0%', bottom: '-10%' }}></div>
           </div>
 
-          <div className="absolute top-6 right-6 flex items-center gap-2 bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-30 animate-in fade-in slide-in-from-right-4 duration-1000 group hover:border-orange-500/30 transition-colors">
-            <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse group-hover:scale-110 transition-transform" />
-            <span className="font-bold text-orange-100">{streak} Dias</span>
-          </div>
+          <div className="absolute top-6 right-6 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
+            {/* Kids Mode Toggle */}
+            <button
+              onClick={() => setIsKidsMode(!isKidsMode)}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md transition-all duration-500 group pointer-events-auto ${isKidsMode ? 'bg-white text-[#ff6b6b] border-[#ff6b6b] shadow-[0_0_20px_rgba(255,107,107,0.3)]' : 'bg-slate-900/50 text-slate-400 border-white/10 hover:border-orange-500/30'}`}
+            >
+              <div className={`p-1 rounded-full transition-transform duration-500 ${isKidsMode ? 'bg-[#ff6b6b] text-white rotate-[360deg]' : 'bg-slate-800 text-slate-500'}`}>
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <span className="font-black text-xs uppercase tracking-widest">{isKidsMode ? 'Modo Kids Ativo' : 'Ativar Modo Kids'}</span>
+            </button>
 
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
+              <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
+              <span className="font-bold">{streak} Dias</span>
+            </div>
+          </div>
 
           <div className="space-y-12 z-10 max-w-2xl relative">
             <div className="animate-float-slow transition-all duration-1000">
@@ -615,14 +640,26 @@ const App: React.FC = () => {
               />
             </div>
 
+
             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both">
-              <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tight leading-[1.1]">
-                Lingua<span className="text-orange-500 text-glow">Flow</span>
+              <h1 className="text-5xl md:text-8xl font-display font-black tracking-tight leading-[1.1]">
+                {isKidsMode ? (
+                  <span className="text-white drop-shadow-[0_5px_15px_rgba(255,107,107,0.4)]">
+                    Mundo<span className="text-[#ff6b6b] text-glow animate-bounce-slow inline-block">Kids!</span>
+                  </span>
+                ) : (
+                  <span className="text-white">
+                    Lingua<span className="text-orange-500 text-glow">Flow</span>
+                  </span>
+                )}
               </h1>
-              <p className="text-slate-400 text-sm md:text-xl font-medium max-w-sm md:max-w-md mx-auto leading-relaxed">
-                Sua jornada para a fluência começa aqui. Interaja, aprenda e domine.
+              <p className={`text-sm md:text-xl font-medium max-w-sm md:max-w-md mx-auto leading-relaxed ${isKidsMode ? 'text-[#4b5563]' : 'text-slate-400'}`}>
+                {isKidsMode
+                  ? 'Aprenda inglês com aventuras mágicas, jogos e muitos amigos novos!'
+                  : 'Sua jornada para a fluência começa aqui. Interaja, aprenda e domine.'}
               </p>
             </div>
+
 
             <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both">
               <button
@@ -635,10 +672,9 @@ const App: React.FC = () => {
             </div>
 
           </div>
-
-
         </div>
       )}
+
 
 
       {step === 'setup' && (
@@ -648,9 +684,13 @@ const App: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
                 <h2 className="text-2xl md:text-3xl font-display font-black flex items-center gap-3">
-                  <Sparkles className="text-orange-500 shrink-0" /> Mapa de Progresso
+                  <Sparkles className="text-orange-500 shrink-0" /> {isKidsMode ? 'Mapa de Aventuras' : 'Mapa de Progresso'}
                 </h2>
-                <p className="text-slate-400 text-sm mt-1">Domine novas línguas e expanda seus horizontes, uma missão de cada vez.</p>
+                <p className="text-slate-400 text-sm mt-1">
+                  {isKidsMode
+                    ? 'Explore mundos mágicos e aprenda brincando!'
+                    : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
+                </p>
               </div>
               <div className="flex items-center gap-3 self-end sm:self-auto">
                 <div className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 rounded-xl border border-orange-500/20">
@@ -690,7 +730,7 @@ const App: React.FC = () => {
                 {/* Journey Map */}
                 <div className="flex-1">
                   <JourneyMap
-                    topics={TOPICS}
+                    topics={TOPICS.filter(t => isKidsMode ? t.isKidMode : !t.isKidMode)}
                     progress={topicProgress}
                     selectedTopicId={selectedTopicId}
                     onSelectTopic={(id) => setSelectedTopicId(id)}
@@ -707,9 +747,9 @@ const App: React.FC = () => {
                       </label>
                       <div className="flex bg-slate-900/40 p-1.5 rounded-2xl border border-white/5">
                         {[
-                          { id: Level.BEGINNER, label: 'Básico' },
-                          { id: Level.INTERMEDIATE, label: 'Médio' },
-                          { id: Level.ADVANCED, label: 'Pro' }
+                          { id: Level.BEGINNER, label: isKidsMode ? 'Nível 1' : 'Básico' },
+                          { id: Level.INTERMEDIATE, label: isKidsMode ? 'Nível 2' : 'Médio' },
+                          { id: Level.ADVANCED, label: isKidsMode ? 'Nível 3' : 'Pro' }
                         ].map(lvl => (
                           <button
                             key={lvl.id}
@@ -753,64 +793,78 @@ const App: React.FC = () => {
                         <Sparkles className="w-5 h-5" />
                       </div>
                       <div className="text-left">
-                        <span className={`font-black block text-sm tracking-tight ${selectedTopicId === 'free-conversation' ? 'text-white' : 'text-slate-300'}`}>Conversa Livre</span>
-                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.1em] opacity-80">Pratique sem roteiro</span>
+                        <span className={`font-black block text-sm tracking-tight ${selectedTopicId === 'free-conversation' ? 'text-white' : 'text-slate-300'}`}>
+                          {isKidsMode ? 'Conversa Amiga' : 'Conversa Livre'}
+                        </span>
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.1em] opacity-80">
+                          {isKidsMode ? 'Fale o que quiser!' : 'Pratique sem roteiro'}
+                        </span>
                       </div>
                     </button>
 
                     <div className="mb-5">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 opacity-70">
-                        <BrainCircuit className="w-3.5 h-3.5 text-orange-500" /> Escolha seu Mentor
+                        <BrainCircuit className="w-3.5 h-3.5 text-orange-500" /> {isKidsMode ? 'Escolha seu Amigo' : 'Escolha seu Mentor'}
                       </label>
                     </div>
 
                     {/* Teachers List */}
                     <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1 mb-4 min-h-[160px]">
-                      {TEACHERS.filter(t => t.language === selectedLanguage).map(teacher => {
-                        const isLocked = !isPremium && TEACHERS.filter(t => t.language === selectedLanguage).indexOf(teacher) >= 2;
-                        const isSelected = selectedTeacherId === teacher.id;
+                      {TEACHERS
+                        .filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode))
+                        .map(teacher => {
+                          const currentPool = TEACHERS.filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode));
+                          const isLocked = !isPremium && currentPool.indexOf(teacher) >= 2;
+                          const isSelected = selectedTeacherId === teacher.id;
 
-                        return (
-                          <button
-                            key={teacher.id}
-                            onClick={() => {
-                              if (isLocked) {
-                                setShowUpgradeModal(true);
-                              } else {
-                                setSelectedTeacherId(teacher.id);
-                              }
-                            }}
-                            className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${isSelected
-                              ? 'bg-orange-500/10 border-orange-500/50 shadow-lg shadow-orange-500/5'
-                              : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
-                              }`}
-                          >
-                            <div className="relative">
-                              <img src={teacher.avatar} className={`w-11 h-11 rounded-xl object-cover border-2 transition-all duration-300 ${isSelected ? 'border-orange-500 shadow-lg shadow-orange-500/10' : 'border-slate-800'} ${isLocked ? 'grayscale opacity-50' : ''}`} />
-                              {isSelected && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-orange-500 rounded-full border-2 border-slate-900 animate-pulse"></div>}
-                            </div>
-                            <div className="text-left flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className={`font-black text-sm tracking-tight truncate ${isSelected ? 'text-white' : 'text-slate-300'}`}>{teacher.name}</span>
-                                {isLocked && <span className="text-[8px] font-black bg-orange-500 text-white px-1 py-0.5 rounded border border-orange-400/50 uppercase tracking-tighter shadow-sm flex-shrink-0">PRO</span>}
+
+                          return (
+                            <button
+                              key={teacher.id}
+                              onClick={() => {
+                                if (isLocked) {
+                                  setShowUpgradeModal(true);
+                                } else {
+                                  setSelectedTeacherId(teacher.id);
+                                }
+                              }}
+                              className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${isSelected
+                                ? 'bg-orange-500/10 border-orange-500/50 shadow-lg shadow-orange-500/5'
+                                : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                                }`}
+                            >
+                              <div className="relative">
+                                <img src={teacher.avatar} className={`w-11 h-11 rounded-xl object-cover border-2 transition-all duration-300 ${isSelected ? 'border-orange-500 shadow-lg shadow-orange-500/10' : 'border-slate-800'} ${isLocked ? 'grayscale opacity-50' : ''}`} />
+                                {isSelected && <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-orange-500 rounded-full border-2 border-slate-900 animate-pulse"></div>}
                               </div>
-                              <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block truncate opacity-70">{teacher.accent}</span>
-                            </div>
-                          </button>
-                        );
-                      })}
+                              <div className="text-left flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className={`font-black text-sm tracking-tight truncate ${isSelected ? 'text-white' : 'text-slate-300'}`}>{teacher.name}</span>
+                                  {isLocked && <span className="text-[8px] font-black bg-orange-500 text-white px-1 py-0.5 rounded border border-orange-400/50 uppercase tracking-tighter shadow-sm flex-shrink-0">PRO</span>}
+                                </div>
+                                <span className="text-[9px] text-slate-500 font-bold uppercase tracking-widest block truncate opacity-70">{teacher.accent}</span>
+                              </div>
+                            </button>
+                          );
+                        })}
                     </div>
 
                     {/* Selected Mission Preview (Footer) */}
                     {selectedTopicId && (
                       <div className="pt-5 border-t border-white/5 animate-in slide-in-from-bottom-4 duration-500">
-                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.25em] block mb-3 text-center">Pronto para iniciar?</label>
+                        <label className="text-[10px] font-black text-slate-600 uppercase tracking-[0.25em] block mb-3 text-center">
+                          {isKidsMode ? 'Tudo pronto para a aventura?' : 'Pronto para iniciar?'}
+                        </label>
                         <div className="flex items-center gap-3 mb-4 bg-white/5 p-3 rounded-[1.25rem] border border-white/5">
                           <div className="p-3 bg-slate-900 rounded-xl text-2xl shadow-inner">{TOPICS.find(t => t.id === selectedTopicId)?.icon}</div>
                           <div className="flex-1 min-w-0">
                             <div className="font-black text-white text-base tracking-tight truncate">{TOPICS.find(t => t.id === selectedTopicId)?.name}</div>
                             <div className="inline-flex items-center px-1.5 py-0.5 bg-orange-500/10 border border-orange-500/20 rounded-md mt-0.5">
-                              <span className="text-[8px] text-orange-400 font-black uppercase tracking-widest">Nível {selectedLevel === Level.BEGINNER ? 'Básico' : selectedLevel === Level.INTERMEDIATE ? 'Médio' : 'Pro'}</span>
+                              <span className="text-[8px] text-orange-400 font-black uppercase tracking-widest">
+                                {isKidsMode
+                                  ? `Fase ${selectedLevel === Level.BEGINNER ? '1' : selectedLevel === Level.INTERMEDIATE ? '2' : '3'}`
+                                  : `Nível ${selectedLevel === Level.BEGINNER ? 'Básico' : selectedLevel === Level.INTERMEDIATE ? 'Médio' : 'Pro'}`}
+                              </span>
                             </div>
                           </div>
                         </div>
@@ -835,8 +889,10 @@ const App: React.FC = () => {
                               </>
                             ) : (
                               <>
-                                <span className="uppercase tracking-widest text-base">Iniciar Missão</span>
-                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                <span className="uppercase tracking-widest text-base">
+                                  {isKidsMode ? 'Começar Aventura!' : 'Iniciar Missão'}
+                                </span>
+                                <ArrowRight className={`w-5 h-5 group-hover:translate-x-1 transition-transform ${isKidsMode ? 'animate-bounce-hover' : ''}`} />
                               </>
                             )}
                           </div>
@@ -946,14 +1002,12 @@ const App: React.FC = () => {
         )
       }
 
-      {
-        step !== 'call' && (
-          <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-1 pointer-events-none">
-            <p>&copy; 2026 Paulinho Fernando. Todos os direitos reservados.</p>
-            {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
-          </div>
-        )
-      }
+      {step !== 'call' && (
+        <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-1 pointer-events-none">
+          <p>&copy; 2026 Paulinho Fernando. Todos os direitos reservados.</p>
+          {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
+        </div>
+      )}
 
 
       {/* Upgrade Modal */}

@@ -63,38 +63,72 @@ export const TEACHERS: Teacher[] = [
     bio: 'Estrategista de ensino brasileiro com vivência internacional acadêmica. Geremy utiliza métodos de imersão gradual no Francês para transformar o conhecimento passivo em fala ativa e fluente.'
   },
   {
-    id: 'kevin-en',
-    name: 'Professor Kevin',
+    id: 'leo-en',
+    name: 'Leo',
     language: Language.ENGLISH,
-    accent: 'Modo Kids (BR) 🇧🇷',
-    avatar: '/kevin.png',
-    voice: 'Puck', // Changed to Puck (Male) for Kevin
+    accent: 'Kids Mode 🎈',
+    avatar: '/kids/leo.png',
+    voice: 'Puck', // Energetic Boy
     gender: 'male',
     isKidMode: true,
-    bio: 'O amigo brasileiro divertido para aprender inglês! Kevin usa uma linguagem simples e brincadeiras para tornar o aprendizado leve e natural para crianças.'
+    bio: 'Seu melhor amigo para aprender inglês brincando! O Leo adora aventuras e vai te ensinar palavras novas de um jeito super divertido.'
   },
   {
-    id: 'kevin-es',
-    name: 'Professor Kevin',
+    id: 'lara-en',
+    name: 'Lara',
+    language: Language.ENGLISH,
+    accent: 'Kids Mode 🎈',
+    avatar: '/kids/lara.png',
+    voice: 'Kore', // Youthful Girl
+    gender: 'female',
+    isKidMode: true,
+    bio: 'A Lara é super criativa e ama contar histórias em inglês. Vamos aprender e nos divertir muito juntos!'
+  },
+  {
+    id: 'leo-es',
+    name: 'Leo',
     language: Language.SPANISH,
-    accent: 'Modo Kids (BR) 🇧🇷',
-    avatar: '/kevin.png',
-    voice: 'Puck', // Puck for Spanish Kevin
+    accent: 'Modo Kids 🎈',
+    avatar: '/kids/leo.png',
+    voice: 'Puck',
     gender: 'male',
     isKidMode: true,
-    bio: 'O amigo brasileiro divertido para aprender espanhol! Kevin usa uma linguagem simples e brincadeiras para tornar o aprendizado leve e natural para crianças.'
+    bio: '¡Hola! Soy Leo. Vamos aprender espanhol com muitas brincadeiras e alegria!'
   },
   {
-    id: 'kevin-fr',
-    name: 'Professor Kevin',
+    id: 'lara-es',
+    name: 'Lara',
+    language: Language.SPANISH,
+    accent: 'Modo Kids 🎈',
+    avatar: '/kids/lara.png',
+    voice: 'Kore',
+    gender: 'female',
+    isKidMode: true,
+    bio: 'Oi! Eu sou a Lara. Vamos descobrir o mundo do espanhol cantando e rindo muito!'
+  },
+  {
+    id: 'leo-fr',
+    name: 'Leo',
     language: Language.FRENCH,
-    accent: 'Modo Kids (BR) 🇧🇷',
-    avatar: '/kevin.png',
-    voice: 'Puck', // Puck for French Kevin
+    accent: 'Mode Kids 🎈',
+    avatar: '/kids/leo.png',
+    voice: 'Puck',
     gender: 'male',
     isKidMode: true,
-    bio: 'O amigo brasileiro divertido para aprender francês! Kevin usa uma linguagem simples e brincadeiras para tornar o aprendizado leve e natural para crianças.'
+    bio: 'Salut! Je suis Leo. Aprender francês é como um jogo fantástico, vamos nessa?'
+  },
+  {
+    id: 'lara-fr',
+    name: 'Lara',
+    language: Language.FRENCH,
+    accent: 'Mode Kids 🎈',
+    avatar: '/kids/lara.png',
+    voice: 'Kore',
+    gender: 'female',
+    isKidMode: true,
+    bio: 'Bonjour! Eu sou a Lara. O francês é uma língua mágica, e eu vou te mostrar como é fácil aprender!'
   }
+
 ];
 
 export const TOPICS: Topic[] = [
@@ -165,6 +199,34 @@ export const TOPICS: Topic[] = [
       9. Se o aluno quiser parar o treinamento, use 'save_session_report' para avaliar o desempenho geral.
       10. FOCO DE VOZ: Ignore ruídos de fundo (TV, carros, conversas paralelas). Foque apenas na voz ativa que está lendo a frase alvo.
     `
+  },
+  {
+    id: 'kids-magic',
+    name: 'Escola de Magia 🧙‍♂️',
+    icon: '✨',
+    isKidMode: true,
+    prompt: 'Atue como um mestre de magia divertido. Ensine palavras mágicas e feitiços em inglês, mantendo a conversa cheia de fantasia e encorajamento.'
+  },
+  {
+    id: 'kids-animals',
+    name: 'Mundo dos Animais 🦁',
+    icon: '🐾',
+    isKidMode: true,
+    prompt: 'Simule uma aventura na floresta ou fazenda. Ensine nomes de animais, sons e cores de um jeito lúdico e animado.'
+  },
+  {
+    id: 'kids-superhero',
+    name: 'Clube dos Super-Heróis 🦸‍♂️',
+    icon: '⚡',
+    isKidMode: true,
+    prompt: 'Atue como um super-herói treinando um novo parceiro. Use termos de ação, cores e heroismo para ensinar inglês de forma empolgante.'
+  },
+  {
+    id: 'kids-space',
+    name: 'Viagem ao Espaço 🚀',
+    icon: '⭐',
+    isKidMode: true,
+    prompt: 'Conduza uma missão espacial! Ensine sobre planetas, estrelas e foguetes, usando um tom de curiosidade e descoberta.'
   }
 ];
 

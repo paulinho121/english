@@ -41,6 +41,7 @@ export interface Topic {
   name: string;
   icon: string;
   prompt: string;
+  isKidMode?: boolean;
 }
 
 export interface SessionReportData {
