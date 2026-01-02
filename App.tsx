@@ -7,9 +7,11 @@ import { LoginScreen } from './components/auth/LoginScreen';
 import { supabase } from './lib/supabase';
 import { JourneyMap } from './components/JourneyMap';
 import { hotmartService } from './lib/hotmart_integration';
+import { AdminDashboard } from './components/AdminDashboard';
+import { OnboardingTutorial } from './components/OnboardingTutorial';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield
 } from 'lucide-react';
 
 function encode(bytes: Uint8Array) {
@@ -67,6 +69,8 @@ const App: React.FC = () => {
   const [dailyMinutesUsed, setDailyMinutesUsed] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -86,7 +90,7 @@ const App: React.FC = () => {
 
       const isAdmin = user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
 
-      const { data: profile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial').eq('id', user.id).single();
 
       if (isAdmin) {
         setIsPremium(true);
@@ -99,13 +103,15 @@ const App: React.FC = () => {
       if (profile) {
         setStreak(profile.streak_count || 0);
         setDailyMinutesUsed(profile.daily_minutes_used || 0);
+        setIsKidsMode(profile.is_kids_mode || false);
         if (profile.last_language) setSelectedLanguage(profile.last_language as Language);
         if (profile.last_level) setSelectedLevel(profile.last_level as Level);
         if (profile.last_teacher_id) setSelectedTeacherId(profile.last_teacher_id);
         if (profile.last_topic_id) setSelectedTopicId(profile.last_topic_id);
+        if (profile.has_completed_tutorial === false) setShowTutorial(true);
       }
 
-      const { data: progressData } = await supabase.from('user_progress').select('topic_id, score').eq('user_id', user.id);
+      const { data: progressData } = await supabase.from('user_progress').select('topic_id, score, mistakes, vocabulary, tip').eq('user_id', user.id);
 
       const newProgress: Record<string, number> = {};
       if (progressData) {
@@ -156,11 +162,12 @@ const App: React.FC = () => {
         last_level: selectedLevel,
         last_teacher_id: selectedTeacherId,
         last_topic_id: selectedTopicId,
+        is_kids_mode: isKidsMode,
         last_seen: new Date().toISOString()
       }).eq('id', user.id);
     };
 
-    if (selectedLanguage || selectedLevel || selectedTeacherId || selectedTopicId) {
+    if (selectedLanguage || selectedLevel || selectedTeacherId || selectedTopicId || isKidsMode !== undefined) {
       const timeout = setTimeout(saveSessionState, 1000); // Debounce to avoid excessive updates
       return () => clearTimeout(timeout);
     }
@@ -436,6 +443,9 @@ const App: React.FC = () => {
                         user_id: user.id,
                         topic_id: selectedTopicId,
                         score: report.score,
+                        mistakes: report.mistakes,
+                        vocabulary: report.vocabulary,
+                        tip: report.tip,
                         status: report.score >= 80 ? 'completed' : 'unlocked'
                       }, { onConflict: 'user_id, topic_id' });
 
@@ -566,6 +576,13 @@ const App: React.FC = () => {
     setStep('setup');
   };
 
+  const completeTutorial = async () => {
+    setShowTutorial(false);
+    if (user) {
+      await supabase.from('profiles').update({ has_completed_tutorial: true }).eq('id', user.id);
+    }
+  };
+
   const toggleMute = () => {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getAudioTracks().forEach(t => t.enabled = !t.enabled);
@@ -693,10 +710,25 @@ const App: React.FC = () => {
                 </p>
               </div>
               <div className="flex items-center gap-3 self-end sm:self-auto">
+                {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
+                  <button
+                    onClick={() => setIsAdminDashboardOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                  >
+                    <Shield className="w-4 h-4" /> Dashboard Admin
+                  </button>
+                )}
                 <div className="flex items-center gap-2 px-4 py-2 bg-orange-500/10 rounded-xl border border-orange-500/20">
                   <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
                   <span className="font-bold text-sm text-orange-200">{streak} Dias</span>
                 </div>
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
+                  title="Como Usar"
+                >
+                  <Globe className="w-4 h-4" />
+                </button>
                 <button
                   onClick={signOut}
                   className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
@@ -1064,7 +1096,14 @@ const App: React.FC = () => {
           </div>
         )
       }
-    </main >
+      {isAdminDashboardOpen && (
+        <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
+      )}
+
+      {showTutorial && (
+        <OnboardingTutorial onComplete={completeTutorial} />
+      )}
+    </main>
   );
 };
 
