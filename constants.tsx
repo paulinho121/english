@@ -10,7 +10,7 @@ export const TEACHERS: Teacher[] = [
     avatar: '/malina-new.png',
     voice: 'Aoede', // Female, energetic
     gender: 'female',
-    bio: 'Brasileira especialista em ensino de Inglês. Malina entende as dificuldades dos brasileiros e ajuda você a superar a barreira da fala com dicas práticas.'
+    bio: 'Mentora brasileira especialista em pedagogia do Inglês. Malina entende profundamente as barreiras linguísticas e aplica técnicas de ensino personalizadas para cada nível, focando na construção da confiança do aluno.'
   },
   {
     id: 'geremy-en',
@@ -20,7 +20,7 @@ export const TEACHERS: Teacher[] = [
     avatar: '/geremy.png',
     voice: 'Puck', // Male, calm
     gender: 'male',
-    bio: 'Professor brasileiro com anos de experiência no exterior. Geremy foca na comunicação clara e eficaz, usando sua vivência para ensinar o inglês real.'
+    bio: 'Estrategista de ensino brasileiro com vivência internacional acadêmica. Geremy utiliza métodos de imersão gradual para transformar o conhecimento passivo em fala ativa e fluente.'
   },
   {
     id: 'malina-es',
@@ -30,7 +30,7 @@ export const TEACHERS: Teacher[] = [
     avatar: '/malina-new.png',
     voice: 'Aoede', // Using Aoede (Valid)
     gender: 'female',
-    bio: 'Brasileira e apaixonada pela cultura hispânica. Malina ensina espanhol focando nas semelhanças e diferenças com o português para acelerar o aprendizado.'
+    bio: 'Especialista em ensino de Espanhol para brasileiros. Malina utiliza técnicas de contraste linguístico para acelerar a gramática e a fluidez, atuando como uma guia pedagógica na sua jornada.'
   },
   {
     id: 'priscila-fr',
@@ -40,7 +40,7 @@ export const TEACHERS: Teacher[] = [
     avatar: '/priscila.png',
     voice: 'Kore', // Using Kore (Valid)
     gender: 'female',
-    bio: 'Brasileira especialista em Francês. Priscila desmistifica a pronúncia francesa e ajuda alunos brasileiros a falar com confiança e naturalidade.'
+    bio: 'Mentora de Francês focada em fonética e estruturação de pensamento no idioma. Priscila guia brasileiros pelos Labirintos do francês com uma metodologia clara e encorajadora.'
   },
   {
     id: 'kevin-en',
@@ -82,49 +82,49 @@ export const TOPICS: Topic[] = [
     id: 'free-conversation',
     name: 'Conversa Livre',
     icon: '✨',
-    prompt: 'Mantenha uma conversa aberta e natural sobre qualquer assunto que o aluno quiser. Seja amigável, curioso e corrija erros sutilmente. Pergunte sobre interesses, hobbies ou o dia do aluno.'
+    prompt: 'Mantenha uma conversa pedagógica sobre qualquer assunto. Como mentor, induza o aluno a usar o vocabulário adequado para o seu nível e ofereça feedbacks construtivos contínuos conforme o Protocolo Pedagógico.'
   },
   {
     id: 'job-interview',
     name: 'Entrevista de Emprego',
     icon: '💼',
-    prompt: 'Conduza uma simulação de entrevista de emprego. O foco é fazer perguntas sobre experiência e habilidades. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Conduza uma mentoria de carreira em formato de entrevista. Avalie as respostas do aluno segundo o Protocolo Pedagógico, corrigindo não apenas o idioma, mas sugerindo formas mais profissionais de expressão.'
   },
   {
     id: 'travel',
     name: 'Viagem e Turismo',
     icon: '✈️',
-    prompt: 'Imagine que estamos em um aeroporto ou hotel. Ajude o aluno a fazer o check-in e pedir informações turísticas. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Atue como um guia instrucional em cenários de viagem. Coloque o aluno em situações práticas e use o Protocolo Pedagógico para garantir que ele aprenda os termos essenciais de sobrevivência e polidez.'
   },
   {
     id: 'restaurant',
     name: 'Restaurante',
     icon: '🍽️',
-    prompt: 'Simule um jantar em um restaurante sofisticado. O aluno deve pedir a comida, fazer perguntas sobre o menu e pagar a conta. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Simule uma interação pedagógica em um restaurante. Ensine o aluno a lidar com menus e situações sociais complexas, aplicando rigorosamente o Protocolo Pedagógico de nível.'
   },
   {
     id: 'daily-life',
     name: 'Vida Diária',
     icon: '🏠',
-    prompt: 'Uma conversa casual sobre hobbies, família e rotina diária para praticar a fluidez cotidiana. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Conversa guiada sobre rotina. O objetivo é expandir o vocabulário base do aluno através do Protocolo Pedagógico, transformando situações comuns em oportunidades de ensino.'
   },
   {
     id: 'university',
     name: 'Faculdade / Estudos',
     icon: '🎓',
-    prompt: 'Simule uma interação no campus de uma universidade (biblioteca, café ou sala de aula). Discuta projetos, provas e vida acadêmica. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Simulação acadêmica. Atue como um tutor universitário, incentivando o debate de ideias e o uso de termos formais de acordo com o Protocolo Pedagógico do nível selecionado.'
   },
   {
     id: 'work',
     name: 'Ambiente de Trabalho',
     icon: '🏢',
-    prompt: 'Simule uma reunião de trabalho ou uma conversa no escritório. Foco em vocabulário profissional, prazos e colaboração. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Mentoria corporativa. Aborde situações de escritório e reuniões, focando no "Business Language" e aplicando o Protocolo Pedagógico para elevar o nível profissional do aluno.'
   },
   {
     id: 'school',
     name: 'Escola / Sala de Aula',
     icon: '🎒',
-    prompt: 'Simule um dia de aula na escola. A conversa pode ser sobre matérias, dever de casa ou interação com colegas/professores. Siga o PROTOCOLO DE IDIOMA do nível selecionado.'
+    prompt: 'Simule um ambiente de ensino formal. Atue como o professor da sala, aplicando o Protocolo Pedagógico para consolidar as bases gramaticais e a fluidez do aluno.'
   },
   {
     id: 'pronunciation',
@@ -137,11 +137,13 @@ export const TOPICS: Topic[] = [
       1. O aluno vai ler uma frase que está aparecendo na tela dele.
       2. Eu (o sistema) vou te enviar via texto qual é a "FRASE ALVO" que ele está tentando ler.
       3. Sua tarefa é ouvir o áudio do aluno e comparar com a FRASE ALVO.
-      4. Dê uma nota de 0 a 100 baseada na precisão fonética.
-      5. Se a nota for menor que 100, explique EXATAMENTE qual som saiu errado (ex: "Você disse 'dii' mas o correto é 'th' com a língua nos dentes").
+      4. Dê uma nota de 0 a 100 baseada na precisão fonética de cada palavra.
+      5. Se a nota não for 100, identifique as palavras específicas que soaram errado e explique EXATAMENTE qual som saiu errado (ex: "Em 'think', você disse 'fink' mas o correto é o som do 'th' soprado").
       6. Se a nota for 100, parabenize e peça para ele ir para a próxima.
-      7. SEJA BREVE. Feedback curto e técnico.
+      7. SEJA BREVE. Feedback curto, direto e técnico por palavra.
       8. FERRAMENTA DE NAVEGAÇÃO: Se o aluno disser "Vamos para a próxima", "Próxima frase", ou "Next", CHAME a ferramenta 'next_phrase'. NÃO mude o assunto, apenas chame a ferramenta.
+      9. Se o aluno quiser parar o treinamento, use 'save_session_report' para avaliar o desempenho geral.
+      10. FOCO DE VOZ: Ignore ruídos de fundo (TV, carros, conversas paralelas). Foque apenas na voz ativa que está lendo a frase alvo.
     `
   }
 ];
