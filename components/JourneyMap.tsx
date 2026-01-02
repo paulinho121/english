@@ -7,9 +7,10 @@ interface JourneyMapProps {
     progress: Record<string, number>; // 0 to 100
     selectedTopicId: string | null;
     onSelectTopic: (topicId: string) => void;
+    isKidsMode?: boolean;
 }
 
-export const JourneyMap: React.FC<JourneyMapProps> = ({ topics, progress, selectedTopicId, onSelectTopic }) => {
+export const JourneyMap: React.FC<JourneyMapProps> = ({ topics, progress, selectedTopicId, onSelectTopic, isKidsMode }) => {
     return (
         <div className="flex flex-col items-center w-full max-w-2xl mx-auto space-y-8 py-10 px-4 overflow-x-hidden relative">
 
@@ -56,7 +57,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ topics, progress, select
                             {/* Content */}
                             <div className="flex-1 text-left min-w-0 py-1">
                                 <div className="flex items-center justify-between mb-2">
-                                    <h3 className={`font-display font-bold text-lg md:text-xl truncate text-white group-hover:text-orange-400 transition-colors`}>
+                                    <h3 className={`font-display font-bold text-lg md:text-xl truncate group-hover:text-orange-400 transition-colors ${isKidsMode ? 'text-slate-900' : 'text-white'}`}>
                                         {topic.name}
                                     </h3>
                                     {isCompleted && <Award className="w-6 h-6 text-emerald-400 fill-emerald-400/20 animate-pulse" />}

@@ -18,7 +18,7 @@ import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { PrivacyPolicy, TermsOfService } from './components/LegalModals';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket
 } from 'lucide-react';
 
 function encode(bytes: Uint8Array) {
@@ -336,15 +336,16 @@ const App: React.FC = () => {
               DIRETRIZES GERAIS DE ENSINO:
               - TÓPICO DA AULA: ${topic.name}.
               - CONTEXTO: ${topic.prompt}.
-              - SEJA PROATIVO: Inicie a conversa imediatamente. Não espere o aluno.
+              - TOMAR INICIATIVA (OBRIGATÓRIO): Você é o guia e mentor. Nunca deixe o silêncio reinar. Se o aluno demorar a responder ou parecer perdido, tome a frente, faça uma pergunta direta, sugira um exemplo ou conte uma curiosidade sobre o tema.
               - FOCO AUDITIVO: Ignore ruídos secundários (TV, trânsito). Foque apenas na voz ativa do aluno.
 
               ${isKidsMode ? `
-              KIDS MODE ACTIVE:
-              - Sua linguagem deve ser extremamente simples, lúdica e encorajadora.
-              - Use metáforas de desenhos animados e jogos.
-              - Se o aluno errar, diga "Ops! Quase lá! Vamos tentar de novo?" em vez de apenas corrigir.
-              - Seja um amigo imaginário divertido, não apenas um professor.
+              KIDS_MODE_ACTIVE (SALA MÁGICA):
+              - PERSONA: Você é um amigo imaginário e mentor de aventuras. Sua voz deve transbordar entusiasmo e carinho.
+              - GUIA PROATIVO: Crianças precisam de direção clara. Sugira atividades constantemente: "Vamos ver o que tem atrás daquela árvore?", "Você consegue dizer o nome desse planeta mágico comigo?".
+              - ADAPTAÇÃO DINÂMICA: Sinta o nível da criança. Se ela responder apenas "Yes/No", ajude-a a construir pequenas frases. Se ela já fala bem, desafie-a com perguntas sobre cores, tamanhos e emoções.
+              - REFORÇO POSITIVO: Comemore cada pequena vitória com muita festa sonora (descrita ou via tom de voz).
+              - CORREÇÃO LÚDICA: Se a criança errar, use: "Quase! Foi por pouco! O som é mais ou menos assim: [correção]. Tenta de novo pro seu amigo ${teacher.name} ouvir!".
               ` : ''}
 
               - ENCERRAMENTO: Quando o aluno quiser parar, você DEVE gerar o relatório técnico final via 'save_session_report'.
@@ -366,7 +367,11 @@ const App: React.FC = () => {
               session.sendRealtimeInput({
                 turns: [{
                   role: 'user',
-                  parts: [{ text: `[[SISTEMA]] O aluno entrou. Comece a aula agora. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.` }]
+                  parts: [{
+                    text: isKidsMode
+                      ? `[[SISTEMA]] A criança entrou na sala mágica! Comece a aventura agora com MUITA ENERGIA. Apresente-se como seu amigo ${teacher.name} e inicie a brincadeira no tema ${topic.name}. TOME A INICIATIVA E LIDERE A CONVERSA!`
+                      : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
+                  }]
                 }],
                 turnComplete: true
               } as any);
@@ -610,6 +615,24 @@ const App: React.FC = () => {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
+
+        {/* Kids Mode Specific Background Elements */}
+        {isKidsMode && step === 'welcome' && (
+          <>
+            <div className="absolute top-[10%] left-[15%] text-amber-300 animate-rocket opacity-60">
+              <Rocket className="w-12 h-12 rotate-[45deg]" />
+            </div>
+            <div className="absolute top-[20%] right-[20%] text-blue-300 animate-star opacity-40">
+              <Sparkles className="w-8 h-8" />
+            </div>
+            <div className="absolute bottom-[25%] left-[10%] text-pink-300 animate-star opacity-50 delay-700">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <div className="absolute top-[60%] right-[10%] text-orange-300 animate-rocket opacity-40 delay-1000">
+              <Rocket className="w-10 h-10 -rotate-[15deg]" />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Offline/Reconnecting Overlay */}
@@ -632,7 +655,7 @@ const App: React.FC = () => {
       )}
 
       {step === 'welcome' && (
-        <div className="flex-1 flex flex-col items-center justify-center relative p-6 text-center bg-mesh overflow-hidden">
+        <div className={`flex-1 flex flex-col items-center justify-center relative p-6 text-center bg-mesh overflow-hidden ${isKidsMode ? 'pt-24 md:pt-12' : ''}`}>
           {/* Background Blobs - Enhanced */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="blob blob-1 mix-blend-screen" style={{ width: '60vw', height: '60vw', left: '-10%', top: '-20%' }}></div>
@@ -657,20 +680,20 @@ const App: React.FC = () => {
             </div>
           </div>
 
-          <div className="space-y-12 z-10 max-w-2xl relative">
-            <div className="animate-float-slow transition-all duration-1000">
+          <div className="space-y-8 md:space-y-12 z-10 max-w-2xl relative mb-16 md:mb-28">
+            <div className={`transition-all duration-1000 ${isKidsMode ? 'animate-float opacity-100 scale-100 md:scale-110' : 'animate-float-slow'}`}>
               <img
                 src="/logo.png"
-                className="w-44 h-44 md:w-52 md:h-52 mx-auto drop-shadow-[0_0_50px_rgba(249,115,22,0.5)] transform hover:scale-105 transition-transform duration-700"
+                className={`w-36 h-36 md:w-44 md:h-44 mx-auto transform hover:scale-105 transition-transform duration-700 ${isKidsMode ? 'mb-4 md:mb-8 drop-shadow-[0_10px_30px_rgba(78,205,196,0.3)]' : 'drop-shadow-[0_0_50px_rgba(249,115,22,0.5)]'}`}
               />
             </div>
 
 
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both">
-              <h1 className="text-5xl md:text-8xl font-display font-black tracking-tight leading-[1.1]">
+            <div className={`space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both ${isKidsMode ? 'mb-8' : ''}`}>
+              <h1 className="text-4xl md:text-7xl font-display font-black tracking-tight leading-[1.1]">
                 {isKidsMode ? (
-                  <span className="text-white drop-shadow-[0_5px_15px_rgba(255,107,107,0.4)]">
-                    Mundo<span className="text-[#ff6b6b] text-glow animate-bounce-slow inline-block">Kids!</span>
+                  <span className="text-slate-900 drop-shadow-[0_5px_15px_rgba(255,107,107,0.3)]">
+                    Mundo<span className="text-[#ff6b6b] text-glow animate-bounce-slow inline-block ml-2">Kids!</span>
                   </span>
                 ) : (
                   <span className="text-white">
@@ -678,7 +701,7 @@ const App: React.FC = () => {
                   </span>
                 )}
               </h1>
-              <p className={`text-sm md:text-xl font-medium max-w-sm md:max-w-md mx-auto leading-relaxed ${isKidsMode ? 'text-[#4b5563]' : 'text-slate-400'}`}>
+              <p className={`text-sm md:text-xl font-bold max-w-[280px] md:max-w-md mx-auto leading-relaxed ${isKidsMode ? 'text-slate-600' : 'text-slate-400'}`}>
                 {isKidsMode
                   ? 'Aprenda inglês com aventuras mágicas, jogos e muitos amigos novos!'
                   : 'Sua jornada para a fluência começa aqui. Interaja, aprenda e domine.'}
@@ -689,14 +712,25 @@ const App: React.FC = () => {
             <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both">
               <button
                 onClick={() => { setStep('setup'); }}
-                className="btn-shimmer px-8 py-4 md:px-14 md:py-6 rounded-2xl md:rounded-3xl text-lg md:text-2xl font-black flex items-center gap-4 mx-auto group shadow-2xl shadow-orange-500/10"
+                className="btn-shimmer px-8 py-4 md:px-16 md:py-7 rounded-2xl md:rounded-[2.5rem] text-lg md:text-3xl font-black flex items-center justify-center gap-3 md:gap-4 mx-auto group shadow-2xl shadow-orange-500/10 active:scale-95 transition-all"
               >
-                Continuar Jornada
-                <ArrowRight className="w-6 h-6 md:w-7 md:h-7 group-hover:translate-x-2 transition-transform duration-300" />
+                {isKidsMode ? 'VAMOS COMEÇAR!' : 'Continuar Jornada'}
+                <ArrowRight className="w-6 h-6 md:w-9 md:h-9 group-hover:translate-x-2 transition-transform duration-300" />
               </button>
             </div>
-
           </div>
+
+          {/* Walking Characters - Optimized for Final Visibility */}
+          {isKidsMode && (
+            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+              <div className="absolute top-[28%] -left-[2%] md:top-[38%] md:left-[10%] animate-character">
+                <img src="/kids/leo.png" className="w-28 h-28 md:w-64 md:h-64 blend-multiply" alt="Leo" />
+              </div>
+              <div className="absolute bottom-[20%] -right-[2%] md:top-[58%] md:right-[10%] animate-character delay-500">
+                <img src="/kids/lara.png" className="w-28 h-28 md:w-64 md:h-64 blend-multiply" alt="Lara" />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -774,6 +808,7 @@ const App: React.FC = () => {
                     progress={topicProgress}
                     selectedTopicId={selectedTopicId}
                     onSelectTopic={(id) => setSelectedTopicId(id)}
+                    isKidsMode={isKidsMode}
                   />
                 </div>
 
@@ -1068,8 +1103,8 @@ const App: React.FC = () => {
                   <Sparkles className="w-10 h-10 text-white animate-pulse" />
                 </div>
 
-                <h2 className="text-3xl font-display font-black text-white mb-3">Upgrade para o PRO</h2>
-                <p className="text-slate-400 mb-8 leading-relaxed">
+                <h2 className={`text-3xl font-display font-black mb-3 ${isKidsMode ? 'text-slate-900' : 'text-white'}`}>Upgrade para o PRO</h2>
+                <p className={`${isKidsMode ? 'text-slate-600' : 'text-slate-400'} mb-8 leading-relaxed`}>
                   {!isPremium && dailyMinutesUsed >= 10
                     ? "Você atingiu seu limite diário de 10 minutos gratuitos. Continue evoluindo sem limites!"
                     : "Desbloqueie todos os mentores, níveis avançados e tempo de conversação ilimitado."}
@@ -1081,13 +1116,13 @@ const App: React.FC = () => {
                       const url = hotmartService.getCheckoutUrl('YOUR_HOTMART_ID', user?.email);
                       window.open(url, '_blank');
                     }}
-                    className="btn-primary w-full py-4 rounded-2xl font-bold text-lg shadow-xl shadow-orange-500/20 hover:scale-105 transition-transform"
+                    className={`btn-primary w-full py-4 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition-transform ${isKidsMode ? 'shadow-pink-500/20' : 'shadow-orange-500/20'}`}
                   >
-                    Assinar agora - R$ 49,90/mês
+                    Assinar agora - R$ 99,90/mês
                   </button>
                   <button
                     onClick={() => setShowUpgradeModal(false)}
-                    className="w-full py-4 rounded-2xl font-bold text-slate-500 hover:text-white transition-colors"
+                    className={`w-full py-4 rounded-2xl font-bold transition-colors ${isKidsMode ? 'text-slate-400 hover:text-slate-600' : 'text-slate-500 hover:text-white'}`}
                   >
                     Talvez mais tarde
                   </button>
@@ -1096,12 +1131,12 @@ const App: React.FC = () => {
                 <div className="mt-8 flex items-center justify-center gap-6 opacity-50 grayscale">
                   <div className="flex flex-col items-center gap-1">
                     <div className="text-[10px] font-black uppercase text-slate-500">Mentores</div>
-                    <div className="text-sm font-bold text-white">Ilimitados</div>
+                    <div className="text-sm font-bold {isKidsMode ? 'text-slate-900' : 'text-white'}">Ilimitados</div>
                   </div>
-                  <div className="w-1px h-8 bg-white/10"></div>
+                  <div className="w-1px h-8 bg-black/10"></div>
                   <div className="flex flex-col items-center gap-1">
                     <div className="text-[10px] font-black uppercase text-slate-500">Feedback</div>
-                    <div className="text-sm font-bold text-white">IA Avançada</div>
+                    <div className="text-sm font-bold {isKidsMode ? 'text-slate-900' : 'text-white'}">IA Avançada</div>
                   </div>
                 </div>
               </div>
@@ -1114,7 +1149,7 @@ const App: React.FC = () => {
       )}
 
       {showTutorial && (
-        <OnboardingTutorial onComplete={completeTutorial} />
+        <OnboardingTutorial onComplete={completeTutorial} isKidsMode={isKidsMode} />
       )}
 
       {activeLegalModal === 'privacy' && <PrivacyPolicy onClose={() => setActiveLegalModal(null)} />}

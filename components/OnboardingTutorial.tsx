@@ -24,9 +24,10 @@ interface TutorialStep {
 
 interface OnboardingTutorialProps {
     onComplete: () => void;
+    isKidsMode?: boolean;
 }
 
-export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComplete }) => {
+export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComplete, isKidsMode }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -83,8 +84,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComple
     };
 
     return (
-        <div className={`fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-md transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            <div className={`w-full max-w-lg mx-4 bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden transform transition-all duration-500 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'}`}>
+        <div className={`fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-md transition-opacity duration-500 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'} ${isKidsMode ? 'bg-white/60' : 'bg-slate-950/80'}`}>
+            <div className={`w-full max-w-lg mx-4 border rounded-[2.5rem] shadow-2xl overflow-hidden transform transition-all duration-500 ${isVisible ? 'scale-100 translate-y-0' : 'scale-95 translate-y-8'} ${isKidsMode ? 'bg-white border-[#4ecdc4] shadow-[0_20px_50px_rgba(78,205,196,0.3)]' : 'bg-slate-900 border-white/10'}`}>
 
                 {/* Progress Bar */}
                 <div className="absolute top-0 left-0 right-0 h-1.5 flex gap-1 p-1">
@@ -109,10 +110,10 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComple
                     </div>
 
                     <div className="min-h-[160px] flex flex-col items-center">
-                        <h2 className="text-3xl font-display font-black text-white mb-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <h2 className={`text-3xl font-display font-black mb-4 animate-in fade-in slide-in-from-bottom-2 duration-500 ${isKidsMode ? 'text-slate-900' : 'text-white'}`}>
                             {steps[currentStep].title}
                         </h2>
-                        <p className="text-slate-400 text-lg leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <p className={`text-lg leading-relaxed animate-in fade-in slide-in-from-bottom-4 duration-700 ${isKidsMode ? 'text-slate-600' : 'text-slate-400'}`}>
                             {steps[currentStep].description}
                         </p>
                     </div>
