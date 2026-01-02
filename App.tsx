@@ -14,6 +14,7 @@ import { supabase } from './lib/supabase';
 import { JourneyMap } from './components/JourneyMap';
 import { hotmartService } from './lib/hotmart_integration';
 import { AdminDashboard } from './components/AdminDashboard';
+import { PaymentModal } from './components/PaymentModal';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { PrivacyPolicy, TermsOfService } from './components/LegalModals';
 import {
@@ -1103,59 +1104,12 @@ const App: React.FC = () => {
 
 
       {/* Upgrade Modal */}
-      {
-        showUpgradeModal && (
-          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-md animate-in fade-in duration-300">
-            <div className="w-full max-w-md mx-4 glass-premium p-8 rounded-[2.5rem] border border-orange-500/30 text-center relative overflow-hidden">
-              <div className="absolute -top-24 -left-24 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl opacity-50"></div>
-              <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl opacity-50"></div>
-
-              <div className="relative z-10">
-                <div className="w-20 h-20 bg-gradient-to-br from-orange-400 to-amber-600 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-orange-500/20 rotate-3">
-                  <Sparkles className="w-10 h-10 text-white animate-pulse" />
-                </div>
-
-                <h2 className={`text-3xl font-display font-black mb-3 ${isKidsMode ? 'text-slate-900' : 'text-white'}`}>Upgrade para o PRO</h2>
-                <p className={`${isKidsMode ? 'text-slate-600' : 'text-slate-400'} mb-8 leading-relaxed`}>
-                  {!isPremium && dailyMinutesUsed >= 10
-                    ? "Você atingiu seu limite diário de 10 minutos gratuitos. Continue evoluindo sem limites!"
-                    : "Desbloqueie todos os mentores, níveis avançados e tempo de conversação ilimitado."}
-                </p>
-
-                <div className="space-y-4">
-                  <button
-                    onClick={() => {
-                      const url = hotmartService.getCheckoutUrl('YOUR_HOTMART_ID', user?.email);
-                      window.open(url, '_blank');
-                    }}
-                    className={`btn-primary w-full py-4 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition-transform ${isKidsMode ? 'shadow-pink-500/20' : 'shadow-orange-500/20'}`}
-                  >
-                    Assinar agora - R$ 99,90/mês
-                  </button>
-                  <button
-                    onClick={() => setShowUpgradeModal(false)}
-                    className={`w-full py-4 rounded-2xl font-bold transition-colors ${isKidsMode ? 'text-slate-400 hover:text-slate-600' : 'text-slate-500 hover:text-white'}`}
-                  >
-                    Talvez mais tarde
-                  </button>
-                </div>
-
-                <div className="mt-8 flex items-center justify-center gap-6 opacity-50 grayscale">
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-[10px] font-black uppercase text-slate-500">Mentores</div>
-                    <div className="text-sm font-bold {isKidsMode ? 'text-slate-900' : 'text-white'}">Ilimitados</div>
-                  </div>
-                  <div className="w-1px h-8 bg-black/10"></div>
-                  <div className="flex flex-col items-center gap-1">
-                    <div className="text-[10px] font-black uppercase text-slate-500">Feedback</div>
-                    <div className="text-sm font-bold {isKidsMode ? 'text-slate-900' : 'text-white'}">IA Avançada</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      }
+      <PaymentModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        isKidsMode={isKidsMode}
+        userEmail={user?.email}
+      />
       {isAdminDashboardOpen && (
         <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
       )}
