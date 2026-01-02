@@ -7,9 +7,10 @@ interface PaymentModalProps {
     onClose: () => void;
     isKidsMode: boolean;
     userEmail?: string;
+    triggerReason?: 'user_action' | 'time_limit';
 }
 
-export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isKidsMode, userEmail }) => {
+export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isKidsMode, userEmail, triggerReason = 'user_action' }) => {
     if (!isOpen) return null;
 
     const handleSubscribe = () => {
@@ -51,13 +52,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
                     </div>
 
                     <h2 className={`text-3xl font-display font-black mb-3 leading-tight ${isKidsMode ? 'text-slate-900' : 'text-white'}`}>
-                        {isKidsMode ? 'Seja um Super Estudante!' : 'Acesso Premium'}
+                        {triggerReason === 'time_limit'
+                            ? (isKidsMode ? 'Ops! O tempo acabou!' : 'Tempo Diário Esgotado')
+                            : (isKidsMode ? 'Seja um Super Estudante!' : 'Acesso Premium')
+                        }
                     </h2>
 
                     <p className={`${isKidsMode ? 'text-slate-600' : 'text-slate-300'} mb-8 leading-relaxed max-w-[90%] font-medium`}>
-                        {isKidsMode
-                            ? "Desbloqueie todos os poderes mágicos, aventuras ilimitadas e novos amigos!"
-                            : "Desbloqueie todo o potencial da sua fluência com recursos exclusivos e ilimitados."}
+                        {triggerReason === 'time_limit'
+                            ? (isKidsMode
+                                ? "Oh não! O tempo de brincar acabou por hoje. Peça para seus pais para continuar a aventura!"
+                                : "Seu tempo gratuito diário acabou. Assine o Premium para continuar sua jornada sem limites!")
+                            : (isKidsMode
+                                ? "Desbloqueie todos os poderes mágicos, aventuras ilimitadas e novos amigos!"
+                                : "Desbloqueie todo o potencial da sua fluência com recursos exclusivos e ilimitados.")
+                        }
                     </p>
 
                     <div className="w-full space-y-3 mb-8 text-left">

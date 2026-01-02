@@ -60,6 +60,9 @@ const App: React.FC = () => {
   const [currentCaption, setCurrentCaption] = useState('');
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected'>('idle');
+  const [sessionReport, setSessionReport] = useState<SessionReportData | null>(null);
+  const [connectionTestStatus, setConnectionTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+  const [upgradeModalReason, setUpgradeModalReason] = useState<'user_action' | 'time_limit'>('user_action');
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
@@ -69,7 +72,6 @@ const App: React.FC = () => {
   const [topicProgress, setTopicProgress] = useState<Record<string, number>>({});
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isKidsMode, setIsKidsMode] = useState(false);
-  const [sessionReport, setSessionReport] = useState<SessionReportData | null>(null);
 
 
   // Monetization States
@@ -194,6 +196,7 @@ const App: React.FC = () => {
 
         if (totalUsed >= FREE_LIMIT_MINUTES) {
           endCall();
+          setUpgradeModalReason('time_limit');
           setShowUpgradeModal(true);
           setConnectionError("Limite diário de 10 minutos atingido (Grátis).");
         }
@@ -205,6 +208,7 @@ const App: React.FC = () => {
 
   const startSession = async () => {
     if (!isPremium && dailyMinutesUsed >= 10) {
+      setUpgradeModalReason('time_limit');
       setShowUpgradeModal(true);
       return;
     }
@@ -1146,9 +1150,13 @@ const App: React.FC = () => {
       {/* Upgrade Modal */}
       <PaymentModal
         isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
+        onClose={() => {
+          setShowUpgradeModal(false);
+          setUpgradeModalReason('user_action'); // Reset reason
+        }}
         isKidsMode={isKidsMode}
         userEmail={user?.email}
+        triggerReason={upgradeModalReason}
       />
       {isAdminDashboardOpen && (
         <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
