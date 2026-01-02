@@ -85,7 +85,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
                             <span>{isKidsMode ? 'Começar Agora' : 'Assinar Agora'}</span>
-                            <span className="text-base font-bold ml-1 bg-black/20 px-2 py-0.5 rounded-lg border border-white/10">R$ 119,90/mês</span>
+                            <span className="text-base font-bold ml-1 bg-black/20 px-2 py-0.5 rounded-lg border border-white/10">R$ 119,00/mês</span>
                         </button>
 
                         <div className={`flex items-center justify-center gap-2 text-xs opacity-70 ${isKidsMode ? 'text-slate-500' : 'text-slate-400'}`}>
