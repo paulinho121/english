@@ -6,6 +6,7 @@ import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { supabase } from './lib/supabase';
 import { JourneyMap } from './components/JourneyMap';
+import { hotmartService } from './lib/hotmart_integration';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
   ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle
@@ -81,10 +82,20 @@ const App: React.FC = () => {
     const loadProgress = async () => {
       if (!user) return;
 
+      const isAdmin = user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
+
       const { data: profile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used').eq('id', user.id).single();
+
+      if (isAdmin) {
+        setIsPremium(true);
+      } else if (profile) {
+        setIsPremium(profile.is_premium || false);
+      } else {
+        setIsPremium(false);
+      }
+
       if (profile) {
         setStreak(profile.streak_count || 0);
-        setIsPremium(profile.is_premium || false);
         setDailyMinutesUsed(profile.daily_minutes_used || 0);
         if (profile.last_language) setSelectedLanguage(profile.last_language as Language);
         if (profile.last_level) setSelectedLevel(profile.last_level as Level);
@@ -104,6 +115,14 @@ const App: React.FC = () => {
     };
 
     loadProgress();
+  }, [user]);
+
+  // Force premium for admin
+  useEffect(() => {
+    if (user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com') {
+      console.log('Admin identified:', user.email);
+      setIsPremium(true);
+    }
   }, [user]);
 
   // Handle auto-scroll to teacher panel on mobile when topic selected
@@ -543,6 +562,8 @@ const App: React.FC = () => {
   }
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
+
+
   if (!user) return <LoginScreen />;
 
   return (
@@ -573,27 +594,52 @@ const App: React.FC = () => {
       )}
 
       {step === 'welcome' && (
-        <div className="flex-1 flex flex-col items-center justify-center relative p-6 text-center animate-in fade-in duration-700">
-          {/* Header Streak */}
-          <div className="absolute top-6 right-6 flex items-center gap-2 bg-slate-900/50 px-4 py-2 rounded-full border border-orange-500/20">
-            <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse" />
+        <div className="flex-1 flex flex-col items-center justify-center relative p-6 text-center bg-mesh overflow-hidden">
+          {/* Background Blobs - Enhanced */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="blob blob-1 mix-blend-screen" style={{ width: '60vw', height: '60vw', left: '-10%', top: '-20%' }}></div>
+            <div className="blob blob-2 mix-blend-overlay" style={{ width: '50vw', height: '50vw', right: '0%', bottom: '-10%' }}></div>
+          </div>
+
+          <div className="absolute top-6 right-6 flex items-center gap-2 bg-slate-900/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 z-30 animate-in fade-in slide-in-from-right-4 duration-1000 group hover:border-orange-500/30 transition-colors">
+            <Flame className="w-5 h-5 text-orange-500 fill-orange-500 animate-pulse group-hover:scale-110 transition-transform" />
             <span className="font-bold text-orange-100">{streak} Dias</span>
           </div>
 
-          <div className="space-y-8 z-10 max-w-2xl">
-            <img src="/logo.png" className="w-40 h-40 mx-auto drop-shadow-[0_0_30px_rgba(249,115,22,0.4)]" />
-            <h1 className="hidden md:block text-5xl md:text-7xl font-display font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-500">
-              Lingua<span className="text-orange-500">Flow</span>
-            </h1>
-            <button
-              onClick={() => { setStep('setup'); }}
-              className="btn-primary px-8 py-4 md:px-12 md:py-5 rounded-full text-xl md:text-2xl font-bold flex items-center gap-3 mx-auto hover:scale-105 transition-transform shadow-lg shadow-orange-500/20"
-            >
-              Continuar Jornada <ArrowRight className="w-6 h-6" />
-            </button>
+
+          <div className="space-y-12 z-10 max-w-2xl relative">
+            <div className="animate-float-slow transition-all duration-1000">
+              <img
+                src="/logo.png"
+                className="w-44 h-44 md:w-52 md:h-52 mx-auto drop-shadow-[0_0_50px_rgba(249,115,22,0.5)] transform hover:scale-105 transition-transform duration-700"
+              />
+            </div>
+
+            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both">
+              <h1 className="text-5xl md:text-8xl font-display font-black text-white tracking-tight leading-[1.1]">
+                Lingua<span className="text-orange-500 text-glow">Flow</span>
+              </h1>
+              <p className="text-slate-400 text-sm md:text-xl font-medium max-w-sm md:max-w-md mx-auto leading-relaxed">
+                Sua jornada para a fluência começa aqui. Interaja, aprenda e domine.
+              </p>
+            </div>
+
+            <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both">
+              <button
+                onClick={() => { setStep('setup'); }}
+                className="btn-shimmer px-8 py-4 md:px-14 md:py-6 rounded-2xl md:rounded-3xl text-lg md:text-2xl font-black flex items-center gap-4 mx-auto group shadow-2xl shadow-orange-500/10"
+              >
+                Continuar Jornada
+                <ArrowRight className="w-6 h-6 md:w-7 md:h-7 group-hover:translate-x-2 transition-transform duration-300" />
+              </button>
+            </div>
+
           </div>
+
+
         </div>
       )}
+
 
       {step === 'setup' && (
         <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar p-4 md:p-8">
@@ -902,11 +948,13 @@ const App: React.FC = () => {
 
       {
         step !== 'call' && (
-          <div className="py-4 text-center text-xs text-slate-600 font-medium z-10">
-            &copy; 2025 Paulinho Fernando. Todos os direitos reservados.
+          <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-1 pointer-events-none">
+            <p>&copy; 2026 Paulinho Fernando. Todos os direitos reservados.</p>
+            {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
           </div>
         )
       }
+
 
       {/* Upgrade Modal */}
       {
@@ -929,7 +977,13 @@ const App: React.FC = () => {
                 </p>
 
                 <div className="space-y-4">
-                  <button className="btn-primary w-full py-4 rounded-2xl font-bold text-lg shadow-xl shadow-orange-500/20 hover:scale-105 transition-transform">
+                  <button
+                    onClick={() => {
+                      const url = hotmartService.getCheckoutUrl('YOUR_HOTMART_ID', user?.email);
+                      window.open(url, '_blank');
+                    }}
+                    className="btn-primary w-full py-4 rounded-2xl font-bold text-lg shadow-xl shadow-orange-500/20 hover:scale-105 transition-transform"
+                  >
                     Assinar agora - R$ 49,90/mês
                   </button>
                   <button

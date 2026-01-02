@@ -43,6 +43,26 @@ export const TEACHERS: Teacher[] = [
     bio: 'Mentora de Francês focada em fonética e estruturação de pensamento no idioma. Priscila guia brasileiros pelos Labirintos do francês com uma metodologia clara e encorajadora.'
   },
   {
+    id: 'geremy-es',
+    name: 'Profesor Geremy',
+    language: Language.SPANISH,
+    accent: 'Sotaque Brasileiro 🇧🇷',
+    avatar: '/geremy.png',
+    voice: 'Puck', // Male, calm
+    gender: 'male',
+    bio: 'Estrategista de ensino brasileiro com vivência internacional acadêmica. Geremy utiliza métodos de imersão gradual no Espanhol para transformar o conhecimento passivo em fala ativa e fluente.'
+  },
+  {
+    id: 'geremy-fr',
+    name: 'Professeur Geremy',
+    language: Language.FRENCH,
+    accent: 'Sotaque Brasileiro 🇧🇷',
+    avatar: '/geremy.png',
+    voice: 'Puck', // Male, calm
+    gender: 'male',
+    bio: 'Estrategista de ensino brasileiro com vivência internacional acadêmica. Geremy utiliza métodos de imersão gradual no Francês para transformar o conhecimento passivo em fala ativa e fluente.'
+  },
+  {
     id: 'kevin-en',
     name: 'Professor Kevin',
     language: Language.ENGLISH,

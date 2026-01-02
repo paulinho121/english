@@ -9,6 +9,26 @@ interface SessionReportProps {
 }
 
 export const SessionReport: React.FC<SessionReportProps> = ({ data, onRestart }) => {
+    const handleShare = async () => {
+        const text = `Ganhei ${data.score} pontos praticando meu novo idioma no LinguistAI! 🚀\n\nMinha dica de hoje: "${data.tip}"\n\nVenha destravar sua fluência também! #LinguistAI #FluenciaIA`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Meu Progresso no LinguistAI',
+                    text: text,
+                    url: window.location.origin,
+                });
+            } catch (err) {
+                console.log('Error sharing:', err);
+            }
+        } else {
+            // Fallback: Copy to clipboard
+            await navigator.clipboard.writeText(text + '\n' + window.location.origin);
+            alert('Progresso copiado para a área de transferência! Compartilhe com seus amigos.');
+        }
+    };
+
     return (
         <div className="flex-1 flex flex-col items-center justify-center p-6 pb-24 md:pb-6 overflow-y-auto w-full animate-in fade-in zoom-in-95 duration-700">
             <div className="max-w-4xl w-full bg-slate-950/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
@@ -119,8 +139,11 @@ export const SessionReport: React.FC<SessionReportProps> = ({ data, onRestart })
 
                 {/* Footer Actions */}
                 <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <button className="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-bold transition-colors">
-                        <Share2 className="w-4 h-4" /> Compartilhar Relatório
+                    <button
+                        onClick={handleShare}
+                        className="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-bold transition-colors"
+                    >
+                        <Share2 className="w-4 h-4" /> Compartilhar Resultado
                     </button>
                     <button
                         onClick={onRestart}

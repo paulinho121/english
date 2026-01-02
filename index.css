@@ -159,13 +159,87 @@ h6,
 
 @keyframes float-blob {
     0% {
-        transform: translate(0, 0) scale(1);
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(50px, -30px) scale(1.1) rotate(5deg);
+    }
+
+    66% {
+        transform: translate(-20px, 40px) scale(0.9) rotate(-5deg);
     }
 
     100% {
-        transform: translate(30px, 50px) scale(1.1);
+        transform: translate(0, 0) scale(1) rotate(0deg);
     }
 }
+
+@keyframes mesh-gradient {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+@keyframes float-slow {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-15px) rotate(1deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.animate-float-slow {
+    animation: float-slow 8s ease-in-out infinite;
+}
+
+.bg-mesh {
+    background: linear-gradient(-45deg, #020617, #0f172a, #1e1b4b, #020617);
+    background-size: 400% 400%;
+    animation: mesh-gradient 15s ease infinite;
+}
+
+.btn-shimmer {
+    background: linear-gradient(90deg,
+            rgba(249, 115, 22, 1) 0%,
+            rgba(251, 146, 60, 1) 45%,
+            rgba(255, 255, 255, 0.4) 50%,
+            rgba(251, 146, 60, 1) 55%,
+            rgba(249, 115, 22, 1) 100%);
+    background-size: 200% 100%;
+    transition: all 0.5s ease;
+}
+
+.btn-shimmer:hover {
+    background-position: 200% 0;
+    box-shadow: 0 0 40px rgba(249, 115, 22, 0.4);
+    transform: translateY(-2px) scale(1.02);
+}
+
 
 @keyframes float {
     0% {
