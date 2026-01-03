@@ -136,7 +136,14 @@ const App: React.FC = () => {
 
       const isAdmin = user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
 
-      const { data: profile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial').eq('id', user.id).single();
+      let profile = null;
+      let retries = 0;
+      while (!profile && retries < 3) {
+        const { data } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial').eq('id', user.id).single();
+        profile = data;
+        if (!profile) await new Promise(r => setTimeout(r, 500)); // Wait 500ms
+        retries++;
+      }
 
       // TEMPORARY DEMO UNLOCK (Content Only)
       // Removes payment locks for display, but timer is strictly enforced.
@@ -171,6 +178,9 @@ const App: React.FC = () => {
         if (profile.last_teacher_id) setSelectedTeacherId(profile.last_teacher_id);
         if (profile.last_topic_id) setSelectedTopicId(profile.last_topic_id);
         if (profile.has_completed_tutorial === false) setShowTutorial(true);
+      } else {
+        // Fallback: If absolutely no profile found after retries, assume new user -> Show Tutorial
+        setShowTutorial(true);
       }
 
       const { data: progressData } = await supabase.from('user_progress').select('topic_id, score, mistakes, vocabulary, tip').eq('user_id', user.id);
