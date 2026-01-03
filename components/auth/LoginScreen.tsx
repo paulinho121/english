@@ -8,7 +8,7 @@ export const LoginScreen: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [mode, setMode] = useState<'signin' | 'signup' | 'phone'>('signin');
+    const [mode, setMode] = useState<'signin' | 'signup' | 'phone' | 'reset_password'>('signin');
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null);
 
     // Signup specific states
@@ -105,6 +105,24 @@ export const LoginScreen: React.FC = () => {
         }
     };
 
+    const handlePasswordReset = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage(null);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin,
+            });
+            if (error) throw error;
+            setMessage({ type: 'success', text: 'Email de redefinição enviado! Verifique sua caixa de entrada.' });
+            setTimeout(() => setMode('signin'), 5000);
+        } catch (err: any) {
+            setMessage({ type: 'error', text: err.message });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-[100dvh] bg-slate-950 flex flex-col items-center p-4 md:p-6 relative overflow-y-auto custom-scrollbar">
             {/* Ambient Animated Background */}
@@ -178,6 +196,36 @@ export const LoginScreen: React.FC = () => {
                             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (showOtpInput ? 'Confirmar Código' : 'Enviar SMS')}
                         </button>
                     </form>
+                ) : mode === 'reset_password' ? (
+                    <form onSubmit={handlePasswordReset} className="space-y-5">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Email para recuperação</label>
+                            <input
+                                type="email"
+                                placeholder="seu@email.com"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 px-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-orange-500/50 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                                required
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="btn-primary w-full py-3 md:py-4 rounded-2xl flex items-center justify-center gap-2 text-lg shadow-lg shadow-orange-500/20"
+                        >
+                            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Enviar Email'}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => { setMode('signin'); setMessage(null); }}
+                            className="w-full py-2 text-slate-400 hover:text-white text-sm font-medium transition-colors"
+                        >
+                            Voltar para Login
+                        </button>
+                    </form>
                 ) : (
                     <form onSubmit={handleEmailLogin} className="space-y-5">
                         {mode === 'signup' && (
@@ -231,6 +279,18 @@ export const LoginScreen: React.FC = () => {
                                 />
                             </div>
                         </div>
+
+                        {mode === 'signin' && (
+                            <div className="flex justify-end">
+                                <button
+                                    type="button"
+                                    onClick={() => { setMode('reset_password'); setMessage(null); }}
+                                    className="text-xs text-slate-400 hover:text-orange-400 transition-colors font-medium"
+                                >
+                                    Esqueceu sua senha?
+                                </button>
+                            </div>
+                        )}
 
                         <button
                             type="submit"
