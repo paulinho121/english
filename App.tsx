@@ -83,6 +83,7 @@ const App: React.FC = () => {
   const [isPremium, setIsPremium] = useState(false);
   const [dailyMinutesUsed, setDailyMinutesUsed] = useState(0);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0); // Added for Session Timer
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -428,7 +429,8 @@ const App: React.FC = () => {
         setTimeout(() => {
           if (!isConnectedRef.current || !mediaStreamRef.current || !audioContextRef.current) return;
           const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-          const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+          // Optimized Buffer Size: 2048 (approx 40ms latency at 48kHz) vs 4096 (85ms)
+          const processor = audioContextRef.current.createScriptProcessor(2048, 1, 1);
 
           const inputSampleRate = audioContextRef.current.sampleRate;
           const targetSampleRate = 16000;
@@ -689,12 +691,25 @@ const App: React.FC = () => {
     }
   };
 
-  const toggleMute = () => {
+  // Session Timer Logic
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (sessionStartTime) {
+      interval = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - sessionStartTime) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+    return () => clearInterval(interval);
+  }, [sessionStartTime]);
+
+  const toggleMute = useCallback(() => {
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getAudioTracks().forEach(t => t.enabled = !t.enabled);
       setIsMuted(m => !m);
     }
-  }
+  }, [mediaStreamRef]);
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
 
@@ -772,6 +787,10 @@ const App: React.FC = () => {
               <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
               <span className="font-bold">{streak} Dias</span>
             </div>
+            {step === 'call' && (
+              <div className="flex items-center gap-3">
+              </div>
+            )}
           </div>
 
           <div className="space-y-8 md:space-y-12 z-10 max-w-2xl relative mb-16 md:mb-28">
@@ -1096,6 +1115,16 @@ const App: React.FC = () => {
       {
         step === 'call' && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+            {/* Live Timer Overlay */}
+            <div className="absolute top-6 right-6 z-50 animate-in fade-in duration-700">
+              <div className={`px-4 py-2 rounded-full border backdrop-blur-md flex items-center gap-2 ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b] shadow-[0_0_15px_rgba(255,107,107,0.3)] animate-pulse' : 'bg-red-500/10 border-red-500/20 text-red-500 animate-pulse'}`}>
+                <div className={`w-2 h-2 rounded-full ${isKidsMode ? 'bg-[#ff6b6b]' : 'bg-red-500'} animate-ping`} />
+                <span className="text-xs font-black tracking-widest uppercase tabular-nums">
+                  {/* Timer Display */}
+                  {new Date(elapsedTime * 1000).toISOString().substr(14, 5)}
+                </span>
+              </div>
+            </div>
 
             {/* Pronunciation Card Overlay */}
             {/* Pronunciation Card Overlay */}
