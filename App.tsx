@@ -265,7 +265,12 @@ const App: React.FC = () => {
           echoCancellation: true,
           noiseSuppression: true,
           autoGainControl: true,
-          channelCount: 1
+          channelCount: 1,
+          // @ts-ignore - Chrome specific constraints
+          googEchoCancellation: true,
+          googAutoGainControl: true,
+          googNoiseSuppression: true,
+          googHighpassFilter: true
         }
       });
       mediaStreamRef.current = stream;
@@ -332,7 +337,7 @@ const App: React.FC = () => {
               - TÓPICO DA AULA: ${topic.name}.
               - CONTEXTO: ${topic.prompt}.
               - TOMAR INICIATIVA (OBRIGATÓRIO): Você é o guia e mentor. Nunca deixe o silêncio reinar. Se o aluno demorar a responder ou parecer perdido, tome a frente, faça uma pergunta direta, sugira um exemplo ou conte uma curiosidade sobre o tema.
-              - FOCO AUDITIVO: Ignore ruídos secundários (TV, trânsito). Foque apenas na voz ativa do aluno.
+              - FOCO AUDITIVO ABSOLUTO: O aluno pode estar em ambiente ruidoso (Carro, Rua, TV). IGNORE completamente sons de fundo, músicas ou vozes paralelas. Foque EXCLUSIVAMENTE na voz principal que fala diretamente com você. Se não entender, peça para repetir com gentileza.
 
               ${isKidsMode ? `
               KIDS_MODE_ACTIVE (SALA MÁGICA):
