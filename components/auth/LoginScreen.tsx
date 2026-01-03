@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
+import { trackEvent } from '../../lib/analytics';
 import { LogIn, Key, Phone, ArrowRight, Loader2, AlertCircle, Sparkles } from 'lucide-react';
 
 export const LoginScreen: React.FC = () => {
@@ -54,12 +55,14 @@ export const LoginScreen: React.FC = () => {
                         console.error('Profile creation warning:', profileError);
                     }
 
+                    trackEvent('signup', { method: 'email' });
                     setMessage({ type: 'success', text: 'Conta criada! Verifique seu email.' });
                 }
             } else {
                 // Sign In
                 const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) throw error;
+                trackEvent('login', { method: 'email' });
             }
         } catch (err: any) {
             setMessage({ type: 'error', text: err.message });
@@ -96,6 +99,7 @@ export const LoginScreen: React.FC = () => {
                         last_seen: new Date().toISOString()
                     });
                     if (profileError) console.error(profileError);
+                    trackEvent('login', { method: 'phone' });
                 }
             }
         } catch (err: any) {

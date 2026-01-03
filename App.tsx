@@ -22,6 +22,10 @@ import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
   ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket
 } from 'lucide-react';
+import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
+
+// Initialize Analytics
+initAnalytics();
 
 function encode(bytes: Uint8Array) {
   let binary = '';
@@ -113,6 +117,11 @@ const App: React.FC = () => {
         setIsPremium(false);
       }
 
+      // Analytics Identification
+      if (user) {
+        identifyUser(user.id, user.email);
+      }
+
       if (profile) {
         setStreak(profile.streak_count || 0);
         setDailyMinutesUsed(profile.daily_minutes_used || 0);
@@ -145,12 +154,11 @@ const App: React.FC = () => {
     // Check specific hash for recovery (Fallback)
     const hash = window.location.hash;
     if (hash && hash.includes('type=recovery')) {
-      console.log('Recovery hash detected');
       setShowUpdatePasswordModal(true);
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth event:', event);
+      // Auth monitoring
       if (event === 'PASSWORD_RECOVERY') {
         setShowUpdatePasswordModal(true);
       }
@@ -164,7 +172,6 @@ const App: React.FC = () => {
   // Force premium for admin
   useEffect(() => {
     if (user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com') {
-      console.log('Admin identified:', user.email);
       setIsPremium(true);
     }
   }, [user]);
@@ -587,6 +594,17 @@ const App: React.FC = () => {
       };
       setStep('call');
 
+      // Analytics: Session Start
+      if (selectedTopicId) {
+        trackEvent('session_start', {
+          topic_id: selectedTopicId,
+          level: selectedLevel,
+          teacher_id: selectedTeacherId,
+          language: selectedLanguage,
+          is_kids_mode: isKidsMode // Even if hidden, we track track it
+        });
+      }
+
     } catch (err: any) {
       console.error('Erro ao conectar Proxy:', err);
       setConnectionError('Falha na conexão: ' + (err.message || 'Erro desconhecido'));
@@ -602,6 +620,17 @@ const App: React.FC = () => {
       setDailyMinutesUsed(newTotal);
       await supabase.from('profiles').update({ daily_minutes_used: newTotal }).eq('id', user.id);
     }
+
+    // Analytics: Session End
+    if (sessionStartTime) {
+      const durationSeconds = (Date.now() - sessionStartTime) / 1000;
+      trackEvent('session_end', {
+        duration_seconds: durationSeconds,
+        topic_id: selectedTopicId,
+        score: sessionReport?.score || 0
+      });
+    }
+
     setSessionStartTime(null);
 
     // Update Progress
@@ -727,7 +756,7 @@ const App: React.FC = () => {
           </div>
 
           <div className="absolute top-6 right-6 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
-            {/* Kids Mode Toggle */}
+            {/* Kids Mode Toggle - HIDDEN FOR STARTUP PITCH
             <button
               onClick={() => setIsKidsMode(!isKidsMode)}
               className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md transition-all duration-500 group pointer-events-auto ${isKidsMode ? 'bg-white text-[#ff6b6b] border-[#ff6b6b] shadow-[0_0_20px_rgba(255,107,107,0.3)]' : 'bg-slate-900/50 text-slate-400 border-white/10 hover:border-orange-500/30'}`}
@@ -737,6 +766,7 @@ const App: React.FC = () => {
               </div>
               <span className="font-black text-xs uppercase tracking-widest">{isKidsMode ? 'Modo Kids Ativo' : 'Ativar Modo Kids'}</span>
             </button>
+            */}
 
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
               <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
@@ -796,269 +826,271 @@ const App: React.FC = () => {
             </div>
           )}
         </div>
-      )}
+      )
+      }
 
 
 
-      {step === 'setup' && (
-        <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar p-4 md:p-8">
-          <div className="max-w-5xl w-full mx-auto space-y-8 pb-20">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-              <div>
-                <h2 className="text-2xl md:text-3xl font-display font-black flex items-center gap-3">
-                  <Sparkles className="text-orange-500 shrink-0" /> {isKidsMode ? 'Mapa de Aventuras' : 'Mapa de Progresso'}
-                </h2>
-                <p className={`text-sm mt-1 font-bold ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-400'}`}>
-                  {isKidsMode
-                    ? 'Explore mundos mágicos e aprenda brincando!'
-                    : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
-                </p>
-              </div>
-              <div className="flex items-center gap-3 self-end sm:self-auto">
-                {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
-                  <button
-                    onClick={() => setIsAdminDashboardOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
-                  >
-                    <Shield className="w-4 h-4" /> Dashboard Admin
-                  </button>
-                )}
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${isKidsMode ? 'bg-white/80 border-[#ff6b6b]/20 shadow-sm' : 'bg-orange-500/10 border-orange-500/20'}`}>
-                  <Flame className={`w-4 h-4 ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
-                  <span className={`font-bold text-sm ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-200'}`}>{streak} Dias</span>
+      {
+        step === 'setup' && (
+          <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar p-4 md:p-8">
+            <div className="max-w-5xl w-full mx-auto space-y-8 pb-20">
+              {/* Header */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-display font-black flex items-center gap-3">
+                    <Sparkles className="text-orange-500 shrink-0" /> {isKidsMode ? 'Mapa de Aventuras' : 'Mapa de Progresso'}
+                  </h2>
+                  <p className={`text-sm mt-1 font-bold ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-400'}`}>
+                    {isKidsMode
+                      ? 'Explore mundos mágicos e aprenda brincando!'
+                      : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setShowTutorial(true)}
-                  className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
-                  title="Como Usar"
-                >
-                  <Globe className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={signOut}
-                  className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
-                  title="Sair"
-                >
-                  <Key className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Language Selector */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[Language.ENGLISH, Language.SPANISH, Language.FRENCH].map(lang => (
-                <button
-                  key={lang}
-                  onClick={() => setSelectedLanguage(lang)}
-                  className={`p-4 rounded-2xl border font-bold uppercase transition-all flex flex-col items-center gap-2 
-                    ${selectedLanguage === lang
-                      ? isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b] shadow-lg shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white border-orange-500'
-                      : isKidsMode ? 'bg-white/80 border-[#4ecdc4]/20 text-[#4ecdc4]' : 'bg-white/5 border-white/10 text-slate-400'}`}
-                >
-                  <img
-                    src={lang === Language.ENGLISH ? 'https://flagcdn.com/w80/us.png' : lang === Language.SPANISH ? 'https://flagcdn.com/w80/es.png' : 'https://flagcdn.com/w80/fr.png'}
-                    alt={lang}
-                    className="w-10 h-auto rounded shadow-sm object-cover"
-                  />
-                  <span>{lang}</span>
-                </button>
-              ))}
-            </div>
-
-            {selectedLanguage ? (
-              <div className="flex flex-col lg:flex-row gap-8 overflow-x-hidden">
-                {/* Journey Map */}
-                <div className="flex-1">
-                  <JourneyMap
-                    topics={TOPICS.filter(t => isKidsMode ? t.isKidMode : !t.isKidMode)}
-                    progress={topicProgress}
-                    selectedTopicId={selectedTopicId}
-                    onSelectTopic={(id) => setSelectedTopicId(id)}
-                    isKidsMode={isKidsMode}
-                  />
-                </div>
-
-                {/* Right Panel: Teacher Selection */}
-                <div ref={teacherPanelRef} className="lg:w-1/3 space-y-4 lg:sticky top-8 h-fit">
-                  <div className="glass-premium p-5 rounded-3xl border border-white/10 flex flex-col max-h-[85vh]">
-                    {/* Level Selector */}
-                    <div className="mb-6">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-3 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500 opacity-70'}`}>
-                        <Settings className={`w-3.5 h-3.5 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> Nível de Dificuldade
-                      </label>
-                      <div className="grid grid-cols-2 gap-4">
-                        {[
-                          { id: Level.B1, label: 'B1 - Intermediário' },
-                          { id: Level.B2, label: 'B2 - Avançado' }
-                        ].map((lvl) => (
-                          <button
-                            key={lvl.id}
-                            onClick={() => {
-                              if (!isPremium && lvl.id === Level.B2) {
-                                setShowUpgradeModal(true);
-                              } else {
-                                setSelectedLevel(lvl.id);
-                              }
-                            }}
-                            className={`p-4 rounded-xl border-2 transition-all ${selectedLevel === lvl.id
-                              ? 'border-orange-500 bg-orange-500/10 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]'
-                              : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/20'
-                              }`}
-                          >
-                            <div className="font-bold text-lg mb-1">{lvl.label.split(' - ')[0]}</div>
-                            <div className="text-xs opacity-70 uppercase tracking-widest">{lvl.label.split(' - ')[1]}</div>
-                            {!isPremium && lvl.id === Level.B2 && (
-                              <span className={`p-0.5 rounded ${isKidsMode ? 'bg-white/20' : 'bg-orange-500/10'}`}>
-                                <Key className={`w-3 h-3 ${isKidsMode ? 'text-white' : 'text-orange-500'}`} />
-                              </span>
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Free Conversation Shortcut */}
+                <div className="flex items-center gap-3 self-end sm:self-auto">
+                  {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
                     <button
-                      onClick={() => setSelectedTopicId('free-conversation')}
-                      className={`w-full mb-6 p-4 rounded-[1.5rem] border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedTopicId === 'free-conversation'
-                        ? isKidsMode ? 'bg-[#ff6b6b]/10 border-[#ff6b6b]/50 shadow-lg' : 'bg-gradient-to-br from-indigo-500/15 to-purple-500/15 border-indigo-500/50 shadow-lg shadow-indigo-500/5'
-                        : isKidsMode ? 'bg-white/50 border-[#4ecdc4]/20 hover:border-[#ff6b6b]/30' : 'bg-white/5 border-white/5 hover:border-indigo-500/30'
-                        }`}
+                      onClick={() => setIsAdminDashboardOpen(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
                     >
-                      {selectedTopicId === 'free-conversation' && (
-                        <div className="absolute top-0 right-0 p-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
-                        </div>
-                      )}
-                      <div className={`p-3 rounded-xl transition-all duration-300 ${selectedTopicId === 'free-conversation'
-                        ? isKidsMode ? 'bg-[#ff6b6b] text-white shadow-md' : 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                        : isKidsMode ? 'bg-[#4ecdc4]/20 text-[#4ecdc4]' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700'}`}>
-                        <Sparkles className="w-5 h-5" />
-                      </div>
-                      <div className="text-left">
-                        <span className={`font-black block text-sm tracking-tight ${selectedTopicId === 'free-conversation'
-                          ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white'
-                          : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>
-                          {isKidsMode ? 'Conversa Amiga' : 'Conversa Livre'}
-                        </span>
-                        <span className={`text-[9px] font-bold uppercase tracking-[0.1em] opacity-80 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>
-                          {isKidsMode ? 'Fale o que quiser!' : 'Pratique sem roteiro'}
-                        </span>
-                      </div>
+                      <Shield className="w-4 h-4" /> Dashboard Admin
                     </button>
+                  )}
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${isKidsMode ? 'bg-white/80 border-[#ff6b6b]/20 shadow-sm' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                    <Flame className={`w-4 h-4 ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
+                    <span className={`font-bold text-sm ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-200'}`}>{streak} Dias</span>
+                  </div>
+                  <button
+                    onClick={() => setShowTutorial(true)}
+                    className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
+                    title="Como Usar"
+                  >
+                    <Globe className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={signOut}
+                    className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
+                    title="Sair"
+                  >
+                    <Key className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
 
-                    <div className="mb-5">
-                      <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500 opacity-70'}`}>
-                        <BrainCircuit className={`w-3.5 h-3.5 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> {isKidsMode ? 'Escolha seu Amigo' : 'Escolha seu Mentor'}
-                      </label>
-                    </div>
+              {/* Language Selector */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[Language.ENGLISH, Language.SPANISH, Language.FRENCH].map(lang => (
+                  <button
+                    key={lang}
+                    onClick={() => setSelectedLanguage(lang)}
+                    className={`p-4 rounded-2xl border font-bold uppercase transition-all flex flex-col items-center gap-2 
+                    ${selectedLanguage === lang
+                        ? isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b] shadow-lg shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white border-orange-500'
+                        : isKidsMode ? 'bg-white/80 border-[#4ecdc4]/20 text-[#4ecdc4]' : 'bg-white/5 border-white/10 text-slate-400'}`}
+                  >
+                    <img
+                      src={lang === Language.ENGLISH ? 'https://flagcdn.com/w80/us.png' : lang === Language.SPANISH ? 'https://flagcdn.com/w80/es.png' : 'https://flagcdn.com/w80/fr.png'}
+                      alt={lang}
+                      className="w-10 h-auto rounded shadow-sm object-cover"
+                    />
+                    <span>{lang}</span>
+                  </button>
+                ))}
+              </div>
 
-                    {/* Teachers List */}
-                    <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1 mb-4 min-h-[160px]">
-                      {TEACHERS
-                        .filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode))
-                        .map(teacher => {
-                          const currentPool = TEACHERS.filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode));
-                          const isLocked = !isPremium && currentPool.indexOf(teacher) >= 2;
-                          const isSelected = selectedTeacherId === teacher.id;
+              {selectedLanguage ? (
+                <div className="flex flex-col lg:flex-row gap-8 overflow-x-hidden">
+                  {/* Journey Map */}
+                  <div className="flex-1">
+                    <JourneyMap
+                      topics={TOPICS.filter(t => isKidsMode ? t.isKidMode : !t.isKidMode)}
+                      progress={topicProgress}
+                      selectedTopicId={selectedTopicId}
+                      onSelectTopic={(id) => setSelectedTopicId(id)}
+                      isKidsMode={isKidsMode}
+                    />
+                  </div>
 
-
-                          return (
+                  {/* Right Panel: Teacher Selection */}
+                  <div ref={teacherPanelRef} className="lg:w-1/3 space-y-4 lg:sticky top-8 h-fit">
+                    <div className="glass-premium p-5 rounded-3xl border border-white/10 flex flex-col max-h-[85vh]">
+                      {/* Level Selector */}
+                      <div className="mb-6">
+                        <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-3 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500 opacity-70'}`}>
+                          <Settings className={`w-3.5 h-3.5 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> Nível de Dificuldade
+                        </label>
+                        <div className="grid grid-cols-2 gap-4">
+                          {[
+                            { id: Level.B1, label: 'B1 - Intermediário' },
+                            { id: Level.B2, label: 'B2 - Avançado' }
+                          ].map((lvl) => (
                             <button
-                              key={teacher.id}
+                              key={lvl.id}
                               onClick={() => {
-                                if (isLocked) {
+                                if (!isPremium && lvl.id === Level.B2) {
                                   setShowUpgradeModal(true);
                                 } else {
-                                  setSelectedTeacherId(teacher.id);
+                                  setSelectedLevel(lvl.id);
                                 }
                               }}
-                              className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${isSelected
-                                ? isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/50 shadow-md' : 'bg-orange-500/10 border-orange-500/50 shadow-lg shadow-orange-500/5'
-                                : isKidsMode ? 'bg-white/50 border-[#4ecdc4]/10 hover:border-[#4ecdc4]/30' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                              className={`p-4 rounded-xl border-2 transition-all ${selectedLevel === lvl.id
+                                ? 'border-orange-500 bg-orange-500/10 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]'
+                                : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/20'
                                 }`}
                             >
-                              <div className="relative">
-                                <img src={teacher.avatar} className={`w-11 h-11 rounded-xl object-cover border-2 transition-all duration-300 ${isSelected ? isKidsMode ? 'border-[#4ecdc4] shadow-md' : 'border-orange-500 shadow-lg shadow-orange-500/10' : isKidsMode ? 'border-[#4ecdc4]/20' : 'border-slate-800'} ${isLocked ? 'grayscale opacity-50' : ''}`} />
-                                {isSelected && <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 animate-pulse ${isKidsMode ? 'bg-[#ff6b6b] border-white' : 'bg-orange-500 border-slate-900'}`}></div>}
-                              </div>
-                              <div className="text-left flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                  <span className={`font-black text-sm tracking-tight truncate ${isSelected ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white' : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>{teacher.name}</span>
-                                  {isLocked && <span className={`text-[8px] font-black px-1 py-0.5 rounded border uppercase tracking-tighter shadow-sm flex-shrink-0 ${isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b]/50' : 'bg-orange-500 text-white border-orange-400/50'}`}>PRO</span>}
-                                </div>
-                                <span className={`text-[9px] font-bold uppercase tracking-widest block truncate opacity-70 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>{teacher.accent}</span>
-                              </div>
+                              <div className="font-bold text-lg mb-1">{lvl.label.split(' - ')[0]}</div>
+                              <div className="text-xs opacity-70 uppercase tracking-widest">{lvl.label.split(' - ')[1]}</div>
+                              {!isPremium && lvl.id === Level.B2 && (
+                                <span className={`p-0.5 rounded ${isKidsMode ? 'bg-white/20' : 'bg-orange-500/10'}`}>
+                                  <Key className={`w-3 h-3 ${isKidsMode ? 'text-white' : 'text-orange-500'}`} />
+                                </span>
+                              )}
                             </button>
-                          );
-                        })}
-                    </div>
-
-                    {/* Selected Mission Preview (Footer) */}
-                    {selectedTopicId && (
-                      <div className="pt-5 border-t border-white/5 animate-in slide-in-from-bottom-4 duration-500">
-                        <label className={`text-[10px] font-black uppercase tracking-[0.25em] block mb-3 text-center ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-600'}`}>
-                          {isKidsMode ? 'Tudo pronto para a aventura?' : 'Pronto para iniciar?'}
-                        </label>
-                        <div className={`flex items-center gap-3 mb-4 p-3 rounded-[1.25rem] border ${isKidsMode ? 'bg-white border-[#4ecdc4]/20 shadow-sm' : 'bg-white/5 border-white/5'}`}>
-                          <div className={`p-3 rounded-xl text-2xl shadow-inner ${isKidsMode ? 'bg-[#4ecdc4]/10 text-white' : 'bg-slate-900'}`}>
-                            {TOPICS.find(t => t.id === selectedTopicId)?.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className={`font-black text-base tracking-tight truncate ${isKidsMode ? 'text-[#2d3748]' : 'text-white'}`}>
-                              {TOPICS.find(t => t.id === selectedTopicId)?.name}
-                            </div>
-                            <div className={`inline-flex items-center px-1.5 py-0.5 border rounded-md mt-0.5 ${isKidsMode ? 'bg-[#ff6b6b]/10 border-[#ff6b6b]/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
-                              <span className={`text-[8px] font-black uppercase tracking-widest ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-400'}`}>
-                                {isKidsMode
-                                  ? `Fase ${selectedLevel === Level.B1 ? '1' : '2'}`
-                                  : `Nível ${selectedLevel === Level.B1 ? 'B1' : 'B2'}`}
-                              </span>
-                            </div>
-                          </div>
+                          ))}
                         </div>
+                      </div>
 
-                        {connectionError && (
-                          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-2 text-center flex items-center justify-center gap-2">
-                            <AlertTriangle className="w-3.5 h-3.5" /> {connectionError}
+                      {/* Free Conversation Shortcut */}
+                      <button
+                        onClick={() => setSelectedTopicId('free-conversation')}
+                        className={`w-full mb-6 p-4 rounded-[1.5rem] border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedTopicId === 'free-conversation'
+                          ? isKidsMode ? 'bg-[#ff6b6b]/10 border-[#ff6b6b]/50 shadow-lg' : 'bg-gradient-to-br from-indigo-500/15 to-purple-500/15 border-indigo-500/50 shadow-lg shadow-indigo-500/5'
+                          : isKidsMode ? 'bg-white/50 border-[#4ecdc4]/20 hover:border-[#ff6b6b]/30' : 'bg-white/5 border-white/5 hover:border-indigo-500/30'
+                          }`}
+                      >
+                        {selectedTopicId === 'free-conversation' && (
+                          <div className="absolute top-0 right-0 p-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
                           </div>
                         )}
+                        <div className={`p-3 rounded-xl transition-all duration-300 ${selectedTopicId === 'free-conversation'
+                          ? isKidsMode ? 'bg-[#ff6b6b] text-white shadow-md' : 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                          : isKidsMode ? 'bg-[#4ecdc4]/20 text-[#4ecdc4]' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700'}`}>
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div className="text-left">
+                          <span className={`font-black block text-sm tracking-tight ${selectedTopicId === 'free-conversation'
+                            ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white'
+                            : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>
+                            {isKidsMode ? 'Conversa Amiga' : 'Conversa Livre'}
+                          </span>
+                          <span className={`text-[9px] font-bold uppercase tracking-[0.1em] opacity-80 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>
+                            {isKidsMode ? 'Fale o que quiser!' : 'Pratique sem roteiro'}
+                          </span>
+                        </div>
+                      </button>
 
-                        <button
-                          onClick={startSession}
-                          disabled={!selectedTopicId || connectionStatus === 'connecting'}
-                          className="w-full relative group overflow-hidden"
-                        >
-                          <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity ${isKidsMode ? 'bg-white' : 'bg-gradient-to-r from-orange-400 to-amber-600'}`}></div>
-                          <div className={`relative flex items-center justify-center gap-3 py-4 rounded-[1rem] font-black text-white shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] 
-                            ${isKidsMode ? 'bg-gradient-to-r from-[#4ecdc4] to-[#45b7af] shadow-[#4ecdc4]/20' : 'bg-orange-500 shadow-orange-500/30'}`}>
-                            {connectionStatus === 'connecting' ? (
-                              <>
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                                <span className="uppercase tracking-widest text-xs">Conectando...</span>
-                              </>
-                            ) : (
-                              <>
-                                <span className="uppercase tracking-widest text-base">
-                                  {isKidsMode ? 'COMEÇAR AVENTURA!' : 'Iniciar Missão'}
-                                </span>
-                                <ArrowRight className={`w-5 h-5 group-hover:translate-x-1 transition-transform ${isKidsMode ? 'animate-bounce-hover' : ''}`} />
-                              </>
-                            )}
-                          </div>
-                        </button>
+                      <div className="mb-5">
+                        <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500 opacity-70'}`}>
+                          <BrainCircuit className={`w-3.5 h-3.5 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> {isKidsMode ? 'Escolha seu Amigo' : 'Escolha seu Mentor'}
+                        </label>
                       </div>
-                    )}
+
+                      {/* Teachers List */}
+                      <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1 mb-4 min-h-[160px]">
+                        {TEACHERS
+                          .filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode))
+                          .map(teacher => {
+                            const currentPool = TEACHERS.filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode));
+                            const isLocked = !isPremium && currentPool.indexOf(teacher) >= 2;
+                            const isSelected = selectedTeacherId === teacher.id;
+
+
+                            return (
+                              <button
+                                key={teacher.id}
+                                onClick={() => {
+                                  if (isLocked) {
+                                    setShowUpgradeModal(true);
+                                  } else {
+                                    setSelectedTeacherId(teacher.id);
+                                  }
+                                }}
+                                className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${isSelected
+                                  ? isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/50 shadow-md' : 'bg-orange-500/10 border-orange-500/50 shadow-lg shadow-orange-500/5'
+                                  : isKidsMode ? 'bg-white/50 border-[#4ecdc4]/10 hover:border-[#4ecdc4]/30' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
+                                  }`}
+                              >
+                                <div className="relative">
+                                  <img src={teacher.avatar} className={`w-11 h-11 rounded-xl object-cover border-2 transition-all duration-300 ${isSelected ? isKidsMode ? 'border-[#4ecdc4] shadow-md' : 'border-orange-500 shadow-lg shadow-orange-500/10' : isKidsMode ? 'border-[#4ecdc4]/20' : 'border-slate-800'} ${isLocked ? 'grayscale opacity-50' : ''}`} />
+                                  {isSelected && <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 animate-pulse ${isKidsMode ? 'bg-[#ff6b6b] border-white' : 'bg-orange-500 border-slate-900'}`}></div>}
+                                </div>
+                                <div className="text-left flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className={`font-black text-sm tracking-tight truncate ${isSelected ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white' : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>{teacher.name}</span>
+                                    {isLocked && <span className={`text-[8px] font-black px-1 py-0.5 rounded border uppercase tracking-tighter shadow-sm flex-shrink-0 ${isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b]/50' : 'bg-orange-500 text-white border-orange-400/50'}`}>PRO</span>}
+                                  </div>
+                                  <span className={`text-[9px] font-bold uppercase tracking-widest block truncate opacity-70 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>{teacher.accent}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                      </div>
+
+                      {/* Selected Mission Preview (Footer) */}
+                      {selectedTopicId && (
+                        <div className="pt-5 border-t border-white/5 animate-in slide-in-from-bottom-4 duration-500">
+                          <label className={`text-[10px] font-black uppercase tracking-[0.25em] block mb-3 text-center ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-600'}`}>
+                            {isKidsMode ? 'Tudo pronto para a aventura?' : 'Pronto para iniciar?'}
+                          </label>
+                          <div className={`flex items-center gap-3 mb-4 p-3 rounded-[1.25rem] border ${isKidsMode ? 'bg-white border-[#4ecdc4]/20 shadow-sm' : 'bg-white/5 border-white/5'}`}>
+                            <div className={`p-3 rounded-xl text-2xl shadow-inner ${isKidsMode ? 'bg-[#4ecdc4]/10 text-white' : 'bg-slate-900'}`}>
+                              {TOPICS.find(t => t.id === selectedTopicId)?.icon}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className={`font-black text-base tracking-tight truncate ${isKidsMode ? 'text-[#2d3748]' : 'text-white'}`}>
+                                {TOPICS.find(t => t.id === selectedTopicId)?.name}
+                              </div>
+                              <div className={`inline-flex items-center px-1.5 py-0.5 border rounded-md mt-0.5 ${isKidsMode ? 'bg-[#ff6b6b]/10 border-[#ff6b6b]/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-400'}`}>
+                                  {isKidsMode
+                                    ? `Fase ${selectedLevel === Level.B1 ? '1' : '2'}`
+                                    : `Nível ${selectedLevel === Level.B1 ? 'B1' : 'B2'}`}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {connectionError && (
+                            <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-[10px] font-bold animate-in fade-in slide-in-from-top-2 text-center flex items-center justify-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5" /> {connectionError}
+                            </div>
+                          )}
+
+                          <button
+                            onClick={startSession}
+                            disabled={!selectedTopicId || connectionStatus === 'connecting'}
+                            className="w-full relative group overflow-hidden"
+                          >
+                            <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity ${isKidsMode ? 'bg-white' : 'bg-gradient-to-r from-orange-400 to-amber-600'}`}></div>
+                            <div className={`relative flex items-center justify-center gap-3 py-4 rounded-[1rem] font-black text-white shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98] 
+                            ${isKidsMode ? 'bg-gradient-to-r from-[#4ecdc4] to-[#45b7af] shadow-[#4ecdc4]/20' : 'bg-orange-500 shadow-orange-500/30'}`}>
+                              {connectionStatus === 'connecting' ? (
+                                <>
+                                  <Loader2 className="w-5 h-5 animate-spin" />
+                                  <span className="uppercase tracking-widest text-xs">Conectando...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="uppercase tracking-widest text-base">
+                                    {isKidsMode ? 'COMEÇAR AVENTURA!' : 'Iniciar Missão'}
+                                  </span>
+                                  <ArrowRight className={`w-5 h-5 group-hover:translate-x-1 transition-transform ${isKidsMode ? 'animate-bounce-hover' : ''}`} />
+                                </>
+                              )}
+                            </div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-20 text-slate-500">Selecione um idioma para ver o seu mapa.</div>
-            )}
+              ) : (
+                <div className="text-center py-20 text-slate-500">Selecione um idioma para ver o seu mapa.</div>
+              )}
+            </div>
           </div>
-        </div>
-      )
+        )
       }
 
       {
@@ -1181,17 +1213,19 @@ const App: React.FC = () => {
         )
       }
 
-      {step !== 'call' && (
-        <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-2 pointer-events-auto">
-          <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
-            <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
-            <div className="w-[1px] h-2 bg-slate-800"></div>
-            <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
+      {
+        step !== 'call' && (
+          <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-2 pointer-events-auto">
+            <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
+              <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
+              <div className="w-[1px] h-2 bg-slate-800"></div>
+              <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
+            </div>
+            <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
+            {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
           </div>
-          <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
-          {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
-        </div>
-      )}
+        )
+      }
 
 
       {/* Upgrade Modal */}
@@ -1205,17 +1239,21 @@ const App: React.FC = () => {
         userEmail={user?.email}
         triggerReason={upgradeModalReason}
       />
-      {isAdminDashboardOpen && (
-        <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
-      )}
+      {
+        isAdminDashboardOpen && (
+          <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
+        )
+      }
 
-      {showTutorial && (
-        <OnboardingTutorial onComplete={completeTutorial} isKidsMode={isKidsMode} />
-      )}
+      {
+        showTutorial && (
+          <OnboardingTutorial onComplete={completeTutorial} isKidsMode={isKidsMode} />
+        )
+      }
 
       {activeLegalModal === 'privacy' && <PrivacyPolicy onClose={() => setActiveLegalModal(null)} />}
       {activeLegalModal === 'terms' && <TermsOfService onClose={() => setActiveLegalModal(null)} />}
-    </main>
+    </main >
   );
 };
 

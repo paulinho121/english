@@ -44,14 +44,8 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComple
             animation: "animate-float"
         },
         {
-            title: "Escolha seu Perfil",
-            description: "No topo, você pode alternar entre o Modo Normal e o Modo Kids (com personagens lúdicos e aventuras mágicas).",
-            icon: <Sparkles className="w-12 h-12 text-[#ff6b6b]" />,
-            animation: "animate-bounce-slow"
-        },
-        {
             title: "Diferentes Tópicos",
-            description: "Escolha o que deseja praticar no Mapa: desde Entrevistas de Emprego até o Mundo dos Animais no Modo Kids.",
+            description: "Escolha o que deseja praticar no Mapa: desde Entrevistas de Emprego até Viagens e Cotidiano.",
             icon: <LayoutGrid className="w-12 h-12 text-blue-500" />,
             animation: "animate-pulse"
         },
