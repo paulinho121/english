@@ -142,7 +142,15 @@ const App: React.FC = () => {
 
   // Listen for Password Recovery Event - Independent of user state
   useEffect(() => {
+    // Check specific hash for recovery (Fallback)
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      console.log('Recovery hash detected');
+      setShowUpdatePasswordModal(true);
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth event:', event);
       if (event === 'PASSWORD_RECOVERY') {
         setShowUpdatePasswordModal(true);
       }
