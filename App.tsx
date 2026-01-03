@@ -134,8 +134,6 @@ const App: React.FC = () => {
       }
       setTopicProgress(newProgress);
     };
-
-    setTopicProgress(newProgress);
   };
 
   loadProgress();
