@@ -316,12 +316,12 @@ const App: React.FC = () => {
               PROTOCOLO PEDAGÓGICO OBRIGATÓRIO POR NÍVEL:
 
               ${selectedLevel === Level.B1 ? `
-              - NÍVEL B1 (INTERMEDIÁRIO - Protocolo "Bridge to Fluency"):
-                1. Use 60% Português e 40% ${teacher.language}.
-                2. Explique conceitos mais complexos em português.
-                3. Incentive frases completas, mas aceite erros menores.
-                4. Foque em comunicação funcional: o aluno consegue se fazer entender?
-                5. Introduza vocabulário mais rico.
+              - NÍVEL B1 (INTERMEDIÁRIO - Protocolo "Mixed Immersion"):
+                1. AUMENTAR CARGA DE INGLÊS: Fale misturado (Português/Inglês) mas force o uso de termos em inglês.
+                2. EXIGÊNCIA DE OUTPUT: Se o aluno falar em português, entenda, mas peça gentilmente: "Can you try to say that in English?".
+                3. CORREÇÃO ATIVA: Corrija erros de pronúncia e gramática. O objetivo é destravar a fala, mesmo que errada, para poder corrigir.
+                4. VOCABULÁRIO: Use palavras em inglês no meio de frases em português para acostumar o ouvido (Code-Switching).
+                5. META: Fazer o aluno suar a camisa. Tire ele da zona de conforto do português.
               ` : ''}
 
               ${selectedLevel === Level.B2 ? `
