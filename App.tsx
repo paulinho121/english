@@ -110,7 +110,11 @@ const App: React.FC = () => {
 
       const { data: profile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial').eq('id', user.id).single();
 
-      if (isAdmin) {
+      // TEMPORARY DEMO UNLOCK (Expires Jan 10, 2026)
+      // Removes payment locks for investors/demo
+      const isDemoPeriod = new Date() < new Date('2026-01-10');
+
+      if (isAdmin || isDemoPeriod) {
         setIsPremium(true);
       } else if (profile) {
         setIsPremium(profile.is_premium || false);
