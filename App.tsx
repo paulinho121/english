@@ -23,6 +23,7 @@ import {
   ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
+import { SeanEllisSurvey } from './components/SeanEllisSurvey';
 
 // Initialize Analytics
 initAnalytics();
@@ -99,6 +100,29 @@ const App: React.FC = () => {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const teacherPanelRef = useRef<HTMLDivElement>(null);
 
+  const [showSurvey, setShowSurvey] = useState(false);
+
+  useEffect(() => {
+    // Demo Trigger for PMF Survey:
+    // Show if: 
+    // 1. Not answered yet (localStorage)
+    // 2. Used for at least 3 minutes (enough to form opinion)
+    // 3. Not currently in a call (don't interrupt)
+
+    // Check localStorage on mount
+    const hasAnswered = localStorage.getItem('linguaflow_pmf_answered');
+    if (!hasAnswered && dailyMinutesUsed >= 3 && step !== 'call' && !showTutorial) {
+      // Add a small delay so it doesn't pop up INSTANTLY after call
+      const timer = setTimeout(() => setShowSurvey(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [dailyMinutesUsed, step, showTutorial]);
+
+  const handleSurveyComplete = () => {
+    setShowSurvey(false);
+    localStorage.setItem('linguaflow_pmf_answered', 'true');
+  };
+
   useEffect(() => {
     const saved = localStorage.getItem('linguistai_stage');
     if (saved) setHasSavedStage(true);
@@ -106,18 +130,29 @@ const App: React.FC = () => {
     const loadProgress = async () => {
       if (!user) return;
 
+      // Auto-unlock survey for testing if needed
+      // localStorage.removeItem('linguaflow_pmf_answered'); 
+
+
       const isAdmin = user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
 
       const { data: profile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial').eq('id', user.id).single();
 
-      // TEMPORARY DEMO UNLOCK (Expires Jan 10, 2026)
-      // Removes payment locks for investors/demo
+      // TEMPORARY DEMO UNLOCK (Content Only)
+      // Removes payment locks for display, but timer is strictly enforced.
       const isDemoPeriod = new Date() < new Date('2026-01-10');
+      const realPremiumStatus = profile?.is_premium || false;
 
-      if (isAdmin || isDemoPeriod) {
+      // Logic:
+      // 1. If Admin -> TRUE Premium (Unlimited Time, Unlocked Content)
+      // 2. If Real Premium -> TRUE Premium (Unlimited Time, Unlocked Content)
+      // 3. If Demo Period -> "Fake" Premium for UI (Unlocked Content), but FALSE for Time (Limited Time)
+
+      if (isAdmin || realPremiumStatus) {
         setIsPremium(true);
-      } else if (profile) {
-        setIsPremium(profile.is_premium || false);
+      } else if (isDemoPeriod) {
+        // UI Unlocked (so they see no padlocks)
+        setIsPremium(true);
       } else {
         setIsPremium(false);
       }
@@ -223,7 +258,22 @@ const App: React.FC = () => {
 
   // Session Timer for Monetization
   useEffect(() => {
-    if (step !== 'call' || isPremium) return;
+    // Admin and Real Premium are exempt
+    const isAdmin = user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
+    // We need to fetch/know real premium status here. 
+    // Since 'isPremium' is now potentially "fake true" for demo, we must rely on a stricter check.
+    // However, to keep it simple: If it's a demo user (isPremium=true but NOT admin), we enforce the limit.
+
+    // STRICT DEMO RULE: Even if unlocked, if you are not Admin, you have 10 mins.
+    if (step !== 'call') return;
+
+    if (isAdmin) return; // Admins are gods.
+
+    // Everyone else (Demo or Free) gets 10 minutes. 
+    // If they have a REAL subscription, they should be exempt. 
+    // But currently, only Admin has a real subscription in this context.
+
+    // Logic: Limit is enforced for EVERYONE except Admin during this "Demo Pitch" phase.
 
     const FREE_LIMIT_MINUTES = 10;
     const interval = setInterval(() => {
@@ -235,13 +285,13 @@ const App: React.FC = () => {
           endCall();
           setUpgradeModalReason('time_limit');
           setShowUpgradeModal(true);
-          setConnectionError("Limite diário de 10 minutos atingido (Grátis).");
+          setConnectionError("Limite de demonstração diário atingido (10 min).");
         }
       }
     }, 10000); // Check every 10 seconds
 
     return () => clearInterval(interval);
-  }, [step, isPremium, sessionStartTime, dailyMinutesUsed]);
+  }, [step, isPremium, sessionStartTime, dailyMinutesUsed, user]);
 
   const startSession = async () => {
     if (!isPremium && dailyMinutesUsed >= 10) {
@@ -1291,6 +1341,14 @@ const App: React.FC = () => {
 
       {activeLegalModal === 'privacy' && <PrivacyPolicy onClose={() => setActiveLegalModal(null)} />}
       {activeLegalModal === 'terms' && <TermsOfService onClose={() => setActiveLegalModal(null)} />}
+
+      {/* PMF Survey Modal */}
+      {showSurvey && (
+        <SeanEllisSurvey
+          onClose={() => setShowSurvey(false)}
+          onComplete={handleSurveyComplete}
+        />
+      )}
     </main >
   );
 };
