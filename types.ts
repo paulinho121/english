@@ -6,9 +6,8 @@ export enum Language {
 }
 
 export enum Level {
-  BEGINNER = 'Beginner',
-  INTERMEDIATE = 'Intermediate',
-  ADVANCED = 'Advanced'
+  B1 = 'B1 (Intermediário)',
+  B2 = 'B2 (Intermediário Superior)'
 }
 
 export interface Teacher {
@@ -46,10 +45,13 @@ export interface Topic {
 
 export interface SessionReportData {
   score: number;
-  mistakes: { mistake: string; correction: string }[];
+  strengths: string[];
+  mistakes: { mistake: string; correction: string; explanation: string }[];
+  improvements: { original: string; adjusted: string; explanation: string }[];
   vocabulary: { word: string; translation: string }[];
   tip: string;
   continuationContext?: string;
+  duration?: string;
 }
 
 export interface PronunciationPhrase {

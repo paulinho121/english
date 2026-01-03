@@ -53,7 +53,7 @@ const App: React.FC = () => {
   const { user, loading, signOut } = useAuth();
   const [step, setStep] = useState<'welcome' | 'setup' | 'call'>('welcome');
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
-  const [selectedLevel, setSelectedLevel] = useState<Level>(Level.BEGINNER);
+  const [selectedLevel, setSelectedLevel] = useState<Level>(Level.B1);
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [isTeacherSpeaking, setIsTeacherSpeaking] = useState(false);
@@ -302,30 +302,22 @@ const App: React.FC = () => {
               NÍVEL DO ALUNO: ${selectedLevel}.
               PROTOCOLO PEDAGÓGICO OBRIGATÓRIO POR NÍVEL:
 
-              ${selectedLevel === Level.BEGINNER ? `
-              - NÍVEL BÁSICO (Protocolo "Safe Path"):
-                1. Use 70% Português (explicações) e 30% ${teacher.language} (prática).
-                2. Explique o conceito em português, mas peça para o aluno repetir a frase curta em ${teacher.language}.
-                3. Se o aluno errar, corrija IMEDIATAMENTE de forma gentil em português.
-                4. Encoraje o tempo todo ("Muito bem!", "Isso mesmo!").
-                5. Use vocabulário do dia a dia.
+              ${selectedLevel === Level.B1 ? `
+              - NÍVEL B1 (INTERMEDIÁRIO - Protocolo "Bridge to Fluency"):
+                1. Use 60% Português e 40% ${teacher.language}.
+                2. Explique conceitos mais complexos em português.
+                3. Incentive frases completas, mas aceite erros menores.
+                4. Foque em comunicação funcional: o aluno consegue se fazer entender?
+                5. Introduza vocabulário mais rico.
               ` : ''}
 
-              ${selectedLevel === Level.INTERMEDIATE ? `
-              - NÍVEL MÉDIO (Protocolo "Bridge to Fluency"):
-                1. Use 50% Português e 50% ${teacher.language}.
-                2. Comece frases em ${teacher.language} e use português apenas para traduzir conceitos complexos ou palavras novas.
-                3. Incentive o aluno a elaborar frases completas. Se ele responder com uma palavra, pergunte "Como você diria isso em uma frase completa?".
-                4. Introduza expressões comuns (phrasal verbs/idioms).
-              ` : ''}
-
-              ${selectedLevel === Level.ADVANCED ? `
-              - NÍVEL PRO (Protocolo "High Immersion"):
-                1. Use 100% ${teacher.language}. NUNCA fale português.
-                2. Fale em velocidade natural de um nativo.
-                3. Foco em nuances: sugira sinônimos mais sofisticados ou formas mais naturais de dizer algo.
-                4. Desafie o aluno com perguntas complexas e debates.
-                5. O feedback deve ser técnico e refinado.
+              ${selectedLevel === Level.B2 ? `
+              - NÍVEL B2 (INTERMEDIÁRIO SUPERIOR - Protocolo "High Immersion"):
+                1. Use 90% ${teacher.language}. Português apenas se o aluno travar totalmente.
+                2. Fale em velocidade natural.
+                3. Exija precisão gramatical e correção de erros.
+                4. Incentive o uso de conectivos e estruturas mais complexas.
+                5. O feedback deve focar em soar "natural" e menos "traduzido".
               ` : ''}
 
               DIRETRIZES GERAIS DE ENSINO:
@@ -351,35 +343,56 @@ const App: React.FC = () => {
               { function_declarations: [{ name: 'next_phrase', description: 'Next phrase' }] },
               {
                 function_declarations: [{
-                  name: 'save_session_report',
-                  description: 'Saves the student performance report at the end of the session.',
+                  name: "save_session_report",
+                  description: "Save a detailed report of the conversation session.",
                   parameters: {
-                    type: 'OBJECT',
+                    type: "OBJECT",
                     properties: {
-                      score: { type: 'NUMBER', description: 'Overall score from 0 to 100' },
+                      score: { type: "NUMBER", description: "Score from 0 to 100 based on performance" },
+                      strengths: {
+                        type: "ARRAY",
+                        items: { type: "STRING" },
+                        description: "List of specific things the student did well (pronunciation, vocabulary, grammar)"
+                      },
                       mistakes: {
-                        type: 'ARRAY',
+                        type: "ARRAY",
                         items: {
-                          type: 'OBJECT',
+                          type: "OBJECT",
                           properties: {
-                            mistake: { type: 'STRING' },
-                            correction: { type: 'STRING' }
+                            mistake: { type: "STRING" },
+                            correction: { type: "STRING" },
+                            explanation: { type: "STRING" }
                           }
-                        }
+                        },
+                        description: "List of major mistakes with corrections and brief explanations"
+                      },
+                      improvements: {
+                        type: "ARRAY",
+                        items: {
+                          type: "OBJECT",
+                          properties: {
+                            original: { type: "STRING", description: "What the user said" },
+                            adjusted: { type: "STRING", description: "A more natural/native way to say it (B1/B2 level)" },
+                            explanation: { type: "STRING", description: "Why the adjustment is better" }
+                          }
+                        },
+                        description: "Suggestions for sounding more natural or professional"
                       },
                       vocabulary: {
-                        type: 'ARRAY',
+                        type: "ARRAY",
                         items: {
-                          type: 'OBJECT',
+                          type: "OBJECT",
                           properties: {
-                            word: { type: 'STRING' },
-                            translation: { type: 'STRING' }
+                            word: { type: "STRING" },
+                            translation: { type: "STRING" }
                           }
-                        }
+                        },
+                        description: "List of new or relevant vocabulary used"
                       },
-                      tip: { type: 'STRING', description: 'A helpful tip from the teacher' }
+                      tip: { type: "STRING", description: "A motivational tip for the student" },
+                      continuationContext: { type: "STRING", description: "Context for the next session" }
                     },
-                    required: ['score', 'mistakes', 'vocabulary', 'tip']
+                    required: ["score", "strengths", "mistakes", "improvements", "vocabulary", "tip"]
                   }
                 }]
               }
@@ -518,6 +531,15 @@ const App: React.FC = () => {
               for (const call of functionCalls) {
                 if (call.name === 'save_session_report') {
                   const report = call.args as unknown as SessionReportData;
+
+                  // Calculate Duration
+                  if (sessionStartTime) {
+                    const diffMs = Date.now() - sessionStartTime;
+                    const mins = Math.floor(diffMs / 60000);
+                    const secs = Math.floor((diffMs % 60000) / 1000);
+                    report.duration = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                  }
+
                   setSessionReport(report);
 
                   if (selectedTopicId && user) {
@@ -865,28 +887,28 @@ const App: React.FC = () => {
                       <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 mb-3 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500 opacity-70'}`}>
                         <Settings className={`w-3.5 h-3.5 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> Nível de Dificuldade
                       </label>
-                      <div className={`flex p-1.5 rounded-2xl border ${isKidsMode ? 'bg-white/50 border-[#4ecdc4]/20' : 'bg-slate-900/40 border-white/5'}`}>
+                      <div className="grid grid-cols-2 gap-4">
                         {[
-                          { id: Level.BEGINNER, label: isKidsMode ? 'Fase 1' : 'Básico' },
-                          { id: Level.INTERMEDIATE, label: isKidsMode ? 'Fase 2' : 'Médio' },
-                          { id: Level.ADVANCED, label: isKidsMode ? 'Fase 3' : 'Pro' }
-                        ].map(lvl => (
+                          { id: Level.B1, label: 'B1 - Intermediário' },
+                          { id: Level.B2, label: 'B2 - Avançado' }
+                        ].map((lvl) => (
                           <button
                             key={lvl.id}
                             onClick={() => {
-                              if (!isPremium && (lvl.id === Level.INTERMEDIATE || lvl.id === Level.ADVANCED)) {
+                              if (!isPremium && lvl.id === Level.B2) {
                                 setShowUpgradeModal(true);
                               } else {
                                 setSelectedLevel(lvl.id);
                               }
                             }}
-                            className={`flex-1 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${selectedLevel === lvl.id
-                              ? isKidsMode ? 'bg-[#4ecdc4] text-white shadow-md' : 'bg-gradient-to-br from-slate-700 to-slate-800 text-white shadow-lg shadow-black/20 border border-white/10'
-                              : isKidsMode ? 'text-[#4ecdc4] hover:bg-[#4ecdc4]/10' : 'text-slate-500 hover:text-slate-300 hover:bg-white/5'
+                            className={`p-4 rounded-xl border-2 transition-all ${selectedLevel === lvl.id
+                              ? 'border-orange-500 bg-orange-500/10 text-white shadow-[0_0_20px_rgba(249,115,22,0.3)]'
+                              : 'border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:border-white/20'
                               }`}
                           >
-                            {lvl.label}
-                            {!isPremium && (lvl.id === Level.INTERMEDIATE || lvl.id === Level.ADVANCED) && (
+                            <div className="font-bold text-lg mb-1">{lvl.label.split(' - ')[0]}</div>
+                            <div className="text-xs opacity-70 uppercase tracking-widest">{lvl.label.split(' - ')[1]}</div>
+                            {!isPremium && lvl.id === Level.B2 && (
                               <span className={`p-0.5 rounded ${isKidsMode ? 'bg-white/20' : 'bg-orange-500/10'}`}>
                                 <Key className={`w-3 h-3 ${isKidsMode ? 'text-white' : 'text-orange-500'}`} />
                               </span>
@@ -990,8 +1012,8 @@ const App: React.FC = () => {
                             <div className={`inline-flex items-center px-1.5 py-0.5 border rounded-md mt-0.5 ${isKidsMode ? 'bg-[#ff6b6b]/10 border-[#ff6b6b]/20' : 'bg-orange-500/10 border-orange-500/20'}`}>
                               <span className={`text-[8px] font-black uppercase tracking-widest ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-400'}`}>
                                 {isKidsMode
-                                  ? `Fase ${selectedLevel === Level.BEGINNER ? '1' : selectedLevel === Level.INTERMEDIATE ? '2' : '3'}`
-                                  : `Nível ${selectedLevel === Level.BEGINNER ? 'Básico' : selectedLevel === Level.INTERMEDIATE ? 'Médio' : 'Pro'}`}
+                                  ? `Fase ${selectedLevel === Level.B1 ? '1' : '2'}`
+                                  : `Nível ${selectedLevel === Level.B1 ? 'B1' : 'B2'}`}
                               </span>
                             </div>
                           </div>
