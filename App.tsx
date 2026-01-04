@@ -972,6 +972,15 @@ const MainApp: React.FC = () => {
           </div>
 
           <div className="absolute top-6 right-6 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
+            {/* Premium/Free Badge */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isPremium
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                : 'bg-slate-800/50 border-white/10 text-slate-400'
+              }`}>
+              {isPremium ? <Sparkles className="w-4 h-4 text-amber-400" /> : <div className="w-2 h-2 rounded-full bg-slate-500" />}
+              <span className="font-bold text-xs tracking-wider">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+            </div>
+
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
               <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
               <span className="font-bold">{streak} Dias</span>
