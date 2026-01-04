@@ -182,6 +182,8 @@ const MainApp: React.FC = () => {
         identifyUser(user.id, user.email);
       }
 
+      const hasCompletedTutorialLocal = localStorage.getItem('linguistai_tutorial_complete') === 'true';
+
       if (profile) {
         setStreak(profile.streak_count || 0);
         setDailyMinutesUsed(profile.daily_minutes_used || 0);
@@ -190,10 +192,16 @@ const MainApp: React.FC = () => {
         if (profile.last_level) setSelectedLevel(profile.last_level as Level);
         if (profile.last_teacher_id) setSelectedTeacherId(profile.last_teacher_id);
         if (profile.last_topic_id) setSelectedTopicId(profile.last_topic_id);
-        if (profile.has_completed_tutorial === false) setShowTutorial(true);
+
+        // Show tutorial only if both DB and LocalStorage say it's not complete
+        if (profile.has_completed_tutorial === false && !hasCompletedTutorialLocal) {
+          setShowTutorial(true);
+        }
       } else {
         // Fallback: If absolutely no profile found after retries, assume new user -> Show Tutorial
-        setShowTutorial(true);
+        if (!hasCompletedTutorialLocal) {
+          setShowTutorial(true);
+        }
       }
 
       const { data: progressData } = await supabase.from('user_progress').select('topic_id, score, status, current_level, total_minutes').eq('user_id', user.id);
@@ -926,6 +934,7 @@ const MainApp: React.FC = () => {
 
   const completeTutorial = async () => {
     setShowTutorial(false);
+    localStorage.setItem('linguistai_tutorial_complete', 'true');
     if (user) {
       await supabase.from('profiles').update({ has_completed_tutorial: true }).eq('id', user.id);
     }
