@@ -711,13 +711,25 @@ const App: React.FC = () => {
 
       setTopicProgress(prev => ({ ...prev, [selectedTopicId]: newProgress }));
 
-      // Save to Supabase
-      await supabase.from('user_progress').upsert({
-        user_id: user.id,
-        topic_id: selectedTopicId,
-        score: newProgress,
-        status: newProgress === 100 ? 'completed' : 'unlocked'
-      }, { onConflict: 'user_id, topic_id' });
+      // Save to Supabase with Debugging
+      try {
+        console.log('📝 Saving progress for:', { userId: user.id, topicId: selectedTopicId, progress: newProgress });
+        const { error: upsertError } = await supabase.from('user_progress').upsert({
+          user_id: user.id,
+          topic_id: selectedTopicId,
+          score: newProgress,
+          status: newProgress === 100 ? 'completed' : 'unlocked'
+        }, { onConflict: 'user_id, topic_id' });
+
+        if (upsertError) {
+          console.error('❌ Error saving progress:', upsertError);
+          // Optional: Show UI error
+        } else {
+          console.log('✅ Progress saved successfully');
+        }
+      } catch (err) {
+        console.error('❌ Unexpected error in progress save:', err);
+      }
     }
 
     // Cleanup Resources
