@@ -19,7 +19,7 @@ import { UpdatePasswordModal } from './components/UpdatePasswordModal';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { PrivacyPolicy, TermsOfService } from './components/LegalModals';
 import { LandingPage } from './components/LandingPage';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
   ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket
@@ -56,10 +56,10 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
   return buffer;
 }
 
-const App: React.FC = () => {
+const MainApp: React.FC = () => {
   const { user, loading, signOut } = useAuth();
-  const location = useLocation();
   const navigate = useNavigate();
+
 
   const [step, setStep] = useState<'welcome' | 'setup' | 'call'>('welcome');
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
@@ -1457,6 +1457,15 @@ const App: React.FC = () => {
         />
       )}
     </main >
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <Routes>
+      <Route path="/landingpage" element={<LandingPage onStart={() => window.location.href = '/'} />} />
+      <Route path="/*" element={<MainApp />} />
+    </Routes>
   );
 };
 
