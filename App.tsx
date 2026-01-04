@@ -902,7 +902,7 @@ const App: React.FC = () => {
       )}
 
       {step === 'welcome' && (
-        <div className={`flex-1 flex flex-col items-center justify-center relative p-6 text-center bg-mesh overflow-hidden ${isKidsMode ? 'pt-24 md:pt-12' : ''}`}>
+        <div className={`flex-1 flex flex-col items-center justify-between relative p-6 text-center bg-mesh overflow-hidden ${isKidsMode ? 'pt-24 md:pt-12' : ''}`}>
           {/* Background Blobs - Enhanced */}
           <div className="absolute inset-0 pointer-events-none overflow-hidden">
             <div className="blob blob-1 mix-blend-screen" style={{ width: '60vw', height: '60vw', left: '-10%', top: '-20%' }}></div>
@@ -910,18 +910,6 @@ const App: React.FC = () => {
           </div>
 
           <div className="absolute top-6 right-6 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
-            {/* Kids Mode Toggle - HIDDEN FOR STARTUP PITCH
-            <button
-              onClick={() => setIsKidsMode(!isKidsMode)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md transition-all duration-500 group pointer-events-auto ${isKidsMode ? 'bg-white text-[#ff6b6b] border-[#ff6b6b] shadow-[0_0_20px_rgba(255,107,107,0.3)]' : 'bg-slate-900/50 text-slate-400 border-white/10 hover:border-orange-500/30'}`}
-            >
-              <div className={`p-1 rounded-full transition-transform duration-500 ${isKidsMode ? 'bg-[#ff6b6b] text-white rotate-[360deg]' : 'bg-slate-800 text-slate-500'}`}>
-                <Sparkles className="w-3.5 h-3.5" />
-              </div>
-              <span className="font-black text-xs uppercase tracking-widest">{isKidsMode ? 'Modo Kids Ativo' : 'Ativar Modo Kids'}</span>
-            </button>
-            */}
-
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
               <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
               <span className="font-bold">{streak} Dias</span>
@@ -932,7 +920,7 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <div className="space-y-8 md:space-y-12 z-10 max-w-2xl relative mb-16 md:mb-28">
+          <div className="flex-1 flex flex-col justify-center items-center w-full z-10 max-w-2xl relative">
             <div className={`transition-all duration-1000 ${isKidsMode ? 'animate-float opacity-100 scale-100 md:scale-110' : 'animate-float-slow'}`}>
               <img
                 src="/logo.png"
@@ -961,7 +949,7 @@ const App: React.FC = () => {
             </div>
 
 
-            <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both">
+            <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both mt-8 md:mt-12">
               <button
                 onClick={() => { setStep('setup'); }}
                 className="btn-shimmer px-8 py-4 md:px-16 md:py-7 rounded-2xl md:rounded-[2.5rem] text-lg md:text-3xl font-black flex items-center justify-center gap-3 md:gap-4 mx-auto group shadow-2xl shadow-orange-500/10 active:scale-95 transition-all"
@@ -983,6 +971,17 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Footer for Welcome Screen */}
+          <div className="w-full py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-2 pointer-events-auto flex-shrink-0">
+            <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
+              <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
+              <div className="w-[1px] h-2 bg-slate-800"></div>
+              <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
+            </div>
+            <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
+            {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
+          </div>
         </div>
       )
       }
@@ -1210,6 +1209,17 @@ const App: React.FC = () => {
               ) : (
                 <div className="text-center py-20 text-slate-500">Selecione um idioma para ver o seu mapa.</div>
               )}
+
+              {/* Footer Static in Setup */}
+              <div className="pt-8 pb-4 text-center text-[10px] text-slate-700 font-medium flex flex-col gap-2">
+                <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
+                  <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
+                  <div className="w-[1px] h-2 bg-slate-800"></div>
+                  <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
+                </div>
+                <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
+                {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
+              </div>
             </div>
           </div>
         )
@@ -1345,19 +1355,7 @@ const App: React.FC = () => {
         )
       }
 
-      {
-        step !== 'call' && (
-          <div className="absolute bottom-6 left-0 right-0 py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-2 pointer-events-auto">
-            <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
-              <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
-              <div className="w-[1px] h-2 bg-slate-800"></div>
-              <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
-            </div>
-            <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
-            {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
-          </div>
-        )
-      }
+
 
 
       {/* Upgrade Modal */}
