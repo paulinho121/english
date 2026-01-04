@@ -353,7 +353,7 @@ const App: React.FC = () => {
     try {
       // Connect to Proxy (Production or Local)
       // const ws = new WebSocket('ws://localhost:8080'); // Localhost Fallback
-      const ws = new WebSocket('wss://linguaflow-proxy-885367892979.us-central1.run.app');
+      const ws = new WebSocket('wss://linguaflow-proxy-458232577422.us-central1.run.app');
 
       ws.onopen = () => {
         console.log('Proxy conectado');
