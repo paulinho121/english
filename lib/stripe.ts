@@ -14,7 +14,7 @@ export const stripeService = {
         // 1. PREFERRED METHOD: Use a Stripe Payment Link from the Dashboard
         // Replace this URL with your actual Stripe Payment Link (e.g., https://buy.stripe.com/...)
         // You can also append `?prefilled_email=` to these links.
-        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK;
+        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://pay.hotmart.com/I103658736V';
 
         if (STRIPE_PAYMENT_LINK) {
             const url = new URL(STRIPE_PAYMENT_LINK);
