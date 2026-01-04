@@ -139,59 +139,65 @@ export const TEACHERS: Teacher[] = [
 
 ];
 
+import {
+  MessageCircleHeart, BriefcaseBusiness, Plane, UtensilsCrossed,
+  Coffee, GraduationCap, Building2, School, Mic,
+  Wand, PawPrint, Zap, Rocket
+} from 'lucide-react';
+
 export const TOPICS: Topic[] = [
   {
     id: 'free-conversation',
     name: 'Conversa Livre',
-    icon: '✨',
+    icon: <MessageCircleHeart className="w-8 h-8" />,
     prompt: 'Mantenha uma conversa pedagógica sobre qualquer assunto. Como mentor, induza o aluno a usar o vocabulário adequado para o seu nível e ofereça feedbacks construtivos contínuos conforme o Protocolo Pedagógico.'
   },
   {
     id: 'job-interview',
     name: 'Entrevista de Emprego',
-    icon: '💼',
+    icon: <BriefcaseBusiness className="w-8 h-8" />,
     prompt: 'Conduza uma mentoria de carreira em formato de entrevista. Avalie as respostas do aluno segundo o Protocolo Pedagógico, corrigindo não apenas o idioma, mas sugerindo formas mais profissionais de expressão.'
   },
   {
     id: 'travel',
     name: 'Viagem e Turismo',
-    icon: '✈️',
+    icon: <Plane className="w-8 h-8" />,
     prompt: 'Atue como um guia instrucional em cenários de viagem. Coloque o aluno em situações práticas e use o Protocolo Pedagógico para garantir que ele aprenda os termos essenciais de sobrevivência e polidez.'
   },
   {
     id: 'restaurant',
     name: 'Restaurante',
-    icon: '🍽️',
+    icon: <UtensilsCrossed className="w-8 h-8" />,
     prompt: 'Simule uma interação pedagógica em um restaurante. Ensine o aluno a lidar com menus e situações sociais complexas, aplicando rigorosamente o Protocolo Pedagógico de nível.'
   },
   {
     id: 'daily-life',
     name: 'Vida Diária',
-    icon: '🏠',
+    icon: <Coffee className="w-8 h-8" />,
     prompt: 'Conversa guiada sobre rotina. O objetivo é expandir o vocabulário base do aluno através do Protocolo Pedagógico, transformando situações comuns em oportunidades de ensino.'
   },
   {
     id: 'university',
     name: 'Faculdade / Estudos',
-    icon: '🎓',
+    icon: <GraduationCap className="w-8 h-8" />,
     prompt: 'Simulação acadêmica. Atue como um tutor universitário, incentivando o debate de ideias e o uso de termos formais de acordo com o Protocolo Pedagógico do nível selecionado.'
   },
   {
     id: 'work',
     name: 'Ambiente de Trabalho',
-    icon: '🏢',
+    icon: <Building2 className="w-8 h-8" />,
     prompt: 'Mentoria corporativa. Aborde situações de escritório e reuniões, focando no "Business Language" e aplicando o Protocolo Pedagógico para elevar o nível profissional do aluno.'
   },
   {
     id: 'school',
     name: 'Escola / Sala de Aula',
-    icon: '🎒',
+    icon: <School className="w-8 h-8" />,
     prompt: 'Simule um ambiente de ensino formal. Atue como o professor da sala, aplicando o Protocolo Pedagógico para consolidar as bases gramaticais e a fluidez do aluno.'
   },
   {
     id: 'pronunciation',
     name: 'Treinamento de Pronúncia',
-    icon: '🗣️',
+    icon: <Mic className="w-8 h-8" />,
     prompt: `
       FOCO: Avaliador Implacável de Pronúncia.
       
@@ -211,28 +217,28 @@ export const TOPICS: Topic[] = [
   {
     id: 'kids-magic',
     name: 'Escola de Magia 🧙‍♂️',
-    icon: '✨',
+    icon: <Wand className="w-8 h-8" />,
     isKidMode: true,
     prompt: 'Atue como um mestre de magia divertido. Ensine palavras mágicas e feitiços em inglês, mantendo a conversa cheia de fantasia e encorajamento.'
   },
   {
     id: 'kids-animals',
     name: 'Mundo dos Animais 🦁',
-    icon: '🐾',
+    icon: <PawPrint className="w-8 h-8" />,
     isKidMode: true,
     prompt: 'Simule uma aventura na floresta ou fazenda. Ensine nomes de animais, sons e cores de um jeito lúdico e animado.'
   },
   {
     id: 'kids-superhero',
     name: 'Clube dos Super-Heróis 🦸‍♂️',
-    icon: '⚡',
+    icon: <Zap className="w-8 h-8" />,
     isKidMode: true,
     prompt: 'Atue como um super-herói treinando um novo parceiro. Use termos de ação, cores e heroismo para ensinar inglês de forma empolgante.'
   },
   {
     id: 'kids-space',
     name: 'Viagem ao Espaço 🚀',
-    icon: '⭐',
+    icon: <Rocket className="w-8 h-8" />,
     isKidMode: true,
     prompt: 'Conduza uma missão espacial! Ensine sobre planetas, estrelas e foguetes, usando um tom de curiosidade e descoberta.'
   }

@@ -98,6 +98,7 @@ const App: React.FC = () => {
   const sessionRef = useRef<any>(null);
   const isConnectedRef = useRef(false);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const hasWarnedRef = useRef(false);
   const teacherPanelRef = useRef<HTMLDivElement>(null);
 
   const [showSurvey, setShowSurvey] = useState(false);
@@ -297,11 +298,30 @@ const App: React.FC = () => {
         const elapsedMinutes = (Date.now() - sessionStartTime) / 60000;
         const totalUsed = dailyMinutesUsed + elapsedMinutes;
 
+        // Warning at 9 minutes (1 minute remaining)
+        if (!isPremium && totalUsed >= 9 && totalUsed < FREE_LIMIT_MINUTES && !hasWarnedRef.current) {
+          hasWarnedRef.current = true;
+          if (sessionRef.current && sessionRef.current.readyState === WebSocket.OPEN) {
+            console.log('Sending Time Warning to AI...');
+            sessionRef.current.send(JSON.stringify({
+              client_content: {
+                turns: [{
+                  role: 'user',
+                  parts: [{
+                    text: `[SISTEMA - ALERTA DE TEMPO]: O usuário tem apenas 1 minuto restante na conta gratuita. Por favor, avise-o educadamente que a aula vai acabar em breve e que ele precisa assinar o plano PRO para continuar conversando sem limites. Comece a se despedir.`
+                  }]
+                }],
+                turn_complete: true
+              }
+            }));
+          }
+        }
+
         if (totalUsed >= FREE_LIMIT_MINUTES) {
           endCall();
           setUpgradeModalReason('time_limit');
           setShowUpgradeModal(true);
-          setConnectionError("Limite de demonstração diário atingido (10 min).");
+          setConnectionError("Tempo limite diário atingido. Assine o PRO para continuar!");
         }
       }
     }, 10000); // Check every 10 seconds
@@ -360,6 +380,7 @@ const App: React.FC = () => {
       // Connect to Proxy (Production or Local)
       // const ws = new WebSocket('ws://localhost:8080'); // Localhost Fallback
       const ws = new WebSocket('wss://linguaflow-proxy-458232577422.us-central1.run.app');
+      sessionRef.current = ws;
 
       ws.onopen = () => {
         console.log('Proxy conectado');

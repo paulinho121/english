@@ -1,3 +1,4 @@
+import React from 'react';
 
 export enum Language {
   ENGLISH = 'en-US',
@@ -38,7 +39,7 @@ export interface GeminiResponse {
 export interface Topic {
   id: string;
   name: string;
-  icon: string;
+  icon: React.ReactNode;
   prompt: string;
   isKidMode?: boolean;
 }
