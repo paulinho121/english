@@ -8,7 +8,10 @@ export enum Language {
 
 export enum Level {
   B1 = 'B1 (Intermediário)',
-  B2 = 'B2 (Intermediário Superior)'
+  B2 = 'B2 (Intermediário Superior)',
+  BEGINNER = 'Iniciante',
+  INTERMEDIATE = 'Intermediário',
+  ADVANCED = 'Avançado'
 }
 
 export interface Teacher {

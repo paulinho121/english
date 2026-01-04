@@ -22,7 +22,7 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
@@ -245,12 +245,40 @@ const MainApp: React.FC = () => {
     }
   }, [user]);
 
-  // Handle auto-scroll to teacher panel on mobile when topic selected
   useEffect(() => {
     if (selectedTopicId && window.innerWidth < 1024) {
       teacherPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [selectedTopicId]);
+
+  // Realtime Sync for Premium Status
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('profile-premium-sync')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.new && typeof payload.new.is_premium === 'boolean') {
+            const isAdmin = user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
+            setIsPremium(isAdmin || payload.new.is_premium);
+            console.log('Premium status synced:', payload.new.is_premium);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -669,7 +697,23 @@ const MainApp: React.FC = () => {
                       tip: report.tip,
                       status: report.score >= 80 ? 'completed' : 'unlocked'
                     }, { onConflict: 'user_id, topic_id' });
-                    setTopicProgress(prev => ({ ...prev, [selectedTopicId]: report.score }));
+                    setTopicProgress(prev => {
+                      const current = prev[selectedTopicId] || {
+                        topic_id: selectedTopicId,
+                        score: 0,
+                        status: 'unlocked',
+                        current_level: 1.0,
+                        total_minutes: 0
+                      };
+                      return {
+                        ...prev,
+                        [selectedTopicId]: {
+                          ...current,
+                          score: report.score,
+                          status: report.score >= 80 ? 'completed' : 'unlocked'
+                        }
+                      };
+                    });
                   }
 
                   // Send Tool Response
@@ -974,8 +1018,8 @@ const MainApp: React.FC = () => {
           <div className="absolute top-6 right-6 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
             {/* Premium/Free Badge */}
             <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isPremium
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
-                : 'bg-slate-800/50 border-white/10 text-slate-400'
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+              : 'bg-slate-800/50 border-white/10 text-slate-400'
               }`}>
               {isPremium ? <Sparkles className="w-4 h-4 text-amber-400" /> : <div className="w-2 h-2 rounded-full bg-slate-500" />}
               <span className="font-bold text-xs tracking-wider">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
@@ -985,10 +1029,6 @@ const MainApp: React.FC = () => {
               <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
               <span className="font-bold">{streak} Dias</span>
             </div>
-            {step === 'call' && (
-              <div className="flex items-center gap-3">
-              </div>
-            )}
           </div>
 
           <div className="flex-1 flex flex-col justify-center items-center w-full z-10 max-w-2xl relative">
@@ -1075,7 +1115,27 @@ const MainApp: React.FC = () => {
                       : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
                   </p>
                 </div>
-                <div className="flex items-center gap-3 self-end sm:self-auto">
+                <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto justify-end">
+                  {/* Status & Upgrade Badge/Button */}
+                  <div className="flex items-center gap-2">
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                      : 'bg-slate-800/50 border-white/10 text-slate-400'
+                      }`}>
+                      {isPremium ? <Sparkles className="w-3.5 h-3.5 text-amber-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
+                      <span className="font-bold text-[10px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+                    </div>
+
+                    {!isPremium && (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className={`btn-shimmer px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
+                      >
+                        <Zap className="w-3 h-3 fill-current" /> SEJA PRO
+                      </button>
+                    )}
+                  </div>
+
                   {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
                     <button
                       onClick={() => setIsAdminDashboardOpen(true)}
