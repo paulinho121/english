@@ -1013,19 +1013,38 @@ const MainApp: React.FC = () => {
             <div className="blob blob-2 mix-blend-overlay" style={{ width: '50vw', height: '50vw', right: '0%', bottom: '-10%' }}></div>
           </div>
 
-          <div className="absolute top-6 right-6 flex items-center gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
+          <div className="absolute top-4 right-4 md:top-6 md:right-6 flex flex-wrap items-center justify-end gap-2 md:gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
+            {/* User identification (email/name) mobile optimized */}
+            {user && (
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
+                <UserCircle className="w-3.5 h-3.5 text-slate-400" />
+                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{user.user_metadata?.full_name || user.email?.split('@')[0]}</span>
+              </div>
+            )}
+
             {/* Premium/Free Badge */}
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isPremium
-              ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
-              : 'bg-slate-800/50 border-white/10 text-slate-400'
-              }`}>
-              {isPremium ? <Sparkles className="w-4 h-4 text-amber-400" /> : <div className="w-2 h-2 rounded-full bg-slate-500" />}
-              <span className="font-bold text-xs tracking-wider">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+            <div className="flex items-center gap-2">
+              <div className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isPremium
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                : 'bg-slate-800/50 border-white/10 text-slate-400'
+                }`}>
+                {isPremium ? <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400" /> : <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-slate-500" />}
+                <span className="font-bold text-[10px] md:text-xs tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+              </div>
+
+              {!isPremium && (
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className={`btn-shimmer px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white' : 'bg-orange-500 text-white'}`}
+                >
+                  <Zap className="w-3 h-3 fill-current" /> <span className="hidden xs:inline">SEJA PRO</span>
+                </button>
+              )}
             </div>
 
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
-              <Flame className={`w-5 h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
-              <span className="font-bold">{streak} Dias</span>
+            <div className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
+              <Flame className={`w-4 h-4 md:w-5 md:h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
+              <span className="font-bold text-xs md:text-base">{streak} Dias</span>
             </div>
           </div>
 
@@ -1113,61 +1132,69 @@ const MainApp: React.FC = () => {
                       : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto justify-end">
-                  {/* User Identification */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
-                    <UserCircle className="w-4 h-4 text-slate-400" />
-                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                    </span>
-                  </div>
-
-                  {/* Status & Upgrade Badge/Button */}
-                  <div className="flex items-center gap-2">
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
-                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
-                      : 'bg-slate-800/50 border-white/10 text-slate-400'
-                      }`}>
-                      {isPremium ? <Sparkles className="w-3.5 h-3.5 text-amber-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
-                      <span className="font-bold text-[10px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
+                  {/* Status Group */}
+                  <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+                    {/* User Identification */}
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
+                      <UserCircle className="w-4 h-4 text-slate-400" />
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                      </span>
                     </div>
 
-                    {!isPremium && (
-                      <button
-                        onClick={() => setShowUpgradeModal(true)}
-                        className={`btn-shimmer px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
-                      >
-                        <Zap className="w-3 h-3 fill-current" /> SEJA PRO
-                      </button>
-                    )}
+                    {/* Status & Upgrade */}
+                    <div className="flex items-center gap-2">
+                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                        : 'bg-slate-800/50 border-white/10 text-slate-400'
+                        }`}>
+                        {isPremium ? <Sparkles className="w-3.5 h-3.5 text-amber-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
+                        <span className="font-bold text-[10px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+                      </div>
+
+                      {!isPremium && (
+                        <button
+                          onClick={() => setShowUpgradeModal(true)}
+                          className={`btn-shimmer px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
+                        >
+                          <Zap className="w-3 h-3 fill-current" /> SEJA PRO
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Streak */}
+                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${isKidsMode ? 'bg-white/80 border-[#ff6b6b]/20 shadow-sm' : 'bg-orange-500/10 border-orange-500/20'}`}>
+                      <Flame className={`w-4 h-4 ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
+                      <span className={`font-bold text-sm ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-200'}`}>{streak} Dias</span>
+                    </div>
                   </div>
 
-                  {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
+                  {/* Actions Group */}
+                  <div className="flex items-center gap-2">
+                    {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
+                      <button
+                        onClick={() => setIsAdminDashboardOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                      >
+                        <Shield className="w-4 h-4" /> <span className="hidden lg:inline">Dashboard Admin</span>
+                      </button>
+                    )}
                     <button
-                      onClick={() => setIsAdminDashboardOpen(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                      onClick={() => setShowTutorial(true)}
+                      className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
+                      title="Como Usar"
                     >
-                      <Shield className="w-4 h-4" /> Dashboard Admin
+                      <Globe className="w-4 h-4" />
                     </button>
-                  )}
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${isKidsMode ? 'bg-white/80 border-[#ff6b6b]/20 shadow-sm' : 'bg-orange-500/10 border-orange-500/20'}`}>
-                    <Flame className={`w-4 h-4 ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
-                    <span className={`font-bold text-sm ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-200'}`}>{streak} Dias</span>
+                    <button
+                      onClick={signOut}
+                      className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
+                      title="Sair"
+                    >
+                      <Key className="w-4 h-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => setShowTutorial(true)}
-                    className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
-                    title="Como Usar"
-                  >
-                    <Globe className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={signOut}
-                    className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
-                    title="Sair"
-                  >
-                    <Key className="w-4 h-4" />
-                  </button>
                 </div>
               </div>
 
@@ -1365,12 +1392,29 @@ const MainApp: React.FC = () => {
       {
         step === 'call' && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
-            {/* Live Timer Overlay */}
-            <div className="absolute top-6 right-6 z-50 animate-in fade-in duration-700">
+            {/* Live Timer & Status Overlay */}
+            <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex items-center gap-2 md:gap-3 animate-in fade-in duration-700">
+              {/* Premium/Free Status in Call */}
+              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                : 'bg-slate-800/50 border-white/10 text-slate-400'
+                }`}>
+                {isPremium ? <Sparkles className="w-3 h-3 text-amber-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
+                <span className="font-bold text-[9px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'GRÁTIS'}</span>
+              </div>
+
+              {!isPremium && (
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className={`btn-shimmer px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white' : 'bg-orange-500 text-white'}`}
+                >
+                  <Zap className="w-3 h-3 fill-current" /> <span className="hidden xs:inline">PRO</span>
+                </button>
+              )}
+
               <div className={`px-4 py-2 rounded-full border backdrop-blur-md flex items-center gap-2 ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b] shadow-[0_0_15px_rgba(255,107,107,0.3)] animate-pulse' : 'bg-red-500/10 border-red-500/20 text-red-500 animate-pulse'}`}>
                 <div className={`w-2 h-2 rounded-full ${isKidsMode ? 'bg-[#ff6b6b]' : 'bg-red-500'} animate-ping`} />
                 <span className="text-xs font-black tracking-widest uppercase tabular-nums">
-                  {/* Timer Display */}
                   {new Date(elapsedTime * 1000).toISOString().substr(14, 5)}
                 </span>
               </div>
