@@ -109,16 +109,9 @@ const MainApp: React.FC = () => {
 
   const [showSurvey, setShowSurvey] = useState(false);
 
-  // Route: Landing Page
-  if (location.pathname === '/landingpage') {
-    return <LandingPage onStart={() => navigate('/')} />;
-  }
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
 
-  if (!user) {
-    return <LoginScreen />;
-  }
+  // Moved loading/auth checks to bottom to prevent Hook Error #310
   initAnalytics();
 
 
@@ -914,10 +907,15 @@ const MainApp: React.FC = () => {
     }
   }, [mediaStreamRef]);
 
+
+
+  // --- END OF HOOKS ---
+
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
 
-
-  if (!user) return <LoginScreen />;
+  if (!user) {
+    return <LoginScreen />;
+  }
 
   return (
     <main className={`h-[100dvh] w-full flex flex-col font-sans overflow-hidden relative bg-slate-950 text-white ${isKidsMode ? 'kids-mode' : ''}`}>
