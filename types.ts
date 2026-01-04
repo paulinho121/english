@@ -61,3 +61,11 @@ export interface PronunciationPhrase {
   translation: string;
   image?: string; // Optional image for Kids Mode
 }
+
+export interface UserProgress {
+  topic_id: string;
+  score: number; // Used for bar percentage (0-100)
+  status: 'locked' | 'unlocked' | 'completed';
+  current_level: number; // e.g. 1.0, 1.1, 1.2
+  total_minutes: number;
+}

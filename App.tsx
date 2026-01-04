@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { type LiveServerMessage } from "@google/genai";
-import { Language, Level, Teacher, Topic, SessionReportData } from './types';
+import { Language, Level, Teacher, Topic, SessionReportData, UserProgress } from './types';
 import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
 import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
@@ -75,7 +75,7 @@ const App: React.FC = () => {
 
   // New Progress States
   const [streak, setStreak] = useState(0);
-  const [topicProgress, setTopicProgress] = useState<Record<string, number>>({});
+  const [topicProgress, setTopicProgress] = useState<Record<string, UserProgress>>({});
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isKidsMode, setIsKidsMode] = useState(false);
 
@@ -183,12 +183,18 @@ const App: React.FC = () => {
         setShowTutorial(true);
       }
 
-      const { data: progressData } = await supabase.from('user_progress').select('topic_id, score, mistakes, vocabulary, tip').eq('user_id', user.id);
+      const { data: progressData } = await supabase.from('user_progress').select('topic_id, score, status, current_level, total_minutes').eq('user_id', user.id);
 
-      const newProgress: Record<string, number> = {};
+      const newProgress: Record<string, UserProgress> = {};
       if (progressData) {
         progressData.forEach(p => {
-          newProgress[p.topic_id] = p.score || 0;
+          newProgress[p.topic_id] = {
+            topic_id: p.topic_id,
+            score: p.score || 0,
+            status: (p.status as any) || 'unlocked',
+            current_level: p.current_level || 1.0,
+            total_minutes: p.total_minutes || 0
+          };
         });
       }
       setTopicProgress(newProgress);
@@ -705,28 +711,59 @@ const App: React.FC = () => {
     setSessionStartTime(null);
 
     // Update Progress
+    // Update Progress
     if (selectedTopicId && user) {
-      const currentProgress = topicProgress[selectedTopicId] || 0;
-      const newProgress = Math.min(100, currentProgress + 20); // Increment by 20%
+      // @ts-ignore - Validating runtime type or fallback
+      const currentVal = topicProgress[selectedTopicId];
+      const currentProgressObj: UserProgress = (currentVal && typeof currentVal === 'object') ? currentVal : {
+        topic_id: selectedTopicId,
+        score: 0,
+        status: 'unlocked',
+        current_level: 1.0,
+        total_minutes: 0
+      };
 
-      setTopicProgress(prev => ({ ...prev, [selectedTopicId]: newProgress }));
+      const elapsedMinutesForProgress = sessionStartTime ? Math.ceil((Date.now() - sessionStartTime) / 60000) : 0;
+      const newTotalMinutes = (currentProgressObj.total_minutes || 0) + elapsedMinutesForProgress;
+
+      // Leveling Logic: 70 min per sub-level, 5 sub-levels per major level
+      const MINUTES_PER_SUBLEVEL = 70;
+      const SUBLEVELS_PER_MAJOR = 5;
+
+      const totalSteps = Math.floor(newTotalMinutes / MINUTES_PER_SUBLEVEL);
+
+      const majorLevel = 1 + Math.floor(totalSteps / SUBLEVELS_PER_MAJOR);
+      const minorLevel = totalSteps % SUBLEVELS_PER_MAJOR;
+
+      const newLevel = parseFloat(`${majorLevel}.${minorLevel}`);
+
+      // Percentage of current bar
+      const newPercentage = Math.min(100, Math.round(((newTotalMinutes % MINUTES_PER_SUBLEVEL) / MINUTES_PER_SUBLEVEL) * 100));
+
+      const updatedProgressNode: UserProgress = {
+        ...currentProgressObj,
+        score: newPercentage,
+        current_level: newLevel,
+        total_minutes: newTotalMinutes,
+        status: 'unlocked'
+      };
+
+      setTopicProgress(prev => ({ ...prev, [selectedTopicId]: updatedProgressNode }));
 
       // Save to Supabase with Debugging
       try {
-        console.log('📝 Saving progress for:', { userId: user.id, topicId: selectedTopicId, progress: newProgress });
+        console.log('📝 Saving progress:', { userId: user.id, level: newLevel, minutes: newTotalMinutes, percent: newPercentage });
         const { error: upsertError } = await supabase.from('user_progress').upsert({
           user_id: user.id,
           topic_id: selectedTopicId,
-          score: newProgress,
-          status: newProgress === 100 ? 'completed' : 'unlocked'
+          score: newPercentage,
+          current_level: newLevel,
+          total_minutes: newTotalMinutes,
+          status: 'unlocked'
         }, { onConflict: 'user_id, topic_id' });
 
-        if (upsertError) {
-          console.error('❌ Error saving progress:', upsertError);
-          // Optional: Show UI error
-        } else {
-          console.log('✅ Progress saved successfully');
-        }
+        if (upsertError) console.error('❌ Error saving progress:', upsertError);
+        else console.log('✅ Progress saved successfully');
       } catch (err) {
         console.error('❌ Unexpected error in progress save:', err);
       }
@@ -938,10 +975,10 @@ const App: React.FC = () => {
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-display font-black flex items-center gap-3">
-                    <Sparkles className="text-orange-500 shrink-0" /> {isKidsMode ? 'Mapa de Aventuras' : 'Mapa de Progresso'}
+                  <h2 className="text-2xl md:text-3xl font-display font-bold flex items-center gap-3">
+                    {isKidsMode ? 'Mapa de Aventuras' : 'Sua Jornada de Fluência'}
                   </h2>
-                  <p className={`text-sm mt-1 font-bold ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-400'}`}>
+                  <p className={`text-sm mt-2 font-medium leading-relaxed max-w-2xl ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-400'}`}>
                     {isKidsMode
                       ? 'Explore mundos mágicos e aprenda brincando!'
                       : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
