@@ -72,6 +72,7 @@ const App: React.FC = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   // New Progress States
   const [streak, setStreak] = useState(0);
@@ -173,7 +174,7 @@ const App: React.FC = () => {
       if (profile) {
         setStreak(profile.streak_count || 0);
         setDailyMinutesUsed(profile.daily_minutes_used || 0);
-        setIsKidsMode(profile.is_kids_mode || false);
+        setIsKidsMode(false); // Force hidden for now as requested
         if (profile.last_language) setSelectedLanguage(profile.last_language as Language);
         if (profile.last_level) setSelectedLevel(profile.last_level as Level);
         if (profile.last_teacher_id) setSelectedTeacherId(profile.last_teacher_id);
@@ -692,6 +693,29 @@ const App: React.FC = () => {
       };
       setStep('call');
 
+      // Persistence: Create Session Record
+      if (user && selectedTeacherId && selectedLanguage && selectedTopicId) {
+        try {
+          const { data: sessionData, error: sessionError } = await supabase.from('sessions').insert({
+            user_id: user.id,
+            teacher_id: selectedTeacherId,
+            language: selectedLanguage,
+            topic_id: selectedTopicId,
+            start_time: new Date().toISOString(),
+            status: 'started'
+          }).select().single();
+
+          if (sessionData) {
+            setCurrentSessionId(sessionData.id);
+            console.log('✅ Session started:', sessionData.id);
+          } else if (sessionError) {
+            console.error('❌ Error creating session:', sessionError);
+          }
+        } catch (err) {
+          console.error('❌ Unexpected error creating session:', err);
+        }
+      }
+
       // Analytics: Session Start
       if (selectedTopicId) {
         trackEvent('session_start', {
@@ -729,64 +753,86 @@ const App: React.FC = () => {
       });
     }
 
-    setSessionStartTime(null);
+    // Update Session in Database
+    if (currentSessionId && user) {
+      const endTime = new Date();
+      const duration = sessionStartTime ? Math.floor((endTime.getTime() - sessionStartTime) / 1000) : 0;
 
+      await supabase.from('sessions').update({
+        end_time: endTime.toISOString(),
+        duration_seconds: duration,
+        status: 'completed'
+      }).eq('id', currentSessionId);
+    }
+
+    setSessionStartTime(null);
+    setCurrentSessionId(null);
+
+    // Update Progress
     // Update Progress
     // Update Progress
     if (selectedTopicId && user) {
-      // @ts-ignore - Validating runtime type or fallback
-      const currentVal = topicProgress[selectedTopicId];
-      const currentProgressObj: UserProgress = (currentVal && typeof currentVal === 'object') ? currentVal : {
-        topic_id: selectedTopicId,
-        score: 0,
-        status: 'unlocked',
-        current_level: 1.0,
-        total_minutes: 0
-      };
-
+      // ... (rest of progress logic matches existing)
       const elapsedMinutesForProgress = sessionStartTime ? Math.ceil((Date.now() - sessionStartTime) / 60000) : 0;
-      const newTotalMinutes = (currentProgressObj.total_minutes || 0) + elapsedMinutesForProgress;
 
-      // Leveling Logic: 70 min per sub-level, 5 sub-levels per major level
-      const MINUTES_PER_SUBLEVEL = 70;
-      const SUBLEVELS_PER_MAJOR = 5;
-
-      const totalSteps = Math.floor(newTotalMinutes / MINUTES_PER_SUBLEVEL);
-
-      const majorLevel = 1 + Math.floor(totalSteps / SUBLEVELS_PER_MAJOR);
-      const minorLevel = totalSteps % SUBLEVELS_PER_MAJOR;
-
-      const newLevel = parseFloat(`${majorLevel}.${minorLevel}`);
-
-      // Percentage of current bar
-      const newPercentage = Math.min(100, Math.round(((newTotalMinutes % MINUTES_PER_SUBLEVEL) / MINUTES_PER_SUBLEVEL) * 100));
-
-      const updatedProgressNode: UserProgress = {
-        ...currentProgressObj,
-        score: newPercentage,
-        current_level: newLevel,
-        total_minutes: newTotalMinutes,
-        status: 'unlocked'
-      };
-
-      setTopicProgress(prev => ({ ...prev, [selectedTopicId]: updatedProgressNode }));
-
-      // Save to Supabase with Debugging
-      try {
-        console.log('📝 Saving progress:', { userId: user.id, level: newLevel, minutes: newTotalMinutes, percent: newPercentage });
-        const { error: upsertError } = await supabase.from('user_progress').upsert({
-          user_id: user.id,
+      // MINIMUM DURATION CHECK:
+      // Only update progress (level/score) if session lasted at least 10 minutes.
+      if (elapsedMinutesForProgress >= 10) {
+        // @ts-ignore - Validating runtime type or fallback
+        const currentVal = topicProgress[selectedTopicId];
+        const currentProgressObj: UserProgress = (currentVal && typeof currentVal === 'object') ? currentVal : {
           topic_id: selectedTopicId,
+          score: 0,
+          status: 'unlocked',
+          current_level: 1.0,
+          total_minutes: 0
+        };
+
+        const newTotalMinutes = (currentProgressObj.total_minutes || 0) + elapsedMinutesForProgress;
+
+        // Leveling Logic: 70 min per sub-level, 5 sub-levels per major level
+        const MINUTES_PER_SUBLEVEL = 70;
+        const SUBLEVELS_PER_MAJOR = 5;
+
+        const totalSteps = Math.floor(newTotalMinutes / MINUTES_PER_SUBLEVEL);
+
+        const majorLevel = 1 + Math.floor(totalSteps / SUBLEVELS_PER_MAJOR);
+        const minorLevel = totalSteps % SUBLEVELS_PER_MAJOR;
+
+        const newLevel = parseFloat(`${majorLevel}.${minorLevel}`);
+
+        // Percentage of current bar
+        const newPercentage = Math.min(100, Math.round(((newTotalMinutes % MINUTES_PER_SUBLEVEL) / MINUTES_PER_SUBLEVEL) * 100));
+
+        const updatedProgressNode: UserProgress = {
+          ...currentProgressObj,
           score: newPercentage,
           current_level: newLevel,
           total_minutes: newTotalMinutes,
           status: 'unlocked'
-        }, { onConflict: 'user_id, topic_id' });
+        };
 
-        if (upsertError) console.error('❌ Error saving progress:', upsertError);
-        else console.log('✅ Progress saved successfully');
-      } catch (err) {
-        console.error('❌ Unexpected error in progress save:', err);
+        setTopicProgress(prev => ({ ...prev, [selectedTopicId]: updatedProgressNode }));
+
+        // Save to Supabase with Debugging
+        try {
+          console.log('📝 Saving progress:', { userId: user.id, level: newLevel, minutes: newTotalMinutes, percent: newPercentage });
+          const { error: upsertError } = await supabase.from('user_progress').upsert({
+            user_id: user.id,
+            topic_id: selectedTopicId,
+            score: newPercentage,
+            current_level: newLevel,
+            total_minutes: newTotalMinutes,
+            status: 'unlocked'
+          }, { onConflict: 'user_id, topic_id' });
+
+          if (upsertError) console.error('❌ Error saving progress:', upsertError);
+          else console.log('✅ Progress saved successfully');
+        } catch (err) {
+          console.error('❌ Unexpected error in progress save:', err);
+        }
+      } else {
+        console.log(`⏳ Session too short for progress update (${elapsedMinutesForProgress}m). Minimum required: 10m.`);
       }
     }
 
@@ -1110,9 +1156,9 @@ const App: React.FC = () => {
                       {/* Teachers List */}
                       <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1 mb-4 min-h-[220px]">
                         {TEACHERS
-                          .filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode))
+                          .filter(t => t.language === selectedLanguage && ((isKidsMode ? t.isKidMode : !t.isKidMode) || t.id === 'pronunciation'))
                           .map(teacher => {
-                            const currentPool = TEACHERS.filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode));
+                            const currentPool = TEACHERS.filter(t => t.language === selectedLanguage && ((isKidsMode ? t.isKidMode : !t.isKidMode) || t.id === 'pronunciation'));
                             const isLocked = !isPremium && currentPool.indexOf(teacher) >= 2;
                             const isSelected = selectedTeacherId === teacher.id;
 
@@ -1249,14 +1295,14 @@ const App: React.FC = () => {
               if (!currentPhrase) return null;
 
               return (
-                <div className="absolute top-8 left-4 right-4 md:left-1/2 md:-translate-x-1/2 md:w-[600px] z-20">
-                  <div className={`glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 ${isKidsMode ? 'bg-white/90 border-[#4ecdc4]/30' : ''}`}>
-                    <div className="flex justify-between items-start mb-4">
+                <div className="absolute top-16 left-4 right-4 md:top-8 md:left-1/2 md:-translate-x-1/2 md:w-[600px] z-20">
+                  <div className={`glass-premium p-4 md:p-6 rounded-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 ${isKidsMode ? 'bg-white/90 border-[#4ecdc4]/30' : ''}`}>
+                    <div className="flex justify-between items-start mb-3 md:mb-4">
                       <div className="flex gap-2">
-                        <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${isKidsMode ? 'bg-[#ff6b6b]/20 text-[#ff6b6b] border-[#ff6b6b]/20' : 'bg-orange-500/20 text-orange-400 border-orange-500/20'}`}>
-                          Frase {currentPhraseIndex + 1} de {filteredPhrases.length}
+                        <span className={`px-2 py-0.5 md:px-3 md:py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${isKidsMode ? 'bg-[#ff6b6b]/20 text-[#ff6b6b] border-[#ff6b6b]/20' : 'bg-orange-500/20 text-orange-400 border-orange-500/20'}`}>
+                          Frase {currentPhraseIndex + 1}/{filteredPhrases.length}
                         </span>
-                        <span className="px-3 py-1 bg-slate-700/50 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/5">
+                        <span className="px-2 py-0.5 md:px-3 md:py-1 bg-slate-700/50 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/5">
                           {currentPhrase.level || 'Geral'}
                         </span>
                       </div>
@@ -1264,14 +1310,14 @@ const App: React.FC = () => {
                         <button
                           onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
                           disabled={currentPhraseIndex === 0}
-                          className={`p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
+                          className={`p-1.5 md:p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
                         >
                           <ArrowRight className="w-4 h-4 rotate-180" />
                         </button>
                         <button
                           onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
                           disabled={currentPhraseIndex === filteredPhrases.length - 1}
-                          className={`p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
+                          className={`p-1.5 md:p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
                         >
                           <ArrowRight className="w-4 h-4" />
                         </button>
@@ -1279,31 +1325,31 @@ const App: React.FC = () => {
                     </div>
 
                     {isKidsMode && currentPhrase.image ? (
-                      <div className="flex flex-col items-center gap-4">
-                        <div className="w-40 h-40 relative animate-bounce-slow">
+                      <div className="flex flex-col items-center gap-2 md:gap-4">
+                        <div className="w-24 h-24 md:w-40 md:h-40 relative animate-bounce-slow">
                           <img
                             src={currentPhrase.image}
                             alt={currentPhrase.text}
                             className="w-full h-full object-contain filter drop-shadow-xl"
                           />
                         </div>
-                        <h3 className="text-3xl md:text-4xl font-display font-black text-[#2d3748] mb-1">
+                        <h3 className="text-2xl md:text-3xl font-display font-black text-[#2d3748] mb-1 text-center">
                           {currentPhrase.text}
                         </h3>
                         {/* <p className="text-slate-400 font-medium text-sm">{currentPhrase.translation}</p> */}
                       </div>
                     ) : (
                       <>
-                        <h3 className="text-2xl md:text-3xl font-display font-medium text-white mb-3 leading-snug">
+                        <h3 className="text-xl md:text-3xl font-display font-medium text-white mb-2 md:mb-3 leading-snug text-center">
                           "{currentPhrase.text}"
                         </h3>
-                        <p className="text-slate-400 font-medium text-lg">
+                        <p className="text-slate-400 font-medium text-sm md:text-lg text-center">
                           {currentPhrase.translation}
                         </p>
                       </>
                     )}
 
-                    <div className={`mt-6 flex items-center justify-between text-xs ${isKidsMode ? 'text-slate-600' : 'text-slate-500'}`}>
+                    <div className={`mt-4 md:mt-6 flex items-center justify-between text-xs ${isKidsMode ? 'text-slate-600' : 'text-slate-500'}`}>
                       <span>{isKidsMode ? 'Diga o nome do desenho!' : 'Diga a frase em voz alta'}</span>
                       <span className="flex items-center gap-1">
                         <Sparkles className={`w-3 h-3 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> IA Ouvindo
@@ -1385,10 +1431,11 @@ const App: React.FC = () => {
       {activeLegalModal === 'terms' && <TermsOfService onClose={() => setActiveLegalModal(null)} />}
 
       {/* PMF Survey Modal */}
-      {showSurvey && (
+      {showSurvey && user && (
         <SeanEllisSurvey
           onClose={() => setShowSurvey(false)}
           onComplete={handleSurveyComplete}
+          userId={user.id}
         />
       )}
     </main >

@@ -57,7 +57,7 @@ export const OnboardingTutorial: React.FC<OnboardingTutorialProps> = ({ onComple
         },
         {
             title: "Pronto para Falar?",
-            description: "É só clicar no botão 'Entrar na Aula' para iniciar uma conversa em tempo real com nossa IA via áudio.",
+            description: "É só clicar no botão 'Entrar na Aula' para iniciar uma conversa em tempo real via áudio. Importante: Para evoluir de nível, suas sessões devem durar no mínimo 10 minutos.",
             icon: <Mic className="w-12 h-12 text-green-500" />,
             animation: "animate-pulse"
         }

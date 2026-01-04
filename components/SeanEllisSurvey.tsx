@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { trackEvent } from '../lib/analytics';
+import { supabase } from '../lib/supabase'; // Import Supabase
 import { X, MessageSquareHeart } from 'lucide-react';
 
 interface SeanEllisSurveyProps {
     onClose: () => void;
     onComplete: () => void;
+    userId: string; // Add userId prop
 }
 
-export const SeanEllisSurvey: React.FC<SeanEllisSurveyProps> = ({ onClose, onComplete }) => {
+export const SeanEllisSurvey: React.FC<SeanEllisSurveyProps> = ({ onClose, onComplete, userId }) => {
     const [step, setStep] = useState<'question' | 'feedback' | 'thanks'>('question');
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [feedback, setFeedback] = useState('');
+    const [responseId, setResponseId] = useState<string | null>(null); // Track the DB ID
 
     const options = [
         { value: 'very_disappointed', label: 'Muito desapontado' },
@@ -18,20 +21,45 @@ export const SeanEllisSurvey: React.FC<SeanEllisSurveyProps> = ({ onClose, onCom
         { value: 'not_disappointed', label: 'Nada desapontado' },
     ];
 
-    const handleOptionSelect = (value: string) => {
+    const handleOptionSelect = async (value: string) => {
         setSelectedOption(value);
         setStep('feedback');
 
-        // Track the main PMF metric immediately
+        // Track Analytics
         trackEvent('pmf_survey_response', { response: value });
+
+        // Save to Supabase
+        try {
+            const { data, error } = await supabase.from('survey_responses').insert({
+                user_id: userId,
+                survey_type: 'pmf',
+                response: value
+            }).select().single();
+
+            if (data) setResponseId(data.id);
+            if (error) console.error('Error saving survey response:', error);
+        } catch (err) {
+            console.error('Unexpected error saving survey:', err);
+        }
     };
 
-    const handleSubmitFeedback = () => {
+    const handleSubmitFeedback = async () => {
         if (feedback.trim()) {
             trackEvent('pmf_survey_feedback', {
                 response: selectedOption,
                 feedback: feedback
             });
+
+            // Update Supabase Record with Feedback
+            if (responseId) {
+                try {
+                    await supabase.from('survey_responses').update({
+                        feedback: feedback
+                    }).eq('id', responseId);
+                } catch (err) {
+                    console.error('Error saving feedback:', err);
+                }
+            }
         }
         setStep('thanks');
         setTimeout(onComplete, 2500);
