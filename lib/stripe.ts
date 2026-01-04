@@ -14,14 +14,13 @@ export const stripeService = {
         // 1. PREFERRED METHOD: Use a Stripe Payment Link from the Dashboard
         // Replace this URL with your actual Stripe Payment Link (e.g., https://buy.stripe.com/...)
         // You can also append `?prefilled_email=` to these links.
-        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://pay.hotmart.com/I103658736V';
+        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/test_placeholder';
 
         if (STRIPE_PAYMENT_LINK) {
             const url = new URL(STRIPE_PAYMENT_LINK);
             if (userEmail) {
+                // Stripe uses 'prefilled_email' for Payment Links
                 url.searchParams.set('prefilled_email', userEmail);
-                // Pass the client_reference_id to track who bought it (if your webhook uses it)
-                // url.searchParams.set('client_reference_id', userId); 
             }
             window.location.href = url.toString();
             return;

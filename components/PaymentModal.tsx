@@ -13,8 +13,29 @@ interface PaymentModalProps {
 export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isKidsMode, userEmail, triggerReason = 'user_action' }) => {
     if (!isOpen) return null;
 
-    const handleSubscribe = () => {
+    const handleStripe = () => {
+        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/test_placeholder';
+
+        if (STRIPE_PAYMENT_LINK) {
+            const url = new URL(STRIPE_PAYMENT_LINK);
+            if (userEmail) {
+                // Stripe uses 'prefilled_email' for Payment Links
+                url.searchParams.set('prefilled_email', userEmail);
+            }
+            window.location.href = url.toString();
+            return;
+        }
+        // Fallback to stripeService if VITE_STRIPE_PAYMENT_LINK is not set
         stripeService.redirectToCheckout(userEmail);
+    };
+
+    const handleHotmart = () => {
+        const hotmartLink = import.meta.env.VITE_HOTMART_PAYMENT_LINK || 'https://pay.hotmart.com/I103658736V';
+        const url = new URL(hotmartLink);
+        if (userEmail) {
+            url.searchParams.set('off_email', userEmail);
+        }
+        window.location.href = url.toString();
     };
 
     return (
@@ -85,24 +106,31 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
                     </div>
 
                     <div className="w-full space-y-4">
-                        <button
-                            onClick={handleSubscribe}
-                            className={`w-full py-4 rounded-xl font-black text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group relative overflow-hidden ${isKidsMode
-                                ? 'btn-shimmer bg-[#ff6b6b] text-white shadow-[#ff6b6b]/30'
-                                : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-orange-500/40 ring-1 ring-white/20'
-                                }`}
-                        >
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                            <span>{isKidsMode ? 'Começar Agora' : 'Assinar Agora'}</span>
-                            <span className="text-base font-bold ml-1 bg-black/20 px-2 py-0.5 rounded-lg border border-white/10">R$ 49,90/mês</span>
-                        </button>
+                        <div className="w-full grid grid-cols-1 gap-4">
+                            <button
+                                onClick={handleHotmart}
+                                className={`w-full py-4 rounded-xl font-black text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1 group relative overflow-hidden ${isKidsMode
+                                    ? 'btn-shimmer bg-[#ff6b6b] text-white shadow-[#ff6b6b]/30'
+                                    : 'bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-orange-500/40 ring-1 ring-white/20'
+                                    }`}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+                                <span className="flex items-center gap-2">Pagar via Hotmart <Sparkles className="w-4 h-4" /></span>
+                                <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Cartão, Pix ou Boleto</span>
+                            </button>
 
-                        <div className={`flex items-center justify-center gap-2 text-xs opacity-70 ${isKidsMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                            <ShieldCheck className="w-3 h-3" />
-                            <span>Pagamento 100% seguro via</span>
-                            <span className="font-bold flex items-center gap-1">
-                                <span className={isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}>Hotmart</span>
-                            </span>
+                            <button
+                                onClick={handleStripe}
+                                className={`w-full py-4 rounded-xl font-black text-lg shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex flex-col items-center justify-center gap-1 group relative overflow-hidden bg-slate-100 text-slate-900 shadow-slate-200/20 ring-1 ring-slate-200 border border-slate-300`}
+                            >
+                                <span className="flex items-center gap-2">Pagar via Stripe <ShieldCheck className="w-4 h-4" /></span>
+                                <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">Cartão de Crédito Global</span>
+                            </button>
+
+                            <div className={`flex items-center justify-center gap-2 text-xs opacity-70 mt-2 ${isKidsMode ? 'text-slate-500' : 'text-slate-400'}`}>
+                                <ShieldCheck className="w-3 h-3" />
+                                <span>Pagamento 100% seguro • R$ 49,90/mês</span>
+                            </div>
                         </div>
                     </div>
                 </div>
