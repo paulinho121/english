@@ -1108,44 +1108,8 @@ const App: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Free Conversation Shortcut */}
-                      <button
-                        onClick={() => setSelectedTopicId('free-conversation')}
-                        className={`w-full mb-6 p-4 rounded-[1.5rem] border transition-all flex items-center gap-4 group relative overflow-hidden ${selectedTopicId === 'free-conversation'
-                          ? isKidsMode ? 'bg-[#ff6b6b]/10 border-[#ff6b6b]/50 shadow-lg' : 'bg-gradient-to-br from-indigo-500/15 to-purple-500/15 border-indigo-500/50 shadow-lg shadow-indigo-500/5'
-                          : isKidsMode ? 'bg-white/50 border-[#4ecdc4]/20 hover:border-[#ff6b6b]/30' : 'bg-white/5 border-white/5 hover:border-indigo-500/30'
-                          }`}
-                      >
-                        {selectedTopicId === 'free-conversation' && (
-                          <div className="absolute top-0 right-0 p-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
-                          </div>
-                        )}
-                        <div className={`p-3 rounded-xl transition-all duration-300 ${selectedTopicId === 'free-conversation'
-                          ? isKidsMode ? 'bg-[#ff6b6b] text-white shadow-md' : 'bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                          : isKidsMode ? 'bg-[#4ecdc4]/20 text-[#4ecdc4]' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700'}`}>
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div className="text-left">
-                          <span className={`font-black block text-sm tracking-tight ${selectedTopicId === 'free-conversation'
-                            ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white'
-                            : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>
-                            {isKidsMode ? 'Conversa Amiga' : 'Conversa Livre'}
-                          </span>
-                          <span className={`text-[9px] font-bold uppercase tracking-[0.1em] opacity-80 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>
-                            {isKidsMode ? 'Fale o que quiser!' : 'Pratique sem roteiro'}
-                          </span>
-                        </div>
-                      </button>
-
-                      <div className="mb-5">
-                        <label className={`text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500 opacity-70'}`}>
-                          <BrainCircuit className={`w-3.5 h-3.5 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> {isKidsMode ? 'Escolha seu Amigo' : 'Escolha seu Mentor'}
-                        </label>
-                      </div>
-
                       {/* Teachers List */}
-                      <div className="space-y-2 overflow-y-auto custom-scrollbar flex-1 pr-1 mb-4 min-h-[160px]">
+                      <div className="space-y-3 overflow-y-auto custom-scrollbar flex-1 pr-1 mb-4 min-h-[220px]">
                         {TEACHERS
                           .filter(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode))
                           .map(teacher => {
@@ -1164,21 +1128,21 @@ const App: React.FC = () => {
                                     setSelectedTeacherId(teacher.id);
                                   }
                                 }}
-                                className={`w-full group relative flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${isSelected
+                                className={`w-full group relative flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 ${isSelected
                                   ? isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/50 shadow-md' : 'bg-orange-500/10 border-orange-500/50 shadow-lg shadow-orange-500/5'
                                   : isKidsMode ? 'bg-white/50 border-[#4ecdc4]/10 hover:border-[#4ecdc4]/30' : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
                                   }`}
                               >
                                 <div className="relative">
-                                  <img src={teacher.avatar} className={`w-11 h-11 rounded-xl object-cover border-2 transition-all duration-300 ${isSelected ? isKidsMode ? 'border-[#4ecdc4] shadow-md' : 'border-orange-500 shadow-lg shadow-orange-500/10' : isKidsMode ? 'border-[#4ecdc4]/20' : 'border-slate-800'} ${isLocked ? 'grayscale opacity-50' : ''}`} />
-                                  {isSelected && <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 animate-pulse ${isKidsMode ? 'bg-[#ff6b6b] border-white' : 'bg-orange-500 border-slate-900'}`}></div>}
+                                  <img src={teacher.avatar} className={`w-14 h-14 rounded-2xl object-cover border-2 transition-all duration-300 ${isSelected ? isKidsMode ? 'border-[#4ecdc4] shadow-md' : 'border-orange-500 shadow-lg shadow-orange-500/10' : isKidsMode ? 'border-[#4ecdc4]/20' : 'border-slate-800'} ${isLocked ? 'grayscale opacity-50' : ''}`} />
+                                  {isSelected && <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 animate-pulse ${isKidsMode ? 'bg-[#ff6b6b] border-white' : 'bg-orange-500 border-slate-900'}`}></div>}
                                 </div>
                                 <div className="text-left flex-1 min-w-0">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className={`font-black text-sm tracking-tight truncate ${isSelected ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white' : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>{teacher.name}</span>
-                                    {isLocked && <span className={`text-[8px] font-black px-1 py-0.5 rounded border uppercase tracking-tighter shadow-sm flex-shrink-0 ${isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b]/50' : 'bg-orange-500 text-white border-orange-400/50'}`}>PRO</span>}
+                                    <span className={`font-black text-lg tracking-tight truncate ${isSelected ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white' : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>{teacher.name}</span>
+                                    {isLocked && <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-tighter shadow-sm flex-shrink-0 ${isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b]/50' : 'bg-orange-500 text-white border-orange-400/50'}`}>PRO</span>}
                                   </div>
-                                  <span className={`text-[9px] font-bold uppercase tracking-widest block truncate opacity-70 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>{teacher.accent}</span>
+                                  <span className={`text-[10px] font-bold uppercase tracking-widest block truncate opacity-70 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>{teacher.accent}</span>
                                 </div>
                               </button>
                             );

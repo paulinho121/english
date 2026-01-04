@@ -101,8 +101,8 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ topics, progress, select
                         <button
                             onClick={() => onSelectTopic(topic.id)}
                             className={`
-                group relative w-full md:w-5/6 p-4 md:p-5 rounded-2xl border-2 transition-all duration-300
-                flex items-center gap-4 md:gap-5 shadow-xl hover:scale-[1.02] active:scale-95
+                group relative w-full md:w-5/6 p-5 rounded-2xl border-2 transition-all duration-300
+                flex items-center gap-5 shadow-xl hover:scale-[1.02] active:scale-95
                 ${isSelected
                                     ? 'bg-white/10 border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.1)]'
                                     : isCompleted
@@ -115,7 +115,7 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ topics, progress, select
                         >
                             {/* Icon Bubble */}
                             <div className={`
-                w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-lg shrink-0 transition-all duration-500 relative overflow-hidden
+                w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-lg shrink-0 transition-all duration-500 relative overflow-hidden
                 ${isCompleted ? 'bg-purple-500 text-white' : isStarted ? `bg-gradient-to-br ${barGradient} text-white` : isKidsMode ? 'bg-[#4ecdc4]/20 text-[#4ecdc4]/60' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-white'}
               `}>
                                 {isCompleted ? <Award className="w-8 h-8" /> : topic.icon}
