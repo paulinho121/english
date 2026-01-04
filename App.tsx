@@ -22,7 +22,7 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
@@ -158,20 +158,9 @@ const MainApp: React.FC = () => {
         retries++;
       }
 
-      // TEMPORARY DEMO UNLOCK (Content Only)
-      // Removes payment locks for display, but timer is strictly enforced.
-      const isDemoPeriod = new Date() < new Date('2026-01-10');
       const realPremiumStatus = profile?.is_premium || false;
 
-      // Logic:
-      // 1. If Admin -> TRUE Premium (Unlimited Time, Unlocked Content)
-      // 2. If Real Premium -> TRUE Premium (Unlimited Time, Unlocked Content)
-      // 3. If Demo Period -> "Fake" Premium for UI (Unlocked Content), but FALSE for Time (Limited Time)
-
       if (isAdmin || realPremiumStatus) {
-        setIsPremium(true);
-      } else if (isDemoPeriod) {
-        // UI Unlocked (so they see no padlocks)
         setIsPremium(true);
       } else {
         setIsPremium(false);
@@ -1125,6 +1114,14 @@ const MainApp: React.FC = () => {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 self-end sm:self-auto justify-end">
+                  {/* User Identification */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
+                    <UserCircle className="w-4 h-4 text-slate-400" />
+                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                      {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                    </span>
+                  </div>
+
                   {/* Status & Upgrade Badge/Button */}
                   <div className="flex items-center gap-2">
                     <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
