@@ -6,6 +6,8 @@ import { AuthProvider } from './contexts/AuthContext';
 
 import { Analytics } from "@vercel/analytics/react"
 
+import { BrowserRouter } from 'react-router-dom';
+
 const rootElement = document.getElementById('root');
 if (!rootElement) {
   throw new Error("Could not find root element to mount to");
@@ -14,9 +16,11 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-      <Analytics />
-    </AuthProvider>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+        <Analytics />
+      </AuthProvider>
+    </BrowserRouter>
   </React.StrictMode>
 );

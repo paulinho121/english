@@ -18,6 +18,8 @@ import { PaymentModal } from './components/PaymentModal';
 import { UpdatePasswordModal } from './components/UpdatePasswordModal';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
 import { PrivacyPolicy, TermsOfService } from './components/LegalModals';
+import { LandingPage } from './components/LandingPage';
+import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
   ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket
@@ -56,6 +58,9 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
 
 const App: React.FC = () => {
   const { user, loading, signOut } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const [step, setStep] = useState<'welcome' | 'setup' | 'call'>('welcome');
   const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<Level>(Level.B1);
@@ -103,6 +108,19 @@ const App: React.FC = () => {
   const teacherPanelRef = useRef<HTMLDivElement>(null);
 
   const [showSurvey, setShowSurvey] = useState(false);
+
+  // Route: Landing Page
+  if (location.pathname === '/landingpage') {
+    return <LandingPage onStart={() => navigate('/')} />;
+  }
+
+  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
+
+  if (!user) {
+    return <LoginScreen />;
+  }
+  initAnalytics();
+
 
   useEffect(() => {
     // Demo Trigger for PMF Survey:
