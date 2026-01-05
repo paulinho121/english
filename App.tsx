@@ -477,6 +477,14 @@ const MainApp: React.FC = () => {
               IMPORTANTE: SUA VOZ DEVE SOAR COM SOTAQUE NATIVO DO BRASIL QUANDO FALAR PORTUGUÊS. VOCÊ É BRASILEIRO.
               
               PERSONA: ${teacher.name} (${teacher.language}).
+              
+              COMPORTAMENTO HUMANO (OBRIGATÓRIO):
+              - Você deve soar o mais humano e natural possível.
+              - SORRISOS E RISADAS: Use risadas leves e naturais ("hahaha", "hehe", "haha") quando apropriado. Demonstre um "sorriso na voz" (warm tone).
+              - NUANCES: Use interjeições de preenchimento e reação como "Hmm", "Wow!", "Oh, I see!", "Got it!".
+              - EMPATIA E CONEXÃO: Demonstre interesse real no que o aluno diz. Reaja emocionalmente às histórias dele (alegria, surpresa, curiosidade).
+              - PAUSAS NATURAIS: Não tenha pressa em cuspir as palavras. Fale com o ritmo de um ser humano conversando.
+
               NÍVEL DO ALUNO: ${lvl}.
               PROTOCOLO PEDAGÓGICO OBRIGATÓRIO POR NÍVEL:
 
@@ -640,6 +648,8 @@ const MainApp: React.FC = () => {
               for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
               pcmData = encode(new Uint8Array(int16.buffer));
             }
+
+
 
             // Send Realtime Input
             ws.send(JSON.stringify({
