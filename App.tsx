@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
+import { QuickDemoOnboarding } from './components/QuickDemoOnboarding';
 
 // Initialize Analytics
 initAnalytics();
@@ -96,6 +97,11 @@ const MainApp: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showUpdatePasswordModal, setShowUpdatePasswordModal] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
+
+  // Demo flow states
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoCompleted, setDemoCompleted] = useState(() => localStorage.getItem('linguaflow_demo_complete') === 'true');
+  const [hasAccount, setHasAccount] = useState(() => localStorage.getItem('linguaflow_has_account') === 'true');
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const outputAudioContextRef = useRef<AudioContext | null>(null);
@@ -169,6 +175,8 @@ const MainApp: React.FC = () => {
       // Analytics Identification
       if (user) {
         identifyUser(user.id, user.email);
+        localStorage.setItem('linguaflow_has_account', 'true');
+        setHasAccount(true);
       }
 
       const hasCompletedTutorialLocal = localStorage.getItem('linguistai_tutorial_complete') === 'true';
@@ -235,12 +243,6 @@ const MainApp: React.FC = () => {
     };
   }, []);
 
-  // Force premium for admin
-  useEffect(() => {
-    if (user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com') {
-      setIsPremium(true);
-    }
-  }, [user]);
 
   useEffect(() => {
     if (selectedTopicId && window.innerWidth < 1024) {
@@ -335,6 +337,35 @@ const MainApp: React.FC = () => {
         const elapsedMinutes = (Date.now() - sessionStartTime) / 60000;
         const totalUsed = dailyMinutesUsed + elapsedMinutes;
 
+        // --- Demo Mode Logic (3 Minutes) ---
+        if (isDemoMode) {
+          // Warning at 2:30
+          if (elapsedMinutes >= 2.5 && !hasWarnedRef.current) {
+            hasWarnedRef.current = true;
+            if (sessionRef.current && sessionRef.current.readyState === WebSocket.OPEN) {
+              console.log('Sending Demo Time Warning to AI...');
+              sessionRef.current.send(JSON.stringify({
+                client_content: {
+                  turns: [{
+                    role: 'user',
+                    parts: [{
+                      text: `[SISTEMA - ALERTA DE DEMONSTRAÇÃO]: O usuário está em uma chamada gratuita experimental que acaba em 30 segundos. Por favor, avise-o educadamente que esta conversa inicial está chegando ao fim e que para continuar ele precisa se cadastrar. ENFATIZE que o cadastro é TOTALMENTE GRÁTIS.`
+                    }]
+                  }],
+                  turn_complete: true
+                }
+              }));
+            }
+          }
+
+          // Shutdown at 3:00
+          if (elapsedMinutes >= 3) {
+            endCall();
+            // End Call will trigger redirect to login because we'll set demoCompleted there
+          }
+          return; // Skip normal limit check
+        }
+
         // Warning at 9 minutes (1 minute remaining)
         if (!isPremium && totalUsed >= 9 && totalUsed < FREE_LIMIT_MINUTES && !hasWarnedRef.current) {
           hasWarnedRef.current = true;
@@ -366,8 +397,10 @@ const MainApp: React.FC = () => {
     return () => clearInterval(interval);
   }, [step, isPremium, sessionStartTime, dailyMinutesUsed, user]);
 
-  const startSession = async () => {
-    if (!isPremium && dailyMinutesUsed >= 10) {
+  const startSession = async (demoConfig?: { teacherId: string, level: Level, topicId: string }) => {
+    setStep('call');
+
+    if (!demoConfig && !isPremium && dailyMinutesUsed >= 10) {
       setUpgradeModalReason('time_limit');
       setShowUpgradeModal(true);
       return;
@@ -408,8 +441,12 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    const teacher = TEACHERS.find(t => t.id === selectedTeacherId)!;
-    const topic = TOPICS.find(t => t.id === selectedTopicId)!;
+    const tId = demoConfig ? demoConfig.teacherId : selectedTeacherId;
+    const lId = demoConfig ? demoConfig.topicId : selectedTopicId;
+    const lvl = demoConfig ? demoConfig.level : selectedLevel;
+
+    const teacher = TEACHERS.find(t => t.id === tId)!;
+    const topic = TOPICS.find(t => t.id === lId)!;
 
     console.log('Proxy Connection: Iniciando conexão...');
 
@@ -440,10 +477,10 @@ const MainApp: React.FC = () => {
               IMPORTANTE: SUA VOZ DEVE SOAR COM SOTAQUE NATIVO DO BRASIL QUANDO FALAR PORTUGUÊS. VOCÊ É BRASILEIRO.
               
               PERSONA: ${teacher.name} (${teacher.language}).
-              NÍVEL DO ALUNO: ${selectedLevel}.
+              NÍVEL DO ALUNO: ${lvl}.
               PROTOCOLO PEDAGÓGICO OBRIGATÓRIO POR NÍVEL:
 
-              ${selectedLevel === Level.B1 ? `
+              ${lvl === Level.B1 ? `
               - NÍVEL B1 (INTERMEDIÁRIO - Protocolo "Mixed Immersion"):
                 1. AUMENTAR CARGA DE INGLÊS: Fale misturado (Português/Inglês) mas force o uso de termos em inglês.
                 2. EXIGÊNCIA DE OUTPUT: Se o aluno falar em português, entenda, mas peça gentilmente: "Can you try to say that in English?".
@@ -452,7 +489,7 @@ const MainApp: React.FC = () => {
                 5. META: Fazer o aluno suar a camisa. Tire ele da zona de conforto do português.
               ` : ''}
 
-              ${selectedLevel === Level.B2 ? `
+              ${lvl === Level.B2 ? `
               - NÍVEL B2 (INTERMEDIÁRIO SUPERIOR - Protocolo "High Immersion"):
                 1. Use 90% ${teacher.language}. Português apenas se o aluno travar totalmente.
                 2. Fale em velocidade natural.
@@ -743,10 +780,9 @@ const MainApp: React.FC = () => {
         disconnect: () => ws.close(),
         close: () => ws.close()
       };
-      setStep('call');
 
       // Persistence: Create Session Record
-      if (user && selectedTeacherId && selectedLanguage && selectedTopicId) {
+      if (!isDemoMode && user && selectedTeacherId && selectedLanguage && selectedTopicId) {
         try {
           const { data: sessionData, error: sessionError } = await supabase.from('sessions').insert({
             user_id: user.id,
@@ -806,7 +842,7 @@ const MainApp: React.FC = () => {
     }
 
     // Update Session in Database
-    if (currentSessionId && user) {
+    if (!isDemoMode && currentSessionId && user) {
       const endTime = new Date();
       const duration = sessionStartTime ? Math.floor((endTime.getTime() - sessionStartTime) / 1000) : 0;
 
@@ -815,6 +851,13 @@ const MainApp: React.FC = () => {
         duration_seconds: duration,
         status: 'completed'
       }).eq('id', currentSessionId);
+    }
+
+    if (isDemoMode) {
+      localStorage.setItem('linguaflow_demo_complete', 'true');
+      setDemoCompleted(true);
+      setIsDemoMode(false);
+      setIsPremium(false);
     }
 
     setSessionStartTime(null);
@@ -955,7 +998,36 @@ const MainApp: React.FC = () => {
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
 
-  if (!user) {
+  if (!user && !isDemoMode) {
+    if (!demoCompleted && !hasAccount) {
+      return (
+        <QuickDemoOnboarding
+          onStartDemo={(teacherId) => {
+            setIsDemoMode(true);
+            setIsPremium(true);
+            setStep('call');
+
+            const config = {
+              teacherId,
+              level: Level.B1,
+              topicId: 'free-conversation'
+            };
+
+            setSelectedLanguage(Language.ENGLISH);
+            setSelectedLevel(config.level);
+            setSelectedTeacherId(config.teacherId);
+            setSelectedTopicId(config.topicId);
+
+            // Inicia a sessão imediatamente (AudioContext precisa de gesto do usuário)
+            startSession(config);
+          }}
+          onLoginClick={() => {
+            setHasAccount(true);
+            localStorage.setItem('linguaflow_has_account', 'true');
+          }}
+        />
+      );
+    }
     return <LoginScreen />;
   }
 
@@ -1139,7 +1211,7 @@ const MainApp: React.FC = () => {
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
                       <UserCircle className="w-4 h-4 text-slate-400" />
                       <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
-                        {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                        {user?.user_metadata?.full_name || user?.email?.split('@')[0] || (isDemoMode ? 'Visitante' : '')}
                       </span>
                     </div>
 
@@ -1172,7 +1244,7 @@ const MainApp: React.FC = () => {
 
                   {/* Actions Group */}
                   <div className="flex items-center gap-2">
-                    {user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
+                    {user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
                       <button
                         onClick={() => setIsAdminDashboardOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
@@ -1343,7 +1415,7 @@ const MainApp: React.FC = () => {
                           )}
 
                           <button
-                            onClick={startSession}
+                            onClick={() => startSession()}
                             disabled={!selectedTopicId || connectionStatus === 'connecting'}
                             className="w-full relative group overflow-hidden"
                           >
