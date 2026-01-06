@@ -74,7 +74,7 @@ export const QuickDemoOnboarding: React.FC<QuickDemoOnboardingProps> = ({ onStar
                     <div className="flex flex-col items-center gap-6 w-full">
                         <button
                             onClick={() => onStartDemo(selectedTeacher)}
-                            className="btn-primary w-full max-w-md py-4 md:py-5 rounded-xl md:rounded-2xl flex items-center justify-center gap-3 text-lg md:text-xl shadow-[0_0_30px_rgba(249,115,22,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            className="btn-glass w-full max-w-md py-4 md:py-5 rounded-xl md:rounded-2xl flex items-center justify-center gap-3 text-lg md:text-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                         >
                             FALE AGORA
                             <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
