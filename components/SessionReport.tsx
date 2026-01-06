@@ -10,12 +10,12 @@ interface SessionReportProps {
 
 export const SessionReport: React.FC<SessionReportProps> = ({ data, onRestart }) => {
     const handleShare = async () => {
-        const text = `Ganhei ${data.score} pontos praticando meu novo idioma no LinguistAI! 🚀\n\nMinha dica de hoje: "${data.tip}"\n\nVenha destravar sua fluência também! #LinguistAI #FluenciaIA`;
+        const text = `Ganhei ${data.score} pontos praticando meu novo idioma no LinguaFlow AI! 🚀\n\nMinha dica de hoje: "${data.tip}"\n\nVenha destravar sua fluência também! #LinguaFlow #FluenciaIA`;
 
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Meu Progresso no LinguistAI',
+                    title: 'Meu Progresso no LinguaFlow AI',
                     text: text,
                     url: window.location.origin,
                 });
@@ -30,8 +30,14 @@ export const SessionReport: React.FC<SessionReportProps> = ({ data, onRestart })
     };
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center p-6 pb-24 md:pb-6 overflow-y-auto w-full animate-in fade-in zoom-in-95 duration-700">
-            <div className="max-w-4xl w-full bg-slate-950/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+        <div className="flex-1 flex flex-col items-center justify-center p-6 pb-24 md:pb-6 overflow-y-auto w-full animate-in fade-in zoom-in-95 duration-700 relative">
+            {/* Background Blobs - Enhanced & Animated */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+                <div className="blob blob-1"></div>
+                <div className="blob blob-2"></div>
+                <div className="blob blob-3 opacity-20"></div>
+            </div>
+            <div className="max-w-4xl w-full bg-slate-950/90 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden z-10">
 
                 {/* Glow Effects */}
                 <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-emerald-500 to-transparent opacity-50"></div>

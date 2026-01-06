@@ -142,7 +142,7 @@ export const TEACHERS: Teacher[] = [
 import {
   MessageCircleHeart, BriefcaseBusiness, Plane, UtensilsCrossed,
   Coffee, GraduationCap, Building2, School, Mic,
-  Wand, PawPrint, Zap, Rocket
+  Wand, PawPrint, Zap, Rocket, TrendingUp
 } from 'lucide-react';
 
 export const TOPICS: Topic[] = [
@@ -190,9 +190,9 @@ export const TOPICS: Topic[] = [
   },
   {
     id: 'school',
-    name: 'Escola / Sala de Aula',
-    icon: <School className="w-8 h-8" />,
-    prompt: 'Simule um ambiente de ensino formal. Atue como o professor da sala, aplicando o Protocolo Pedagógico para consolidar as bases gramaticais e a fluidez do aluno.'
+    name: 'Simulação de Vendas',
+    icon: <TrendingUp className="w-8 h-8" />,
+    prompt: 'Simule um cenário de vendas real. Atue como um prospect ou cliente, desafiando o aluno a usar técnicas de negociação, contorno de objeções e vocabulário de negócios, seguindo sempre o Protocolo Pedagógico.'
   },
   {
     id: 'pronunciation',

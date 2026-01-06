@@ -138,9 +138,8 @@ export const LoginScreen: React.FC = () => {
 
             <div className="w-full max-w-md glass-premium p-6 md:p-10 rounded-[2.5rem] relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700 my-auto">
                 <div className="text-center mb-8 md:mb-10">
-                    <div className="w-24 h-24 md:w-36 md:h-36 mx-auto mb-4 md:mb-6 flex items-center justify-center group">
-                        <div className="absolute w-32 h-32 bg-orange-500/20 rounded-full blur-2xl group-hover:bg-orange-500/30 transition-all duration-500"></div>
-                        <img src="/logo.png" alt="LinguistAI Logo" className="w-full h-full object-contain drop-shadow-[0_0_25px_rgba(249,115,22,0.6)] relative z-10 transform group-hover:scale-110 transition-transform duration-500" />
+                    <div className="w-24 h-24 md:w-36 md:h-36 mx-auto mb-4 md:mb-6 flex items-center justify-center group relative">
+                        <img src="/logo.png" alt="LinguaFlow AI Logo" className="w-full h-full object-contain relative z-10 transform group-hover:scale-110 transition-transform duration-500 drop-shadow-sm" />
                     </div>
                     <h1 className="text-3xl md:text-4xl font-display font-black text-white tracking-tight mb-2 text-glow">Bem-vindo</h1>
                     <p className="text-slate-300 font-medium">Acesse sua conta para continuar.</p>
@@ -330,8 +329,8 @@ export const LoginScreen: React.FC = () => {
                 </div>
             </div>
 
-            <div className="mt-8 text-slate-500/40 text-[10px] font-black tracking-[0.2em] uppercase text-center relative z-10 pb-4 mix-blend-plus-lighter">
-                &copy; 2025 Paulinho Fernando. Todos os direitos reservados.
+            <div className="mt-8 text-white/20 text-[10px] font-black tracking-[0.2em] uppercase text-center relative z-10 pb-4 mix-blend-plus-lighter">
+                &copy; 2026 Paulinho Fernando. Todos os direitos reservados.
             </div>
         </div>
     );

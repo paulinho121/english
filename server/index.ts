@@ -20,7 +20,7 @@ const wss = new WebSocketServer({ server });
 
 // Simple health check endpoint for Cloud Run
 app.get('/', (req, res) => {
-    res.send('LinguistAI Proxy is running');
+    res.send('LinguaFlow Proxy is running');
 });
 
 wss.on('connection', (clientWs: WebSocket) => {
@@ -73,5 +73,5 @@ wss.on('connection', (clientWs: WebSocket) => {
 });
 
 server.listen(port, () => {
-    console.log(`LinguistAI Proxy rodando na porta ${port}`);
+    console.log(`LinguaFlow Proxy rodando na porta ${port}`);
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles, CheckCircle2, X, ShieldCheck } from 'lucide-react';
+import { Crown, CheckCircle2, X, ShieldCheck } from 'lucide-react';
 import { stripeService } from '../lib/stripe';
 
 interface PaymentModalProps {
@@ -67,7 +67,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
                         }`}>
                         <img
                             src="/logo.png"
-                            alt="LinguistAI Logo"
+                            alt="LinguaFlow AI Logo"
                             className="w-20 h-20 object-contain drop-shadow-md"
                         />
                     </div>
@@ -115,7 +115,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
                                     }`}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
-                                <span className="flex items-center gap-2">Pagar via Hotmart <Sparkles className="w-4 h-4" /></span>
+                                <span className="flex items-center gap-2">Pagar via Hotmart <div className="crown-wrapper"><Crown className="w-4 h-4 icon-3d-crown fill-amber-400/20" /></div></span>
                                 <span className="text-[10px] font-bold opacity-80 uppercase tracking-widest">Cartão, Pix ou Boleto</span>
                             </button>
 

@@ -153,12 +153,6 @@ export const JourneyMap: React.FC<JourneyMapProps> = ({ topics, progress, select
                                     <span className={`text-[10px] font-bold uppercase tracking-wider ${isCompleted ? 'text-purple-400' : isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>
                                         {isCompleted ? 'Nível Máximo Alcançado!' : `${score}% para Próximo Nível`}
                                     </span>
-
-                                    {!isCompleted && (
-                                        <span className="text-[10px] font-bold text-white/50 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Play className="w-3 h-3 fill-current" /> {isStarted ? 'Continuar Tempo' : 'Iniciar'}
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                         </button>

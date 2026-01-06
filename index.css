@@ -124,16 +124,18 @@ h6,
     opacity: 0.4;
     animation: float-blob 20s infinite alternate cubic-bezier(0.4, 0, 0.2, 1);
     border-radius: 50%;
+    will-change: transform;
+    pointer-events: none;
 }
 
 .blob-1 {
     top: -10%;
     left: -10%;
-    width: 50vw;
-    height: 50vw;
+    width: 60vw;
+    height: 60vw;
     background: #4f46e5;
     /* Indigo */
-    animation-delay: 0s;
+    animation: float-blob-1 25s infinite alternate ease-in-out;
 }
 
 .blob-2 {
@@ -143,7 +145,7 @@ h6,
     height: 50vw;
     background: #ea580c;
     /* Orange */
-    animation-delay: -5s;
+    animation: float-blob-2 30s infinite alternate ease-in-out;
 }
 
 .blob-3 {
@@ -154,24 +156,56 @@ h6,
     background: #db2777;
     /* Pink */
     opacity: 0.2;
-    animation-delay: -10s;
+    animation: float-blob-3 20s infinite alternate ease-in-out;
 }
 
-@keyframes float-blob {
+@keyframes float-blob-1 {
     0% {
         transform: translate(0, 0) scale(1) rotate(0deg);
     }
 
     33% {
-        transform: translate(50px, -30px) scale(1.1) rotate(5deg);
+        transform: translate(10%, 10%) scale(1.1) rotate(60deg);
     }
 
     66% {
-        transform: translate(-20px, 40px) scale(0.9) rotate(-5deg);
+        transform: translate(-5%, 15%) scale(0.9) rotate(-30deg);
     }
 
     100% {
         transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+}
+
+@keyframes float-blob-2 {
+    0% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(-15%, -10%) scale(0.9) rotate(-45deg);
+    }
+
+    66% {
+        transform: translate(10%, -20%) scale(1.2) rotate(30deg);
+    }
+
+    100% {
+        transform: translate(0, 0) scale(1) rotate(0deg);
+    }
+}
+
+@keyframes float-blob-3 {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate(20%, -10%) scale(1.1);
+    }
+
+    100% {
+        transform: translate(0, 0) scale(1);
     }
 }
 
@@ -238,6 +272,57 @@ h6,
     background-position: 200% 0;
     box-shadow: 0 0 40px rgba(249, 115, 22, 0.4);
     transform: translateY(-2px) scale(1.02);
+}
+
+.btn-glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.37),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+    color: white;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:
+        0 12px 40px 0 rgba(0, 0, 0, 0.45),
+        inset 0 0 20px rgba(255, 255, 255, 0.05);
+}
+
+.btn-glass:active {
+    transform: translateY(0) scale(0.98);
+}
+
+/* 3D Crown Style */
+.icon-3d-crown {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 10px rgba(245, 158, 11, 0.4));
+    fill: url(#crown-gradient);
+    /* Note: Requires SVG gradient or falling back to CSS */
+    color: #fbbf24;
+    /* Fallback gold color */
+    transform: perspective(100px) rotateX(10deg);
+}
+
+.crown-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.crown-wrapper::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: radial-gradient(circle, rgba(251, 191, 36, 0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    z-index: -1;
 }
 
 

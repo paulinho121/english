@@ -22,7 +22,7 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
@@ -1044,164 +1044,171 @@ const MainApp: React.FC = () => {
   return (
     <main className={`h-[100dvh] w-full flex flex-col font-sans overflow-hidden relative bg-slate-950 text-white ${isKidsMode ? 'kids-mode' : ''}`}>
 
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {/* Background Ambience - Animated */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div className="blob blob-1"></div>
         <div className="blob blob-2"></div>
-
-        {/* Kids Mode Specific Background Elements */}
-        {isKidsMode && step === 'welcome' && (
-          <>
-            <div className="absolute top-[10%] left-[15%] text-amber-300 animate-rocket opacity-60">
-              <Rocket className="w-12 h-12 rotate-[45deg]" />
-            </div>
-            <div className="absolute top-[20%] right-[20%] text-blue-300 animate-star opacity-40">
-              <Sparkles className="w-8 h-8" />
-            </div>
-            <div className="absolute bottom-[25%] left-[10%] text-pink-300 animate-star opacity-50 delay-700">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <div className="absolute top-[60%] right-[10%] text-orange-300 animate-rocket opacity-40 delay-1000">
-              <Rocket className="w-10 h-10 -rotate-[15deg]" />
-            </div>
-          </>
-        )}
+        <div className="blob blob-1 opacity-20" style={{ left: '30%', top: '40%', width: '40vw', height: '40vw' }}></div>
       </div>
-
-      {/* Offline/Reconnecting Overlay */}
-      {(!isOnline || connectionStatus === 'connecting') && step === 'call' && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="flex flex-col items-center gap-4 p-8 glass-premium rounded-3xl border border-orange-500/20">
-            <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-white mb-1">
-                {!isOnline ? 'Sem Conexão' : 'Conectando à IA...'}
-              </h3>
-              <p className="text-slate-400 text-sm">
-                {!isOnline
-                  ? 'Verifique sua internet para continuar a aula.'
-                  : 'Establishando canal de áudio de alta fidelidade...'}
-              </p>
-            </div>
+      {/* Kids Mode Specific Background Elements */}
+      {isKidsMode && step === 'welcome' && (
+        <>
+          <div className="absolute top-[10%] left-[15%] text-amber-300 animate-rocket opacity-60">
+            <Rocket className="w-12 h-12 rotate-[45deg]" />
           </div>
-        </div>
+          <div className="absolute top-[20%] right-[20%] text-blue-300 animate-star opacity-40">
+            <Sparkles className="w-8 h-8" />
+          </div>
+          <div className="absolute bottom-[25%] left-[10%] text-pink-300 animate-star opacity-50 delay-700">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div className="absolute top-[60%] right-[10%] text-orange-300 animate-rocket opacity-40 delay-1000">
+            <Rocket className="w-10 h-10 -rotate-[15deg]" />
+          </div>
+        </>
       )}
 
-      {step === 'welcome' && (
-        <div className={`flex-1 flex flex-col items-center justify-between relative p-6 text-center bg-mesh overflow-hidden ${isKidsMode ? 'pt-24 md:pt-12' : ''}`}>
-          {/* Background Blobs - Enhanced */}
-          <div className="absolute inset-0 pointer-events-none overflow-hidden">
-            <div className="blob blob-1 mix-blend-screen" style={{ width: '60vw', height: '60vw', left: '-10%', top: '-20%' }}></div>
-            <div className="blob blob-2 mix-blend-overlay" style={{ width: '50vw', height: '50vw', right: '0%', bottom: '-10%' }}></div>
+      {/* Offline/Reconnecting Overlay */}
+      {
+        (!isOnline || connectionStatus === 'connecting') && step === 'call' && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="flex flex-col items-center gap-4 p-8 glass-premium rounded-3xl border border-orange-500/20">
+              <Loader2 className="w-12 h-12 text-orange-500 animate-spin" />
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-white mb-1">
+                  {!isOnline ? 'Sem Conexão' : 'Conectando à IA...'}
+                </h3>
+                <p className="text-slate-400 text-sm">
+                  {!isOnline
+                    ? 'Verifique sua internet para continuar a aula.'
+                    : 'Establishando canal de áudio de alta fidelidade...'}
+                </p>
+              </div>
+            </div>
           </div>
+        )
+      }
 
-          <div className="absolute top-4 right-4 md:top-6 md:right-6 flex flex-wrap items-center justify-end gap-2 md:gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
-            {/* User identification (email/name) mobile optimized */}
-            {user && (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
-                <UserCircle className="w-3.5 h-3.5 text-slate-400" />
-                <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{user.user_metadata?.full_name || user.email?.split('@')[0]}</span>
+      {
+        step === 'welcome' && (
+          <div className={`flex-1 flex flex-col items-center justify-between relative p-6 text-center bg-mesh overflow-hidden ${isKidsMode ? 'pt-24 md:pt-12' : ''}`}>
+            {/* Background Blobs - Enhanced & Animated */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+              <div className="blob blob-1"></div>
+              <div className="blob blob-2"></div>
+              <div className="blob blob-3 opacity-20"></div>
+            </div>
+
+            <div className="absolute top-4 right-4 md:top-6 md:right-6 flex flex-wrap items-center justify-end gap-2 md:gap-4 z-30 animate-in fade-in slide-in-from-right-4 duration-1000">
+              {/* User identification (email/name) mobile optimized */}
+              {user && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
+                  <UserCircle className="w-3.5 h-3.5 text-slate-400" />
+                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{user.user_metadata?.full_name || user.email?.split('@')[0]}</span>
+                </div>
+              )}
+
+              {/* Premium/Free Badge */}
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isPremium
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                  : 'bg-slate-800/50 border-white/10 text-slate-400'
+                  }`}>
+                  {isPremium ? <div className="crown-wrapper"><Crown className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400 icon-3d-crown fill-amber-400/20" /></div> : <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-slate-500" />}
+                  <span className="font-bold text-[10px] md:text-xs tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+                </div>
+
+                {!isPremium && (
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className={`btn-shimmer px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white' : 'bg-orange-500 text-white'}`}
+                  >
+                    <Zap className="w-3 h-3 fill-current" /> <span className="hidden xs:inline">SEJA PRO</span>
+                  </button>
+                )}
+              </div>
+
+
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center items-center w-full z-10 max-w-2xl relative">
+              <div className={`transition-all duration-1000 ${isKidsMode ? 'animate-float opacity-100 scale-100 md:scale-110' : 'animate-float-slow'}`}>
+                <img
+                  src="/logo.png"
+                  className={`w-36 h-36 md:w-44 md:h-44 mx-auto transform hover:scale-105 transition-transform duration-700 ${isKidsMode ? 'mb-4 md:mb-8 drop-shadow-[0_10px_30px_rgba(78,205,196,0.3)]' : 'drop-shadow-sm'}`}
+                />
+              </div>
+
+
+              <div className={`space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both ${isKidsMode ? 'mb-8' : ''}`}>
+                <h1 className="text-4xl md:text-7xl font-display font-black tracking-tight leading-[1.1]">
+                  {isKidsMode ? (
+                    <span className="text-slate-900 drop-shadow-[0_5px_15px_rgba(255,107,107,0.3)]">
+                      Mundo<span className="text-[#ff6b6b] text-glow animate-bounce-slow inline-block ml-2">Kids!</span>
+                    </span>
+                  ) : (
+                    <span className="text-white">
+                      Lingua<span className="text-orange-500 text-glow">Flow</span>
+                    </span>
+                  )}
+                </h1>
+                <p className={`text-sm md:text-xl font-bold max-w-[280px] md:max-w-md mx-auto leading-relaxed ${isKidsMode ? 'text-slate-600' : 'text-slate-400'}`}>
+                  {isKidsMode
+                    ? 'Aprenda inglês com aventuras mágicas, jogos e muitos amigos novos!'
+                    : 'Sua jornada para a fluência começa aqui. Interaja, aprenda e domine.'}
+                </p>
+              </div>
+
+
+              <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both mt-8 md:mt-12">
+                <button
+                  onClick={() => { setStep('setup'); }}
+                  className="btn-glass px-8 py-4 md:px-16 md:py-7 rounded-2xl md:rounded-[2.5rem] text-lg md:text-3xl font-black flex items-center justify-center gap-3 md:gap-4 mx-auto group active:scale-95 transition-all"
+                >
+                  {isKidsMode ? 'VAMOS COMEÇAR!' : 'Continuar Jornada'}
+                  <ArrowRight className="w-6 h-6 md:w-9 md:h-9 group-hover:translate-x-2 transition-transform duration-300" />
+                </button>
+              </div>
+            </div>
+
+            {/* Walking Characters - Optimized for Final Visibility */}
+            {isKidsMode && (
+              <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+                <div className="absolute top-[28%] -left-[2%] md:top-[38%] md:left-[10%] animate-character">
+                  <img src="/kids/leo.png" className="w-28 h-28 md:w-64 md:h-64 blend-multiply" alt="Leo" />
+                </div>
+                <div className="absolute bottom-[20%] -right-[2%] md:top-[58%] md:right-[10%] animate-character delay-500">
+                  <img src="/kids/lara.png" className="w-28 h-28 md:w-64 md:h-64 blend-multiply" alt="Lara" />
+                </div>
               </div>
             )}
 
-            {/* Premium/Free Badge */}
-            <div className="flex items-center gap-2">
-              <div className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isPremium
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
-                : 'bg-slate-800/50 border-white/10 text-slate-400'
-                }`}>
-                {isPremium ? <Sparkles className="w-3.5 h-3.5 md:w-4 md:h-4 text-amber-400" /> : <div className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-slate-500" />}
-                <span className="font-bold text-[10px] md:text-xs tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+            {/* Footer for Welcome Screen */}
+            <div className="w-full py-4 text-center text-[10px] text-white/50 font-medium z-10 flex flex-col gap-2 pointer-events-auto flex-shrink-0">
+              <div className="flex items-center justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
+                <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
+                <div className="w-[1px] h-2 bg-white/10"></div>
+                <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
               </div>
-
-              {!isPremium && (
-                <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  className={`btn-shimmer px-3 py-1.5 md:px-4 md:py-2 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white' : 'bg-orange-500 text-white'}`}
-                >
-                  <Zap className="w-3 h-3 fill-current" /> <span className="hidden xs:inline">SEJA PRO</span>
-                </button>
-              )}
-            </div>
-
-            <div className={`flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full border backdrop-blur-md z-30 transition-colors ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b]' : 'bg-slate-900/50 border-white/10 text-orange-100 group hover:border-orange-500/30'}`}>
-              <Flame className={`w-4 h-4 md:w-5 md:h-5 animate-pulse ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
-              <span className="font-bold text-xs md:text-base">{streak} Dias</span>
+              <p className="text-white/60">&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
+              {user && <p className="text-white/40">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
             </div>
           </div>
-
-          <div className="flex-1 flex flex-col justify-center items-center w-full z-10 max-w-2xl relative">
-            <div className={`transition-all duration-1000 ${isKidsMode ? 'animate-float opacity-100 scale-100 md:scale-110' : 'animate-float-slow'}`}>
-              <img
-                src="/logo.png"
-                className={`w-36 h-36 md:w-44 md:h-44 mx-auto transform hover:scale-105 transition-transform duration-700 ${isKidsMode ? 'mb-4 md:mb-8 drop-shadow-[0_10px_30px_rgba(78,205,196,0.3)]' : 'drop-shadow-[0_0_50px_rgba(249,115,22,0.5)]'}`}
-              />
-            </div>
-
-
-            <div className={`space-y-4 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300 fill-mode-both ${isKidsMode ? 'mb-8' : ''}`}>
-              <h1 className="text-4xl md:text-7xl font-display font-black tracking-tight leading-[1.1]">
-                {isKidsMode ? (
-                  <span className="text-slate-900 drop-shadow-[0_5px_15px_rgba(255,107,107,0.3)]">
-                    Mundo<span className="text-[#ff6b6b] text-glow animate-bounce-slow inline-block ml-2">Kids!</span>
-                  </span>
-                ) : (
-                  <span className="text-white">
-                    Lingua<span className="text-orange-500 text-glow">Flow</span>
-                  </span>
-                )}
-              </h1>
-              <p className={`text-sm md:text-xl font-bold max-w-[280px] md:max-w-md mx-auto leading-relaxed ${isKidsMode ? 'text-slate-600' : 'text-slate-400'}`}>
-                {isKidsMode
-                  ? 'Aprenda inglês com aventuras mágicas, jogos e muitos amigos novos!'
-                  : 'Sua jornada para a fluência começa aqui. Interaja, aprenda e domine.'}
-              </p>
-            </div>
-
-
-            <div className="animate-in fade-in slide-in-from-bottom-12 duration-1000 delay-700 fill-mode-both mt-8 md:mt-12">
-              <button
-                onClick={() => { setStep('setup'); }}
-                className="btn-shimmer px-8 py-4 md:px-16 md:py-7 rounded-2xl md:rounded-[2.5rem] text-lg md:text-3xl font-black flex items-center justify-center gap-3 md:gap-4 mx-auto group shadow-2xl shadow-orange-500/10 active:scale-95 transition-all"
-              >
-                {isKidsMode ? 'VAMOS COMEÇAR!' : 'Continuar Jornada'}
-                <ArrowRight className="w-6 h-6 md:w-9 md:h-9 group-hover:translate-x-2 transition-transform duration-300" />
-              </button>
-            </div>
-          </div>
-
-          {/* Walking Characters - Optimized for Final Visibility */}
-          {isKidsMode && (
-            <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden">
-              <div className="absolute top-[28%] -left-[2%] md:top-[38%] md:left-[10%] animate-character">
-                <img src="/kids/leo.png" className="w-28 h-28 md:w-64 md:h-64 blend-multiply" alt="Leo" />
-              </div>
-              <div className="absolute bottom-[20%] -right-[2%] md:top-[58%] md:right-[10%] animate-character delay-500">
-                <img src="/kids/lara.png" className="w-28 h-28 md:w-64 md:h-64 blend-multiply" alt="Lara" />
-              </div>
-            </div>
-          )}
-
-          {/* Footer for Welcome Screen */}
-          <div className="w-full py-4 text-center text-[10px] text-slate-700 font-medium z-10 flex flex-col gap-2 pointer-events-auto flex-shrink-0">
-            <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
-              <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
-              <div className="w-[1px] h-2 bg-slate-800"></div>
-              <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
-            </div>
-            <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
-            {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
-          </div>
-        </div>
-      )
+        )
       }
 
 
 
       {
         step === 'setup' && (
-          <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar p-4 md:p-8">
-            <div className="max-w-5xl w-full mx-auto space-y-8 pb-20">
+          <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar p-4 md:p-8 relative">
+            {/* Background Blobs - Enhanced & Animated */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+              <div className="blob blob-1"></div>
+              <div className="blob blob-2"></div>
+              <div className="blob blob-3 opacity-20"></div>
+            </div>
+            <div className="max-w-5xl w-full mx-auto space-y-8 pb-20 relative z-10">
               {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
@@ -1214,52 +1221,44 @@ const MainApp: React.FC = () => {
                       : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3 w-full sm:w-auto">
-                  {/* Status Group */}
-                  <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+                  {/* Left Group: User Info & Status */}
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 w-full md:w-auto">
                     {/* User Identification */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
                       <UserCircle className="w-4 h-4 text-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider truncate max-w-[150px] sm:max-w-none">
                         {user?.user_metadata?.full_name || user?.email?.split('@')[0] || (isDemoMode ? 'Visitante' : '')}
                       </span>
                     </div>
 
-                    {/* Status & Upgrade */}
-                    <div className="flex items-center gap-2">
-                      <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
-                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
-                        : 'bg-slate-800/50 border-white/10 text-slate-400'
-                        }`}>
-                        {isPremium ? <Sparkles className="w-3.5 h-3.5 text-amber-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
-                        <span className="font-bold text-[10px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
-                      </div>
-
-                      {!isPremium && (
-                        <button
-                          onClick={() => setShowUpgradeModal(true)}
-                          className={`btn-shimmer px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
-                        >
-                          <Zap className="w-3 h-3 fill-current" /> SEJA PRO
-                        </button>
-                      )}
+                    {/* Premium Status */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                      : 'bg-slate-800/50 border-white/10 text-slate-400'
+                      }`}>
+                      {isPremium ? <div className="crown-wrapper"><Crown className="w-3.5 h-3.5 text-amber-400 icon-3d-crown fill-amber-400/20" /></div> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
+                      <span className="font-bold text-[10px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
                     </div>
 
-                    {/* Streak */}
-                    <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${isKidsMode ? 'bg-white/80 border-[#ff6b6b]/20 shadow-sm' : 'bg-orange-500/10 border-orange-500/20'}`}>
-                      <Flame className={`w-4 h-4 ${isKidsMode ? 'text-[#ff6b6b] fill-[#ff6b6b]' : 'text-orange-500 fill-orange-500'}`} />
-                      <span className={`font-bold text-sm ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-200'}`}>{streak} Dias</span>
-                    </div>
+                    {!isPremium && (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className={`btn-shimmer px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
+                      >
+                        <Zap className="w-3 h-3 fill-current" /> SEJA PRO
+                      </button>
+                    )}
                   </div>
 
-                  {/* Actions Group */}
-                  <div className="flex items-center gap-2">
+                  {/* Right Group: Actions */}
+                  <div className="flex items-center justify-center gap-2 w-full md:w-auto">
                     {user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
                       <button
                         onClick={() => setIsAdminDashboardOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest whitespace-nowrap"
                       >
-                        <Shield className="w-4 h-4" /> <span className="hidden lg:inline">Dashboard Admin</span>
+                        <Shield className="w-4 h-4" /> <span>Dashboard Admin</span>
                       </button>
                     )}
                     <button
@@ -1387,7 +1386,6 @@ const MainApp: React.FC = () => {
                                     <span className={`font-black text-lg tracking-tight truncate ${isSelected ? isKidsMode ? 'text-[#ff6b6b]' : 'text-white' : isKidsMode ? 'text-[#2d3748]' : 'text-slate-300'}`}>{teacher.name}</span>
                                     {isLocked && <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-tighter shadow-sm flex-shrink-0 ${isKidsMode ? 'bg-[#ff6b6b] text-white border-[#ff6b6b]/50' : 'bg-orange-500 text-white border-orange-400/50'}`}>PRO</span>}
                                   </div>
-                                  <span className={`text-[10px] font-bold uppercase tracking-widest block truncate opacity-70 ${isKidsMode ? 'text-[#4ecdc4]' : 'text-slate-500'}`}>{teacher.accent}</span>
                                 </div>
                               </button>
                             );
@@ -1457,14 +1455,14 @@ const MainApp: React.FC = () => {
               )}
 
               {/* Footer Static in Setup */}
-              <div className="pt-8 pb-4 text-center text-[10px] text-slate-700 font-medium flex flex-col gap-2">
-                <div className="flex items-center justify-center gap-4 opacity-50 hover:opacity-100 transition-opacity">
+              <div className="pt-8 pb-4 text-center text-[10px] text-white/50 font-medium flex flex-col gap-2 relative z-10">
+                <div className="flex items-center justify-center gap-4 opacity-70 hover:opacity-100 transition-opacity">
                   <button onClick={() => setActiveLegalModal('terms')} className="hover:text-white transition-colors cursor-pointer">Termos de Uso</button>
-                  <div className="w-[1px] h-2 bg-slate-800"></div>
+                  <div className="w-[1px] h-2 bg-white/10"></div>
                   <button onClick={() => setActiveLegalModal('privacy')} className="hover:text-white transition-colors cursor-pointer">Privacidade</button>
                 </div>
-                <p>&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
-                {user && <p className="opacity-30">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
+                <p className="text-white/60">&copy; 2026 LinguaFlow AI - Paulinho Fernando. Todos os direitos reservados.</p>
+                {user && <p className="text-white/40">Logado como: {user.email} {isPremium ? '(Premium Ativo)' : '(Acesso Grátis)'}</p>}
               </div>
             </div>
           </div>
@@ -1474,6 +1472,12 @@ const MainApp: React.FC = () => {
       {
         step === 'call' && (
           <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
+            {/* Background Blobs - Enhanced & Animated */}
+            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+              <div className="blob blob-1"></div>
+              <div className="blob blob-2"></div>
+              <div className="blob blob-3 opacity-20"></div>
+            </div>
             {/* Live Timer & Status Overlay */}
             <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex items-center gap-2 md:gap-3 animate-in fade-in duration-700">
               {/* Premium/Free Status in Call */}
@@ -1481,7 +1485,7 @@ const MainApp: React.FC = () => {
                 ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
                 : 'bg-slate-800/50 border-white/10 text-slate-400'
                 }`}>
-                {isPremium ? <Sparkles className="w-3 h-3 text-amber-400" /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
+                {isPremium ? <div className="crown-wrapper"><Crown className="w-3 h-3 text-amber-400 icon-3d-crown fill-amber-400/20" /></div> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
                 <span className="font-bold text-[9px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'GRÁTIS'}</span>
               </div>
 
@@ -1648,13 +1652,15 @@ const MainApp: React.FC = () => {
       {activeLegalModal === 'terms' && <TermsOfService onClose={() => setActiveLegalModal(null)} />}
 
       {/* PMF Survey Modal */}
-      {showSurvey && user && (
-        <SeanEllisSurvey
-          onClose={() => setShowSurvey(false)}
-          onComplete={handleSurveyComplete}
-          userId={user.id}
-        />
-      )}
+      {
+        showSurvey && user && (
+          <SeanEllisSurvey
+            onClose={() => setShowSurvey(false)}
+            onComplete={handleSurveyComplete}
+            userId={user.id}
+          />
+        )
+      }
     </main >
   );
 };

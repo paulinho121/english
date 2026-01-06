@@ -1,6 +1,5 @@
-
 {
-  "name": "LinguistAI Live - Immersive Learning",
+  "name": "LinguaFlow AI - Immersive Learning",
   "description": "Conversação em tempo real com professores nativos de IA usando Gemini Live API.",
   "requestFramePermissions": [
     "microphone"

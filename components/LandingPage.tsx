@@ -35,7 +35,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
             <header className="absolute top-0 w-full z-50 p-6 flex justify-between items-center max-w-7xl mx-auto left-0 right-0">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 relative">
-                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(249,115,22,0.5)]" />
+                        <img src="/logo.png" alt="Logo" className="w-full h-full object-contain drop-shadow-sm" />
                     </div>
                     <span className="font-display font-bold text-xl tracking-tight hidden md:block">
                         Lingua<span className="text-orange-500">Flow</span>
