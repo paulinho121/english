@@ -1,7 +1,7 @@
-
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SessionReportData } from '../types';
 import { Star, AlertTriangle, BookOpen, Lightbulb, Share2, RefreshCw, ArrowRight, Sparkles, Clock } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 interface SessionReportProps {
     data: SessionReportData;
@@ -9,6 +9,32 @@ interface SessionReportProps {
 }
 
 export const SessionReport: React.FC<SessionReportProps> = ({ data, onRestart }) => {
+    useEffect(() => {
+        if (data.score >= 80) {
+            // Priority celebration for high scores
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+            const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min;
+
+            const interval: any = setInterval(function () {
+                const timeLeft = animationEnd - Date.now();
+
+                if (timeLeft <= 0) {
+                    return clearInterval(interval);
+                }
+
+                const particleCount = 50 * (timeLeft / duration);
+                // since particles fall down, start a bit higher than random
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+                confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+
+            return () => clearInterval(interval);
+        }
+    }, [data.score]);
+
     const handleShare = async () => {
         const text = `Ganhei ${data.score} pontos praticando meu novo idioma no LinguaFlow AI! 🚀\n\nMinha dica de hoje: "${data.tip}"\n\nVenha destravar sua fluência também! #LinguaFlow #FluenciaIA`;
 
@@ -69,7 +95,7 @@ export const SessionReport: React.FC<SessionReportProps> = ({ data, onRestart })
                                     fill="transparent"
                                     strokeDasharray={2 * Math.PI * 88}
                                     strokeDashoffset={2 * Math.PI * 88 * (1 - data.score / 100)}
-                                    className={`text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-1000 ease-out`}
+                                    className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.5)] transition-all duration-1000 ease-out"
                                     strokeLinecap="round"
                                 />
                             </svg>

@@ -22,7 +22,7 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
@@ -56,6 +56,8 @@ async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: 
   }
   return buffer;
 }
+
+const DAILY_GOAL_MINUTES = 10;
 
 const MainApp: React.FC = () => {
   const { user, loading, signOut } = useAuth();
@@ -1249,6 +1251,50 @@ const MainApp: React.FC = () => {
                         <Zap className="w-3 h-3 fill-current" /> SEJA PRO
                       </button>
                     )}
+
+                    {/* Daily Goal & Streak */}
+                    <div className="flex items-center gap-2">
+                      {/* Streak */}
+                      <div className={`flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm ${streak > 0 ? 'animate-streak-fire border-white/20' : ''}`}>
+                        <Flame className={`w-4 h-4 ${streak > 0 ? 'text-orange-500 fill-orange-500/20' : 'text-slate-500'}`} />
+                        <span className={`text-[10px] font-black ${streak > 0 ? 'text-white' : 'text-slate-500'}`}>
+                          {streak} {isKidsMode ? 'DIAS' : 'OFENSIVA'}
+                        </span>
+                      </div>
+
+                      {/* Daily Goal Progress */}
+                      <div className="flex items-center gap-3 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm group hover:border-white/20 transition-all cursor-help" title={`Meta diária: ${DAILY_GOAL_MINUTES} min`}>
+                        <div className="relative w-4 h-4 flex items-center justify-center">
+                          <svg className="w-full h-full transform -rotate-90">
+                            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/5" />
+                            <circle
+                              cx="8"
+                              cy="8"
+                              r="7"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="transparent"
+                              strokeDasharray={2 * Math.PI * 7}
+                              strokeDashoffset={2 * Math.PI * 7 * (1 - Math.min(dailyMinutesUsed / DAILY_GOAL_MINUTES, 1))}
+                              className={`${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'text-emerald-500' : 'text-orange-500'} transition-all duration-1000`}
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <Clock className={`absolute w-1.5 h-1.5 ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'text-emerald-500' : 'text-orange-500'}`} />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-white leading-none">
+                            {dailyMinutesUsed}/{DAILY_GOAL_MINUTES} MIN
+                          </span>
+                          <div className={`mt-0.5 h-[1px] w-full bg-white/10 overflow-hidden rounded-full ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'bg-emerald-500/30' : ''}`}>
+                            <div
+                              className={`h-full bg-gradient-to-r from-orange-500 to-amber-400 daily-progress-shine transition-all duration-1000 ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'from-emerald-400 to-emerald-600' : ''}`}
+                              style={{ width: `${Math.min((dailyMinutesUsed / DAILY_GOAL_MINUTES) * 100, 100)}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Right Group: Actions */}
