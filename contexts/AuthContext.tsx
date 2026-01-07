@@ -92,13 +92,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Upsert profile with current session ID
         // Note: The 'profiles' table must exist in Supabase
         try {
-            await supabase.from('profiles').upsert({
+            console.log('📝 Registering session for user:', userId);
+            const { error } = await supabase.from('profiles').upsert({
                 id: userId,
                 current_session_id: localInstanceId,
                 last_seen: new Date().toISOString()
             });
+            if (error) console.error('❌ Error registering session (profile upsert):', error);
+            else console.log('✅ Session registered successfully (profile updated)');
         } catch (err) {
-            console.error('Error registering session:', err);
+            console.error('❌ Unexpected error registering session:', err);
         }
     };
 

@@ -297,8 +297,12 @@ const MainApp: React.FC = () => {
   // Auto-save session state to profile
   useEffect(() => {
     const saveSessionState = async () => {
-      if (!user) return;
-      await supabase.from('profiles').update({
+      if (!user) {
+        console.warn('⚠️ skip saveSessionState: no user authenticated');
+        return;
+      }
+      console.log('📝 Saving session state for user:', user.id);
+      const { error } = await supabase.from('profiles').update({
         last_language: selectedLanguage,
         last_level: selectedLevel,
         last_teacher_id: selectedTeacherId,
@@ -306,6 +310,9 @@ const MainApp: React.FC = () => {
         is_kids_mode: isKidsMode,
         last_seen: new Date().toISOString()
       }).eq('id', user.id);
+
+      if (error) console.error('❌ Error saving session state:', error);
+      else console.log('✅ Session state saved');
     };
 
     if (selectedLanguage || selectedLevel || selectedTeacherId || selectedTopicId || isKidsMode !== undefined) {
@@ -734,15 +741,26 @@ const MainApp: React.FC = () => {
                   setSessionReport(report);
 
                   if (selectedTopicId && user) {
-                    await supabase.from('user_progress').upsert({
+                    const currentProgress = topicProgress[selectedTopicId] || {
+                      current_level: 1.0,
+                      total_minutes: 0
+                    };
+
+                    console.log('📝 Upserting user_progress (Report):', { topicId: selectedTopicId, score: report.score });
+                    const { error: progressError } = await supabase.from('user_progress').upsert({
                       user_id: user.id,
                       topic_id: selectedTopicId,
                       score: report.score,
                       mistakes: report.mistakes,
                       vocabulary: report.vocabulary,
                       tip: report.tip,
-                      status: report.score >= 80 ? 'completed' : 'unlocked'
+                      status: report.score >= 80 ? 'completed' : 'unlocked',
+                      current_level: currentProgress.current_level,
+                      total_minutes: currentProgress.total_minutes
                     }, { onConflict: 'user_id, topic_id' });
+
+                    if (progressError) console.error('❌ Error upserting user_progress (Report):', progressError);
+                    else console.log('✅ user_progress upserted (Report)');
                     setTopicProgress(prev => {
                       const current = prev[selectedTopicId] || {
                         topic_id: selectedTopicId,
@@ -796,6 +814,7 @@ const MainApp: React.FC = () => {
       // Persistence: Create Session Record
       if (!isDemoMode && user && selectedTeacherId && selectedLanguage && selectedTopicId) {
         try {
+          console.log('📝 Starting database session record...');
           const { data: sessionData, error: sessionError } = await supabase.from('sessions').insert({
             user_id: user.id,
             teacher_id: selectedTeacherId,
@@ -807,13 +826,15 @@ const MainApp: React.FC = () => {
 
           if (sessionData) {
             setCurrentSessionId(sessionData.id);
-            console.log('✅ Session started:', sessionData.id);
+            console.log('✅ Session record created in DB:', sessionData.id);
           } else if (sessionError) {
-            console.error('❌ Error creating session:', sessionError);
+            console.error('❌ Error creating session record in DB:', sessionError);
           }
         } catch (err) {
-          console.error('❌ Unexpected error creating session:', err);
+          console.error('❌ Unexpected exception creating session record:', err);
         }
+      } else {
+        console.warn('⚠️ Session record NOT created:', { isDemoMode, hasUser: !!user, selectedTeacherId, selectedLanguage, selectedTopicId });
       }
 
       // Analytics: Session Start
@@ -840,7 +861,10 @@ const MainApp: React.FC = () => {
       const elapsedMinutes = Math.ceil((Date.now() - sessionStartTime) / 60000);
       const newTotal = dailyMinutesUsed + elapsedMinutes;
       setDailyMinutesUsed(newTotal);
-      await supabase.from('profiles').update({ daily_minutes_used: newTotal }).eq('id', user.id);
+      console.log('📝 Updating daily_minutes_used:', newTotal);
+      const { error } = await supabase.from('profiles').update({ daily_minutes_used: newTotal }).eq('id', user.id);
+      if (error) console.error('❌ Error updating daily_minutes_used:', error);
+      else console.log('✅ daily_minutes_used updated');
     }
 
     // Analytics: Session End
@@ -858,11 +882,15 @@ const MainApp: React.FC = () => {
       const endTime = new Date();
       const duration = sessionStartTime ? Math.floor((endTime.getTime() - sessionStartTime) / 1000) : 0;
 
-      await supabase.from('sessions').update({
+      console.log('📝 Updating session to completed:', currentSessionId);
+      const { error: sessionUpdateError } = await supabase.from('sessions').update({
         end_time: endTime.toISOString(),
         duration_seconds: duration,
         status: 'completed'
       }).eq('id', currentSessionId);
+
+      if (sessionUpdateError) console.error('❌ Error updating session in DB:', sessionUpdateError);
+      else console.log('✅ Session updated successfully');
     }
 
     if (isDemoMode) {
@@ -883,8 +911,8 @@ const MainApp: React.FC = () => {
       const elapsedMinutesForProgress = sessionStartTime ? Math.ceil((Date.now() - sessionStartTime) / 60000) : 0;
 
       // MINIMUM DURATION CHECK:
-      // Only update progress (level/score) if session lasted at least 10 minutes.
-      if (elapsedMinutesForProgress >= 10) {
+      // Only update progress (level/score) if session lasted at least 1 minute (for easier testing).
+      if (elapsedMinutesForProgress >= 1) {
         // @ts-ignore - Validating runtime type or fallback
         const currentVal = topicProgress[selectedTopicId];
         const currentProgressObj: UserProgress = (currentVal && typeof currentVal === 'object') ? currentVal : {
@@ -919,6 +947,7 @@ const MainApp: React.FC = () => {
           status: 'unlocked'
         };
 
+        console.log('📝 Final progress calculation:', updatedProgressNode);
         setTopicProgress(prev => ({ ...prev, [selectedTopicId]: updatedProgressNode }));
 
         // Save to Supabase with Debugging
@@ -939,7 +968,7 @@ const MainApp: React.FC = () => {
           console.error('❌ Unexpected error in progress save:', err);
         }
       } else {
-        console.log(`⏳ Session too short for progress update (${elapsedMinutesForProgress}m). Minimum required: 10m.`);
+        console.log(`⏳ Session too short for progress update (${elapsedMinutesForProgress}m). Minimum required: 1m.`);
       }
     }
 
