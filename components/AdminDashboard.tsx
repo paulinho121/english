@@ -178,13 +178,56 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 </button>
             </div>
 
-            <div className="glass-premium p-6 rounded-3xl border border-white/5 flex items-center gap-4">
-                <div className="p-3 bg-green-500/10 rounded-2xl text-green-500">
-                    <Users className="w-6 h-6" />
+            {/* Full Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 p-6 bg-slate-900/40">
+                <div className="glass-premium p-4 md:p-6 rounded-3xl border border-white/5 flex items-center gap-4">
+                    <div className="p-3 bg-green-500/10 rounded-2xl text-green-500">
+                        <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Online</p>
+                        <p className="text-2xl font-black text-white">{onlineCount}</p>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Alunos Online</p>
-                    <p className="text-2xl font-black text-white">{onlineCount}</p>
+
+                <div className="glass-premium p-4 md:p-6 rounded-3xl border border-white/5 flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-500">
+                        <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</p>
+                        <p className="text-2xl font-black text-white">{users.length}</p>
+                    </div>
+                </div>
+
+                <div className="glass-premium p-4 md:p-6 rounded-3xl border border-white/5 flex items-center gap-4">
+                    <div className="p-3 bg-orange-500/10 rounded-2xl text-orange-500">
+                        <Zap className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Premium</p>
+                        <p className="text-2xl font-black text-white">{premiumCount}</p>
+                    </div>
+                </div>
+
+                <div className="glass-premium p-4 md:p-6 rounded-3xl border border-white/5 flex items-center gap-4">
+                    <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400">
+                        <Users className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Gratuitos</p>
+                        <p className="text-2xl font-black text-white">{users.length - premiumCount}</p>
+                    </div>
+                </div>
+
+                <div className="glass-premium p-4 md:p-6 rounded-3xl border border-white/5 flex items-center gap-4">
+                    <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-500">
+                        <Clock className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Uso (Hoje)</p>
+                        <p className="text-2xl font-black text-white">{totalMinutes}m</p>
+                    </div>
                 </div>
             </div>
 
