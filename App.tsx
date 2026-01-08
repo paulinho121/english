@@ -141,9 +141,18 @@ const MainApp: React.FC = () => {
   }, [dailyMinutesUsed, step, showTutorial]);
 
   const handleSurveyComplete = () => {
+    trackEvent('survey_complete', { type: 'sean_ellis' });
     setShowSurvey(false);
     localStorage.setItem('linguaflow_pmf_answered', 'true');
   };
+
+  // Auto-select first teacher if none is selected
+  useEffect(() => {
+    if (selectedLanguage && !selectedTeacherId) {
+      const firstAvailableTeacher = TEACHERS.find(t => t.language === selectedLanguage && (isKidsMode ? t.isKidMode : !t.isKidMode));
+      if (firstAvailableTeacher) setSelectedTeacherId(firstAvailableTeacher.id);
+    }
+  }, [selectedLanguage, isKidsMode, selectedTeacherId]);
 
   useEffect(() => {
     const saved = localStorage.getItem('linguistai_stage');
@@ -487,8 +496,12 @@ const MainApp: React.FC = () => {
     const lId = demoConfig ? demoConfig.topicId : selectedTopicId;
     const lvl = demoConfig ? demoConfig.level : selectedLevel;
 
-    const teacher = TEACHERS.find(t => t.id === tId)!;
-    const topic = TOPICS.find(t => t.id === lId)!;
+    if (!tId || !lId) {
+      console.warn('⚠️ Missing teacher or topic. Using defaults.');
+    }
+
+    const teacher = TEACHERS.find(t => t.id === tId) || TEACHERS.find(t => t.language === (selectedLanguage || Language.ENGLISH)) || TEACHERS[0];
+    const topic = TOPICS.find(t => t.id === lId) || TOPICS[0];
 
     console.log('Proxy Connection: Iniciando conexão...');
 
@@ -1646,7 +1659,7 @@ const MainApp: React.FC = () => {
                 <div className="orb-shared"></div>
                 <div className="orb-inner">
                   <img
-                    src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar || '/professores/clara.png'}
+                    src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar || '/malina-new.png'}
                     className="orb-avatar"
                     alt="Teacher"
                   />
@@ -1782,6 +1795,28 @@ const MainApp: React.FC = () => {
                 </div>
               );
             })()}
+
+            {/* Offline/Reconnecting Overlay */}
+            {
+              (!isOnline || connectionStatus === 'connecting') && (
+                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
+                  <div className="text-center p-8 glass-premium rounded-[3rem] border border-white/10 shadow-2xl">
+                    <div className="relative mb-6">
+                      <div className="w-20 h-20 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto" />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Globe className="w-8 h-8 text-orange-500 animate-pulse" />
+                      </div>
+                    </div>
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">
+                      {!isOnline ? 'Sem Internet' : 'Conectando à IA...'}
+                    </h3>
+                    <p className="text-slate-400 text-sm max-w-[200px] mx-auto font-medium">
+                      {!isOnline ? 'Por favor, verifique sua conexão.' : 'Preparando sua aula personalizada...'}
+                    </p>
+                  </div>
+                </div>
+              )
+            }
           </div>
         )
       }
