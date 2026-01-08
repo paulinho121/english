@@ -281,6 +281,38 @@ const MainApp: React.FC = () => {
     };
   }, [user]);
 
+  // Supabase Presence - Track Online Status
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase.channel('online-users', {
+      config: {
+        presence: {
+          key: user.id,
+        },
+      },
+    });
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        // We could handle local sync here if needed
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({
+            id: user.id,
+            email: user.email,
+            full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+            online_at: new Date().toISOString(),
+          });
+        }
+      });
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [user]);
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -613,71 +645,84 @@ const MainApp: React.FC = () => {
         ws.send(JSON.stringify(triggerMessage));
 
         // 3. Start Audio Stream
-        setTimeout(() => {
+        // Initialize AudioWorklet
+        (async () => {
           if (!isConnectedRef.current || !mediaStreamRef.current || !audioContextRef.current) return;
-          const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
-          // Optimized Buffer Size: 2048 (approx 40ms latency at 48kHz) vs 4096 (85ms)
-          const processor = audioContextRef.current.createScriptProcessor(2048, 1, 1);
 
-          const inputSampleRate = audioContextRef.current.sampleRate;
-          const targetSampleRate = 16000;
+          try {
+            await audioContextRef.current.audioWorklet.addModule('/audio-capture-processor.js');
+            const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+            const workletNode = new AudioWorkletNode(audioContextRef.current, 'capture-processor');
 
-          processor.onaudioprocess = (e) => {
-            if (!isConnectedRef.current || ws.readyState !== WebSocket.OPEN) return;
-            const inputData = e.inputBuffer.getChannelData(0);
+            workletNode.port.onmessage = (event) => {
+              if (!isConnectedRef.current || ws.readyState !== WebSocket.OPEN) return;
 
-            // Audio Level Vis
-            let sum = 0;
-            for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
-            setAudioLevel(Math.min(100, Math.sqrt(sum / inputData.length) * 1500));
+              const { type, data, value } = event.data;
 
-            // Downsampling Logic
-            let pcmData;
-            if (inputSampleRate !== targetSampleRate) {
+              if (type === 'rms') {
+                // Update UI Audio Level
+                setAudioLevel(Math.min(100, value * 1500));
+              } else if (type === 'audio') {
+                // Send audio chunk (already downsampled and converted to Int16)
+                const pcmData = encode(new Uint8Array(data));
+                ws.send(JSON.stringify({
+                  realtime_input: {
+                    media_chunks: [{
+                      mime_type: 'audio/pcm;rate=16000',
+                      data: pcmData
+                    }]
+                  }
+                }));
+              }
+            };
+
+            source.connect(workletNode);
+            workletNode.connect(audioContextRef.current.destination);
+
+            console.log('✅ AudioWorklet initialized and capturing');
+          } catch (e) {
+            console.error('❌ Failed to load AudioWorklet, falling back to ScriptProcessor:', e);
+            // Fallback to legacy ScriptProcessor if worklet fails
+            const source = audioContextRef.current.createMediaStreamSource(mediaStreamRef.current);
+            const processor = audioContextRef.current.createScriptProcessor(2048, 1, 1);
+            const inputSampleRate = audioContextRef.current.sampleRate;
+            const targetSampleRate = 16000;
+
+            processor.onaudioprocess = (e) => {
+              if (!isConnectedRef.current || ws.readyState !== WebSocket.OPEN) return;
+              const inputData = e.inputBuffer.getChannelData(0);
+              let sum = 0;
+              for (let i = 0; i < inputData.length; i++) sum += inputData[i] * inputData[i];
+              setAudioLevel(Math.min(100, Math.sqrt(sum / inputData.length) * 1500));
+
+              let pcmData;
               const ratio = inputSampleRate / targetSampleRate;
               const newLength = Math.floor(inputData.length / ratio);
               const result = new Int16Array(newLength);
-
               for (let i = 0; i < newLength; i++) {
-                const startOffset = Math.floor(i * ratio);
-                const endOffset = Math.floor((i + 1) * ratio);
-                let sampleSum = 0;
-                let sampleCount = 0;
-                for (let j = startOffset; j < endOffset && j < inputData.length; j++) {
-                  sampleSum += inputData[j];
-                  sampleCount++;
-                }
-                const avgSample = sampleCount > 0 ? sampleSum / sampleCount : 0;
-                const clamped = Math.max(-1, Math.min(1, avgSample));
+                const sample = inputData[Math.floor(i * ratio)];
+                const clamped = Math.max(-1, Math.min(1, sample));
                 result[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7FFF;
               }
               pcmData = encode(new Uint8Array(result.buffer));
-            } else {
-              const int16 = new Int16Array(inputData.length);
-              for (let i = 0; i < inputData.length; i++) int16[i] = inputData[i] * 32768;
-              pcmData = encode(new Uint8Array(int16.buffer));
-            }
 
+              ws.send(JSON.stringify({
+                realtime_input: {
+                  media_chunks: [{
+                    mime_type: 'audio/pcm;rate=16000',
+                    data: pcmData
+                  }]
+                }
+              }));
+            };
 
-
-            // Send Realtime Input
-            ws.send(JSON.stringify({
-              realtime_input: {
-                media_chunks: [{
-                  mime_type: 'audio/pcm;rate=16000',
-                  data: pcmData
-                }]
-              }
-            }));
-          };
-
-          const muteGain = audioContextRef.current.createGain();
-          muteGain.gain.value = 0;
-          source.connect(processor);
-          processor.connect(muteGain);
-          muteGain.connect(audioContextRef.current.destination);
-        }, 500);
-
+            const muteGain = audioContextRef.current.createGain();
+            muteGain.gain.value = 0;
+            source.connect(processor);
+            processor.connect(muteGain);
+            muteGain.connect(audioContextRef.current.destination);
+          }
+        })();
       };
 
       ws.onmessage = async (event) => {
