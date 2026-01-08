@@ -22,7 +22,7 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
@@ -70,6 +70,7 @@ const MainApp: React.FC = () => {
   const [selectedTeacherId, setSelectedTeacherId] = useState<string | null>(null);
   const [selectedTopicId, setSelectedTopicId] = useState<string | null>(null);
   const [isTeacherSpeaking, setIsTeacherSpeaking] = useState(false);
+  const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [hasSavedStage, setHasSavedStage] = useState(false);
   const [currentCaption, setCurrentCaption] = useState('');
   const [connectionError, setConnectionError] = useState<string | null>(null);
@@ -662,6 +663,8 @@ const MainApp: React.FC = () => {
               if (type === 'rms') {
                 // Update UI Audio Level
                 setAudioLevel(Math.min(100, value * 1500));
+              } else if (type === 'vad') {
+                setIsUserSpeaking(value);
               } else if (type === 'audio') {
                 // Send audio chunk (already downsampled and converted to Int16)
                 const pcmData = encode(new Uint8Array(data));
@@ -1591,153 +1594,194 @@ const MainApp: React.FC = () => {
 
       {
         step === 'call' && (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
-            {/* Background Blobs - Enhanced & Animated */}
+          <div className="flex-1 flex flex-col items-center justify-between p-6 relative overflow-hidden">
+            {/* Background Blobs - Subtly moving */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-              <div className="blob blob-1"></div>
-              <div className="blob blob-2"></div>
-              <div className="blob blob-3 opacity-20"></div>
+              <div className="blob blob-1 opacity-10"></div>
+              <div className="blob blob-2 opacity-10"></div>
             </div>
-            {/* Live Timer & Status Overlay */}
-            <div className="absolute top-4 right-4 md:top-6 md:right-6 z-50 flex items-center gap-2 md:gap-3 animate-in fade-in duration-700">
-              {/* Premium/Free Status in Call */}
-              <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
-                : 'bg-slate-800/50 border-white/10 text-slate-400'
-                }`}>
-                {isPremium ? <div className="crown-wrapper"><Crown className="w-3 h-3 text-amber-400 icon-3d-crown fill-amber-400/20" /></div> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
-                <span className="font-bold text-[9px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'GRÁTIS'}</span>
+
+            {/* Top Toolbar */}
+            <div className="w-full max-w-5xl flex items-center justify-between z-50 animate-in fade-in slide-in-from-top-4 duration-700">
+              <div className="flex items-center gap-3">
+                <div className={`px-4 py-2 rounded-2xl border backdrop-blur-md flex items-center gap-2 ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b] shadow-lg' : 'bg-slate-900/50 border-white/10 text-white'}`}>
+                  <div className={`w-2 h-2 rounded-full ${isKidsMode || isPremium ? 'bg-orange-500' : 'bg-red-500'} animate-pulse`} />
+                  <span className="text-xs font-black tracking-widest tabular-nums uppercase">
+                    {new Date(elapsedTime * 1000).toISOString().substr(14, 5)}
+                  </span>
+                </div>
+                {/* Stats Icons */}
+                <div className="hidden sm:flex items-center gap-2">
+                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Flame className="w-3 h-3 text-orange-500" /> {streak}d
+                  </div>
+                  <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-blue-500" /> {dailyMinutesUsed}m
+                  </div>
+                </div>
               </div>
 
-              {!isPremium && (
+              <div className="flex items-center gap-2">
+                {isPremium && (
+                  <div className="px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-500 flex items-center gap-2">
+                    <Crown className="w-3 h-3 fill-current" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Premium</span>
+                  </div>
+                )}
                 <button
-                  onClick={() => setShowUpgradeModal(true)}
-                  className={`btn-shimmer px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white' : 'bg-orange-500 text-white'}`}
+                  onClick={endCall}
+                  className="p-3 bg-red-500 text-white rounded-2xl hover:bg-red-600 active:scale-95 transition-all shadow-lg shadow-red-500/20"
                 >
-                  <Zap className="w-3 h-3 fill-current" /> <span className="hidden xs:inline">PRO</span>
+                  <X className="w-5 h-5" />
                 </button>
-              )}
-
-              <div className={`px-4 py-2 rounded-full border backdrop-blur-md flex items-center gap-2 ${isKidsMode ? 'bg-white/80 border-[#ff6b6b] text-[#ff6b6b] shadow-[0_0_15px_rgba(255,107,107,0.3)] animate-pulse' : 'bg-red-500/10 border-red-500/20 text-red-500 animate-pulse'}`}>
-                <div className={`w-2 h-2 rounded-full ${isKidsMode ? 'bg-[#ff6b6b]' : 'bg-red-500'} animate-ping`} />
-                <span className="text-xs font-black tracking-widest uppercase tabular-nums">
-                  {new Date(elapsedTime * 1000).toISOString().substr(14, 5)}
-                </span>
               </div>
             </div>
 
-            {/* Pronunciation Card Overlay */}
-            {/* Pronunciation Card Overlay */}
+            {/* Central Conversation Space */}
+            <div className="flex-1 flex flex-col items-center justify-center w-full z-10 relative mt-[-10vh]">
+              {/* The Connection Orb */}
+              <div className={`orb-container ${isUserSpeaking ? 'orb-listening' : isTeacherSpeaking ? 'orb-speaking' : connectionStatus === 'connected' ? 'orb-thinking' : ''}`}>
+                <div className="neural-wave"></div>
+                <div className="neural-wave" style={{ animationDelay: '0.5s' }}></div>
+                <div className="orb-shared"></div>
+                <div className="orb-inner">
+                  <img
+                    src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar || '/professores/clara.png'}
+                    className="orb-avatar"
+                    alt="Teacher"
+                  />
+                  {/* Listening Indicator (Visualizer) */}
+                  {isUserSpeaking && (
+                    <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-0.5 px-8">
+                      {[...Array(8)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="w-1.5 bg-blue-400 rounded-full animate-bounce"
+                          style={{
+                            height: `${10 + Math.random() * 30}px`,
+                            animationDelay: `${i * 0.1}s`,
+                            animationDuration: '0.4s'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Status & Name Label */}
+              <div className="mt-8 text-center animate-in fade-in zoom-in duration-500">
+                <h3 className="text-2xl font-black text-white tracking-tight uppercase">
+                  {TEACHERS.find(t => t.id === selectedTeacherId)?.name}
+                </h3>
+                <div className="flex items-center justify-center gap-2 mt-2">
+                  {isUserSpeaking ? (
+                    <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em] flex items-center gap-2 bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" /> Ouvindo você...
+                    </span>
+                  ) : isTeacherSpeaking ? (
+                    <span className="text-[10px] font-bold text-orange-400 uppercase tracking-[0.2em] flex items-center gap-2 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20">
+                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" /> Falando...
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 bg-slate-500/10 px-3 py-1 rounded-full border border-white/5">
+                      Pronto para ouvir
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Caption & Controls Area */}
+            <div className="w-full max-w-4xl flex flex-col items-center gap-8 pb-8 z-50">
+              {/* Dynamic Captions */}
+              <div className={`realtime-caption transition-all duration-300 ${currentCaption ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                {currentCaption}
+                {!isTeacherSpeaking && !isUserSpeaking && isConnectedRef.current && (
+                  <div className="is-thinking-text ml-2">
+                    {[1, 2, 3].map(i => <div key={i} className="dot-pulse" />)}
+                  </div>
+                )}
+              </div>
+
+              {/* Enhanced Controls */}
+              <div className="flex items-center gap-6 p-4 glass-premium rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-2xl">
+                <button
+                  onClick={() => setIsMuted(prev => !prev)}
+                  className={`p-5 rounded-full transition-all duration-300 shadow-lg ${isMuted
+                    ? 'bg-red-500/20 text-red-500 border border-red-500/30'
+                    : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
+                    }`}
+                >
+                  {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                </button>
+
+                <div className="h-10 w-[1px] bg-white/10"></div>
+
+                <div className="flex flex-col items-center gap-1.5 px-4 min-w-[120px]">
+                  <div className="flex items-center justify-between w-full mb-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nível de áudio</span>
+                    <span className="text-[10px] font-bold text-orange-500">{Math.round(audioLevel)}%</span>
+                  </div>
+                  <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+                    <div
+                      className={`h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-75 shadow-[0_0_10px_rgba(59,130,246,0.5)] ${audioLevel > 50 ? 'from-orange-500 to-orange-400' : ''}`}
+                      style={{ width: `${audioLevel}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="h-10 w-[1px] bg-white/10"></div>
+
+                <button
+                  onClick={endCall}
+                  className="p-5 bg-red-500 rounded-full text-white hover:bg-orange-600 active:scale-95 transition-all shadow-xl shadow-red-500/20"
+                >
+                  <PhoneOff className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Pronunciation Card Overlay - Redesigned */}
             {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (() => {
               const allPhrases = PRONUNCIATION_PHRASES[selectedLanguage];
               const filteredPhrases = allPhrases.filter(p => isKidsMode ? p.level === 'Kids' : p.level !== 'Kids');
               const currentPhrase = filteredPhrases[currentPhraseIndex];
-
               if (!currentPhrase) return null;
 
               return (
-                <div className="absolute top-16 left-4 right-4 md:top-8 md:left-1/2 md:-translate-x-1/2 md:w-[600px] z-20">
-                  <div className={`glass-premium p-4 md:p-6 rounded-3xl border border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)] animate-in slide-in-from-top-4 ${isKidsMode ? 'bg-white/90 border-[#4ecdc4]/30' : ''}`}>
-                    <div className="flex justify-between items-start mb-3 md:mb-4">
-                      <div className="flex gap-2">
-                        <span className={`px-2 py-0.5 md:px-3 md:py-1 text-[10px] font-bold uppercase tracking-wider rounded-lg border ${isKidsMode ? 'bg-[#ff6b6b]/20 text-[#ff6b6b] border-[#ff6b6b]/20' : 'bg-orange-500/20 text-orange-400 border-orange-500/20'}`}>
-                          Frase {currentPhraseIndex + 1}/{filteredPhrases.length}
-                        </span>
-                        <span className="px-2 py-0.5 md:px-3 md:py-1 bg-slate-700/50 text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-lg border border-white/5">
-                          {currentPhrase.level || 'Geral'}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
-                          disabled={currentPhraseIndex === 0}
-                          className={`p-1.5 md:p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
-                        >
-                          <ArrowRight className="w-4 h-4 rotate-180" />
-                        </button>
-                        <button
-                          onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
-                          disabled={currentPhraseIndex === filteredPhrases.length - 1}
-                          className={`p-1.5 md:p-2 rounded-lg disabled:opacity-30 transition-colors ${isKidsMode ? 'hover:bg-[#4ecdc4]/10 text-[#2d3748]' : 'hover:bg-white/10 text-white'}`}
-                        >
-                          <ArrowRight className="w-4 h-4" />
-                        </button>
-                      </div>
+                <div className="absolute inset-x-4 top-24 md:top-28 pointer-events-none z-40">
+                  <div className={`max-w-xl mx-auto glass-premium p-4 rounded-3xl border border-white/10 shadow-2xl animate-in slide-in-from-top-8 duration-700 ${isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/30' : ''}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Pratique a Pronúncia</span>
+                      <span className="text-[10px] font-bold text-slate-500">{currentPhraseIndex + 1}/{filteredPhrases.length}</span>
                     </div>
-
-                    {isKidsMode && currentPhrase.image ? (
-                      <div className="flex flex-col items-center gap-2 md:gap-4">
-                        <div className="w-24 h-24 md:w-40 md:h-40 relative animate-bounce-slow">
-                          <img
-                            src={currentPhrase.image}
-                            alt={currentPhrase.text}
-                            className="w-full h-full object-contain filter drop-shadow-xl"
-                          />
-                        </div>
-                        <h3 className="text-2xl md:text-3xl font-display font-black text-[#2d3748] mb-1 text-center">
-                          {currentPhrase.text}
-                        </h3>
-                        {/* <p className="text-slate-400 font-medium text-sm">{currentPhrase.translation}</p> */}
+                    <div className="text-lg md:text-xl font-black text-white text-center italic drop-shadow-md">
+                      "{currentPhrase.text}"
+                    </div>
+                    {currentPhrase.translation && (
+                      <div className="text-xs text-slate-500 text-center mt-2 opacity-80">
+                        ({currentPhrase.translation})
                       </div>
-                    ) : (
-                      <>
-                        <h3 className="text-xl md:text-3xl font-display font-medium text-white mb-2 md:mb-3 leading-snug text-center">
-                          "{currentPhrase.text}"
-                        </h3>
-                        <p className="text-slate-400 font-medium text-sm md:text-lg text-center">
-                          {currentPhrase.translation}
-                        </p>
-                      </>
                     )}
-
-                    <div className={`mt-4 md:mt-6 flex items-center justify-between text-xs ${isKidsMode ? 'text-slate-600' : 'text-slate-500'}`}>
-                      <span>{isKidsMode ? 'Diga o nome do desenho!' : 'Diga a frase em voz alta'}</span>
-                      <span className="flex items-center gap-1">
-                        <Sparkles className={`w-3 h-3 ${isKidsMode ? 'text-[#ff6b6b]' : 'text-orange-500'}`} /> IA Ouvindo
-                      </span>
+                    <div className="mt-4 flex justify-between pointer-events-auto">
+                      <button
+                        onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
                     </div>
                   </div>
                 </div>
               );
             })()}
-
-            <div className="relative mb-8">
-              <div className={`w-48 h-48 md:w-64 md:h-64 rounded-full border-4 border-orange-500 shadow-[0_0_60px_rgba(249,115,22,0.4)] overflow-hidden transition-transform ${isTeacherSpeaking ? 'scale-105' : 'scale-100'}`}>
-                <img src={TEACHERS.find(t => t.id === selectedTeacherId)?.avatar} className="w-full h-full object-cover" />
-              </div>
-              <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 glass-premium px-6 py-2 rounded-full border border-white/10 flex items-center gap-3">
-                <div className="flex gap-1 h-8 items-end justify-center">
-                  {[1, 2, 3, 4].map(i => (
-                    <div
-                      key={i}
-                      className={`w-1.5 bg-orange-500 rounded-full transition-all duration-75 ${isTeacherSpeaking ? 'animate-pulse h-2 opacity-50' : ''}`}
-                      style={{
-                        height: isTeacherSpeaking ? undefined : `${Math.max(6, audioLevel * (0.5 + (i % 2) * 0.4))}px`,
-                        opacity: isTeacherSpeaking ? 0.5 : 1
-                      }}
-                    ></div>
-                  ))}
-                </div>
-                <span className="text-[10px] uppercase font-black tracking-widest">{isTeacherSpeaking ? 'Ouvindo...' : 'Fale agora'}</span>
-              </div>
-            </div>
-
-            {/* Dynamic Transcript */}
-            {currentCaption && (
-              <div className={`absolute bottom-32 max-w-2xl text-center px-4 animate-in slide-in-from-bottom-4 ${selectedTopicId === 'pronunciation' ? 'opacity-50 pointer-events-none' : ''}`}>
-                <p className="text-xl md:text-2xl font-medium text-white drop-shadow-md bg-black/40 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/5">{currentCaption}</p>
-              </div>
-            )}
-
-            {/* Controls */}
-            <div className="absolute bottom-8 flex items-center gap-6">
-              <button onClick={toggleMute} className={`p-5 rounded-full ${isMuted ? 'bg-red-500/20 text-red-500' : 'bg-white/10 text-white'} hover:scale-105 transition-all`}>
-                {isMuted ? <MicOff /> : <Mic />}
-              </button>
-              <button onClick={endCall} className="p-5 rounded-full bg-red-500 text-white hover:bg-red-600 shadow-lg hover:scale-105 transition-all">
-                <PhoneOff />
-              </button>
-            </div>
           </div>
         )
       }

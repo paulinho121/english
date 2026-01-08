@@ -47,14 +47,18 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
                 this.speechCounter = (this.speechCounter || 0) + 1;
                 if (this.speechCounter > 3) { // ~40ms of consistent energy
                     this.holdTime = 40; // ~600ms hold time
-                    this.isCapturing = true;
+                    if (!this.isCapturing) {
+                        this.isCapturing = true;
+                        this.port.postMessage({ type: 'vad', value: true });
+                    }
                 }
             } else {
                 this.speechCounter = 0;
                 if (this.holdTime > 0) {
                     this.holdTime--;
-                } else {
+                } else if (this.isCapturing) {
                     this.isCapturing = false;
+                    this.port.postMessage({ type: 'vad', value: false });
                 }
             }
 

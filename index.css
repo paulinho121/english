@@ -619,3 +619,170 @@ h6,
     left: 50%;
     transform: translateX(-50%);
 }
+
+/* --- Real-time Conversation Orb --- */
+.orb-container {
+    position: relative;
+    width: 280px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.orb-shared {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    box-shadow:
+        0 0 60px rgba(249, 115, 22, 0.2),
+        inset 0 0 40px rgba(255, 255, 255, 0.05);
+    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+}
+
+.orb-inner {
+    position: absolute;
+    inset: 10px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.orb-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+    transition: transform 0.5s ease;
+}
+
+/* State: Listening (User Speaking) */
+.orb-listening .orb-shared {
+    box-shadow:
+        0 0 80px rgba(59, 130, 246, 0.4),
+        inset 0 0 60px rgba(59, 130, 246, 0.2);
+    transform: scale(1.05);
+}
+
+.orb-listening .orb-inner {
+    border-color: rgba(59, 130, 246, 0.4);
+}
+
+/* State: Thinking (AI processing) */
+.orb-thinking .orb-shared {
+    animation: neural-pulse 1.5s infinite ease-in-out;
+    box-shadow:
+        0 0 100px rgba(249, 115, 22, 0.5),
+        inset 0 0 80px rgba(249, 115, 22, 0.3);
+}
+
+/* State: Speaking (AI talking) */
+.orb-speaking .orb-shared {
+    box-shadow:
+        0 0 120px rgba(249, 115, 22, 0.6),
+        inset 0 0 100px rgba(249, 115, 22, 0.4);
+}
+
+.orb-speaking .orb-avatar {
+    transform: scale(1.1);
+}
+
+/* Neural Wave Animation */
+.neural-wave {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    border: 2px solid rgba(249, 115, 22, 0.3);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.orb-speaking .neural-wave {
+    animation: wave-expand 2s infinite cubic-bezier(0, 0.5, 0.5, 1);
+}
+
+@keyframes neural-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.8;
+    }
+
+    50% {
+        transform: scale(1.02);
+        opacity: 1;
+        filter: brightness(1.2);
+    }
+}
+
+@keyframes wave-expand {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Transcrição em Tempo Real */
+.realtime-caption {
+    max-width: 80%;
+    text-align: center;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: white;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    line-height: 1.4;
+    padding: 1rem 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    border-radius: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.is-thinking-text {
+    display: inline-flex;
+    gap: 4px;
+}
+
+.dot-pulse {
+    width: 6px;
+    height: 6px;
+    background: #f97316;
+    border-radius: 50%;
+    animation: dot-jump 1.4s infinite ease-in-out;
+}
+
+.dot-pulse:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.dot-pulse:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes dot-jump {
+
+    0%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-10px);
+    }
+}
