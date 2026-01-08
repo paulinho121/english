@@ -1716,47 +1716,47 @@ const MainApp: React.FC = () => {
                 if (!currentPhrase) return null;
 
                 return (
-                  <div className={`w-full glass-premium p-6 rounded-[2rem] border border-white/10 shadow-2xl animate-in slide-in-from-bottom-8 duration-700 ${isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/30' : ''}`}>
-                    <div className="flex items-center justify-between mb-4">
+                  <div className={`w-[95%] sm:w-full glass-premium p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 shadow-2xl animate-in slide-in-from-bottom-8 duration-700 ${isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/30' : ''}`}>
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">Prática de Pronúncia</span>
+                        <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-orange-500 animate-pulse" />
+                        <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">Prática de Pronúncia</span>
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 tracking-widest bg-white/5 px-2 py-1 rounded-lg">
+                      <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 tracking-widest bg-white/5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg">
                         {currentPhraseIndex + 1} de {filteredPhrases.length}
                       </span>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="text-xl md:text-2xl font-black text-white text-center italic leading-tight drop-shadow-md">
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="text-lg sm:text-2xl font-black text-white text-center italic leading-tight drop-shadow-md">
                         "{currentPhrase.text}"
                       </div>
                       {currentPhrase.translation && (
-                        <div className="text-xs text-slate-500 text-center opacity-70 font-medium">
+                        <div className="text-[10px] sm:text-xs text-slate-500 text-center opacity-70 font-medium">
                           ({currentPhrase.translation})
                         </div>
                       )}
                     </div>
 
-                    <div className="mt-6 flex justify-between items-center">
+                    <div className="mt-5 sm:mt-6 flex justify-between items-center">
                       <button
                         onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
                         disabled={currentPhraseIndex === 0}
-                        className="p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-2xl transition-all border border-white/5"
+                        className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5"
                       >
-                        <ChevronLeft className="w-5 h-5" />
+                        <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
 
-                      <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                        <Mic className="w-3 h-3 text-orange-500" /> Leia em voz alta
+                      <div className="flex items-center gap-2 text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                        <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange-500" /> Leia em voz alta
                       </div>
 
                       <button
                         onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
                         disabled={currentPhraseIndex === filteredPhrases.length - 1}
-                        className="p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-2xl transition-all border border-white/5"
+                        className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5"
                       >
-                        <ChevronRight className="w-5 h-5" />
+                        <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                       </button>
                     </div>
                   </div>
@@ -1776,25 +1776,25 @@ const MainApp: React.FC = () => {
               )}
 
               {/* Enhanced Controls */}
-              <div className="flex items-center gap-6 p-4 glass-premium rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-2xl">
+              <div className="flex items-center gap-3 sm:gap-6 p-2 sm:p-4 glass-premium rounded-full sm:rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-2xl transition-all">
                 <button
                   onClick={() => setIsMuted(prev => !prev)}
-                  className={`p-5 rounded-full transition-all duration-300 shadow-lg ${isMuted
+                  className={`p-3 sm:p-5 rounded-full transition-all duration-300 shadow-lg ${isMuted
                     ? 'bg-red-500/20 text-red-500 border border-red-500/30'
                     : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
                     }`}
                 >
-                  {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+                  {isMuted ? <MicOff className="w-5 h-5 sm:w-6 sm:h-6" /> : <Mic className="w-5 h-5 sm:w-6 sm:h-6" />}
                 </button>
 
-                <div className="h-10 w-[1px] bg-white/10"></div>
+                <div className="h-8 sm:h-10 w-[1px] bg-white/10"></div>
 
-                <div className="flex flex-col items-center gap-1.5 px-4 min-w-[120px]">
-                  <div className="flex items-center justify-between w-full mb-1">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nível de áudio</span>
-                    <span className="text-[10px] font-bold text-orange-500">{Math.round(audioLevel)}%</span>
+                <div className="flex flex-col items-center gap-1 sm:gap-1.5 px-1 sm:px-4 min-w-[100px] sm:min-w-[120px]">
+                  <div className="flex items-center justify-between w-full mb-0.5 sm:mb-1">
+                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nível</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-orange-500">{Math.round(audioLevel)}%</span>
                   </div>
-                  <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
+                  <div className="w-full h-2 sm:h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
                     <div
                       className={`h-full bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-75 shadow-[0_0_10px_rgba(59,130,246,0.5)] ${audioLevel > 50 ? 'from-orange-500 to-orange-400' : ''}`}
                       style={{ width: `${audioLevel}%` }}
@@ -1802,13 +1802,13 @@ const MainApp: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="h-10 w-[1px] bg-white/10"></div>
+                <div className="h-8 sm:h-10 w-[1px] bg-white/10"></div>
 
                 <button
                   onClick={endCall}
-                  className="p-5 bg-red-500 rounded-full text-white hover:bg-orange-600 active:scale-95 transition-all shadow-xl shadow-red-500/20"
+                  className="p-3 sm:p-5 bg-red-500 rounded-full text-white hover:bg-orange-600 active:scale-95 transition-all shadow-xl shadow-red-500/20"
                 >
-                  <PhoneOff className="w-6 h-6" />
+                  <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
               </div>
             </div>

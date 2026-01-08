@@ -786,3 +786,38 @@ h6,
         transform: translateY(-10px);
     }
 }
+
+/* --- Responsive Adjustments for Conversation View --- */
+@media (max-width: 640px) {
+    .orb-container {
+        width: 200px;
+        height: 200px;
+    }
+
+    .orb-inner {
+        inset: 6px;
+    }
+
+    .neural-wave {
+        inset: -10px;
+    }
+
+    .realtime-caption {
+        max-width: 95%;
+        font-size: 0.95rem;
+        padding: 0.75rem 1.25rem;
+    }
+
+    @keyframes dot-jump {
+
+        0%,
+        80%,
+        100% {
+            transform: translateY(0);
+        }
+
+        40% {
+            transform: translateY(-6px);
+        }
+    }
+}
