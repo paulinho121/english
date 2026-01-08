@@ -1651,7 +1651,7 @@ const MainApp: React.FC = () => {
             </div>
 
             {/* Central Conversation Space */}
-            <div className="flex-1 flex flex-col items-center justify-center w-full z-10 relative mt-[-10vh]">
+            <div className="flex-1 flex flex-col items-center justify-center w-full z-10 relative">
               {/* The Connection Orb */}
               <div className={`orb-container ${isUserSpeaking ? 'orb-listening' : isTeacherSpeaking ? 'orb-speaking' : connectionStatus === 'connected' ? 'orb-thinking' : ''}`}>
                 <div className="neural-wave"></div>
@@ -1683,8 +1683,8 @@ const MainApp: React.FC = () => {
               </div>
 
               {/* Status & Name Label */}
-              <div className="mt-8 text-center animate-in fade-in zoom-in duration-500">
-                <h3 className="text-2xl font-black text-white tracking-tight uppercase">
+              <div className="mt-6 text-center animate-in fade-in zoom-in duration-500">
+                <h3 className="text-xl font-black text-white tracking-tight uppercase">
                   {TEACHERS.find(t => t.id === selectedTeacherId)?.name}
                 </h3>
                 <div className="flex items-center justify-center gap-2 mt-2">
@@ -1705,17 +1705,75 @@ const MainApp: React.FC = () => {
               </div>
             </div>
 
-            {/* Bottom Caption & Controls Area */}
-            <div className="w-full max-w-4xl flex flex-col items-center gap-8 pb-8 z-50">
-              {/* Dynamic Captions */}
-              <div className={`realtime-caption transition-all duration-300 ${currentCaption ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
-                {currentCaption}
-                {!isTeacherSpeaking && !isUserSpeaking && isConnectedRef.current && (
-                  <div className="is-thinking-text ml-2">
-                    {[1, 2, 3].map(i => <div key={i} className="dot-pulse" />)}
+            {/* Bottom Caption, Pronunciation & Controls Area */}
+            <div className="w-full max-w-4xl flex flex-col items-center gap-6 pb-8 z-50">
+
+              {/* Pronunciation Card - Integrated at Bottom */}
+              {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (() => {
+                const allPhrases = PRONUNCIATION_PHRASES[selectedLanguage];
+                const filteredPhrases = allPhrases.filter(p => isKidsMode ? p.level === 'Kids' : p.level !== 'Kids');
+                const currentPhrase = filteredPhrases[currentPhraseIndex];
+                if (!currentPhrase) return null;
+
+                return (
+                  <div className={`w-full glass-premium p-6 rounded-[2rem] border border-white/10 shadow-2xl animate-in slide-in-from-bottom-8 duration-700 ${isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/30' : ''}`}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                        <span className="text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">Prática de Pronúncia</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-500 tracking-widest bg-white/5 px-2 py-1 rounded-lg">
+                        {currentPhraseIndex + 1} de {filteredPhrases.length}
+                      </span>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="text-xl md:text-2xl font-black text-white text-center italic leading-tight drop-shadow-md">
+                        "{currentPhrase.text}"
+                      </div>
+                      {currentPhrase.translation && (
+                        <div className="text-xs text-slate-500 text-center opacity-70 font-medium">
+                          ({currentPhrase.translation})
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-6 flex justify-between items-center">
+                      <button
+                        onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
+                        disabled={currentPhraseIndex === 0}
+                        className="p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-2xl transition-all border border-white/5"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+
+                      <div className="flex items-center gap-2 text-[9px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
+                        <Mic className="w-3 h-3 text-orange-500" /> Leia em voz alta
+                      </div>
+
+                      <button
+                        onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
+                        disabled={currentPhraseIndex === filteredPhrases.length - 1}
+                        className="p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-2xl transition-all border border-white/5"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
+                );
+              })()}
+
+              {/* Dynamic Captions - Only shown if not in pronunciation mode OR if teacher is speaking */}
+              {(selectedTopicId !== 'pronunciation' || isTeacherSpeaking) && (
+                <div className={`realtime-caption transition-all duration-300 ${currentCaption ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                  {currentCaption}
+                  {!isTeacherSpeaking && !isUserSpeaking && isConnectedRef.current && (
+                    <div className="is-thinking-text ml-2">
+                      {[1, 2, 3].map(i => <div key={i} className="dot-pulse" />)}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Enhanced Controls */}
               <div className="flex items-center gap-6 p-4 glass-premium rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-2xl">
@@ -1755,46 +1813,6 @@ const MainApp: React.FC = () => {
               </div>
             </div>
 
-            {/* Pronunciation Card Overlay - Redesigned */}
-            {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (() => {
-              const allPhrases = PRONUNCIATION_PHRASES[selectedLanguage];
-              const filteredPhrases = allPhrases.filter(p => isKidsMode ? p.level === 'Kids' : p.level !== 'Kids');
-              const currentPhrase = filteredPhrases[currentPhraseIndex];
-              if (!currentPhrase) return null;
-
-              return (
-                <div className="absolute inset-x-4 top-24 md:top-28 pointer-events-none z-40">
-                  <div className={`max-w-xl mx-auto glass-premium p-4 rounded-3xl border border-white/10 shadow-2xl animate-in slide-in-from-top-8 duration-700 ${isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/30' : ''}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Pratique a Pronúncia</span>
-                      <span className="text-[10px] font-bold text-slate-500">{currentPhraseIndex + 1}/{filteredPhrases.length}</span>
-                    </div>
-                    <div className="text-lg md:text-xl font-black text-white text-center italic drop-shadow-md">
-                      "{currentPhrase.text}"
-                    </div>
-                    {currentPhrase.translation && (
-                      <div className="text-xs text-slate-500 text-center mt-2 opacity-80">
-                        ({currentPhrase.translation})
-                      </div>
-                    )}
-                    <div className="mt-4 flex justify-between pointer-events-auto">
-                      <button
-                        onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-                      <button
-                        onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
-                        className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition-all"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
 
             {/* Offline/Reconnecting Overlay */}
             {
