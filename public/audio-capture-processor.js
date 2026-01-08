@@ -15,7 +15,7 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
         if (input && input.length > 0) {
             const inputChannel0 = input[0];
 
-            // Basic VAD factor
+            // Advanced VAD Logic
             let sum = 0;
             for (let i = 0; i < inputChannel0.length; i++) {
                 sum += inputChannel0[i] * inputChannel0[i];
@@ -25,27 +25,65 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
             // Send RMS for UI visualization
             this.port.postMessage({ type: 'rms', value: rms });
 
-            // Only process if there's enough volume (simple VAD)
-            // threshold can be adjusted, 0.005 is a safe starting point
-            if (rms > 0.005) {
-                // Simple downsampling (naive pick every Nth sample for 48kHz -> 16kHz)
-                // More robust downsampling could be done here if needed
+            // Dynamic Noise Floor adaptation
+            // Slowly decrease the threshold if we detect consistent silence
+            // Quickly increase it if we detect speech-like energy
+            if (!this.noiseFloor) this.noiseFloor = 0.005;
+
+            // Adapt noise floor based on environment (very slow moving average for noise)
+            if (rms < this.noiseFloor) {
+                this.noiseFloor = this.noiseFloor * 0.999 + rms * 0.001;
+            } else if (rms < this.noiseFloor * 2) {
+                // Potential background noise, drift up slightly
+                this.noiseFloor = this.noiseFloor * 0.99 + rms * 0.01;
+            }
+
+            // Voice Activity Detection with Hold Time and Debouncing
+            const threshold = Math.max(0.012, this.noiseFloor * 1.8); // Slightly more aggressive
+            const isSpeechCandidate = rms > threshold;
+
+            if (isSpeechCandidate) {
+                // Debouncing: Must see consistent energy for a few blocks before starting
+                this.speechCounter = (this.speechCounter || 0) + 1;
+                if (this.speechCounter > 3) { // ~40ms of consistent energy
+                    this.holdTime = 40; // ~600ms hold time
+                    this.isCapturing = true;
+                }
+            } else {
+                this.speechCounter = 0;
+                if (this.holdTime > 0) {
+                    this.holdTime--;
+                } else {
+                    this.isCapturing = false;
+                }
+            }
+
+            // Only process if capturing
+            if (this.isCapturing) {
                 const ratio = sampleRate / this.targetSampleRate;
 
                 for (let i = 0; i < inputChannel0.length; i += ratio) {
                     const sample = inputChannel0[Math.floor(i)];
-                    const int16Sample = Math.max(-1, Math.min(1, sample)) * 0x7FFF;
+
+                    // Basic High-Pass Filter (removes DC offset and low rumble)
+                    // y[i] = α * (y[i-1] + x[i] - x[i-1])
+                    this.lastIn = this.lastIn || 0;
+                    this.lastOut = this.lastOut || 0;
+                    const alpha = 0.95;
+                    const filtered = alpha * (this.lastOut + sample - this.lastIn);
+                    this.lastIn = sample;
+                    this.lastOut = filtered;
+
+                    const int16Sample = Math.max(-1, Math.min(1, filtered)) * 0x7FFF;
 
                     this.buffer[this.bufferIndex++] = int16Sample;
 
                     if (this.bufferIndex >= this.buffer.length) {
-                        // Buffer full, send to main thread
                         this.port.postMessage({
                             type: 'audio',
                             data: this.buffer.buffer
                         }, [this.buffer.buffer]);
 
-                        // Re-allocate buffer since we transferred the previous one
                         this.buffer = new Int16Array(2048);
                         this.bufferIndex = 0;
                     }
