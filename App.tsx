@@ -396,14 +396,14 @@ const MainApp: React.FC = () => {
             if (sessionRef.current && sessionRef.current.readyState === WebSocket.OPEN) {
               console.log('Sending Demo Time Warning to AI...');
               sessionRef.current.send(JSON.stringify({
-                client_content: {
+                clientContent: {
                   turns: [{
                     role: 'user',
                     parts: [{
                       text: `[SISTEMA - ALERTA DE DEMONSTRAÇÃO]: O usuário está em uma chamada gratuita experimental que acaba em 30 segundos. Por favor, avise-o educadamente que esta conversa inicial está chegando ao fim e que para continuar ele precisa se cadastrar. ENFATIZE que o cadastro é TOTALMENTE GRÁTIS.`
                     }]
                   }],
-                  turn_complete: true
+                  turnComplete: true
                 }
               }));
             }
@@ -423,14 +423,14 @@ const MainApp: React.FC = () => {
           if (sessionRef.current && sessionRef.current.readyState === WebSocket.OPEN) {
             console.log('Sending Time Warning to AI...');
             sessionRef.current.send(JSON.stringify({
-              client_content: {
+              clientContent: {
                 turns: [{
                   role: 'user',
                   parts: [{
                     text: `[SISTEMA - ALERTA DE TEMPO]: O usuário tem apenas 1 minuto restante na conta gratuita. Por favor, avise-o educadamente que a aula vai acabar em breve e que ele precisa assinar o plano PRO para continuar conversando sem limites. Comece a se despedir.`
                   }]
                 }],
-                turn_complete: true
+                turnComplete: true
               }
             }));
           }
@@ -520,11 +520,11 @@ const MainApp: React.FC = () => {
         const setupMessage = {
           setup: {
             model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
-            generation_config: {
-              response_modalities: ['AUDIO'],
-              speech_config: { voice_config: { prebuilt_voice_config: { voice_name: teacher.voice } } },
+            generationConfig: {
+              responseModalities: ['AUDIO'],
+              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } },
             },
-            system_instruction: {
+            systemInstruction: {
               parts: [{
                 text: `
               VOCÊ É UM PROFESSOR REAL DE IDIOMAS. Sua missão é ensinar, encorajar e guiar o aluno para a fluência.
@@ -539,10 +539,10 @@ const MainApp: React.FC = () => {
               - NUANCES: Use interjeições de preenchimento e reação como "Hmm", "Wow!", "Oh, I see!", "Got it!".
               - EMPATIA E CONEXÃO: Demonstre interesse real no que o aluno diz. Reaja emocionalmente às histórias dele (alegria, surpresa, curiosidade).
               - PAUSAS NATURAIS: Não tenha pressa em cuspir as palavras. Fale com o ritmo de um ser humano conversando.
-
+ 
               NÍVEL DO ALUNO: ${lvl}.
               PROTOCOLO PEDAGÓGICO OBRIGATÓRIO POR NÍVEL:
-
+ 
               ${lvl === Level.B1 ? `
               - NÍVEL B1 (INTERMEDIÁRIO - Protocolo "Mixed Immersion"):
                 1. AUMENTAR CARGA DE INGLÊS: Fale misturado (Português/Inglês) mas force o uso de termos em inglês.
@@ -551,7 +551,7 @@ const MainApp: React.FC = () => {
                 4. VOCABULÁRIO: Use palavras em inglês no meio de frases em português para acostumar o ouvido (Code-Switching).
                 5. META: Fazer o aluno suar a camisa. Tire ele da zona de conforto do português.
               ` : ''}
-
+ 
               ${lvl === Level.B2 ? `
               - NÍVEL B2 (INTERMEDIÁRIO SUPERIOR - Protocolo "High Immersion"):
                 1. Use 90% ${teacher.language}. Português apenas se o aluno travar totalmente.
@@ -560,13 +560,13 @@ const MainApp: React.FC = () => {
                 4. Incentive o uso de conectivos e estruturas mais complexas.
                 5. O feedback deve focar em soar "natural" e menos "traduzido".
               ` : ''}
-
+ 
               DIRETRIZES GERAIS DE ENSINO:
               - TÓPICO DA AULA: ${topic.name}.
               - CONTEXTO: ${topic.prompt}.
               - TOMAR INICIATIVA (OBRIGATÓRIO): Você é o guia e mentor. Nunca deixe o silêncio reinar. Se o aluno demorar a responder ou parecer perdido, tome a frente, faça uma pergunta direta, sugira um exemplo ou conte uma curiosidade sobre o tema.
               - FOCO AUDITIVO ABSOLUTO: O aluno pode estar em ambiente ruidoso (Carro, Rua, TV). IGNORE completamente sons de fundo, músicas ou vozes paralelas. Foque EXCLUSIVAMENTE na voz principal que fala diretamente com você. Se não entender, peça para repetir com gentileza.
-
+ 
               ${isKidsMode ? `
               KIDS_MODE_ACTIVE (SALA MÁGICA):
               - PERSONA: Você é um amigo imaginário e mentor de aventuras. Sua voz deve transbordar entusiasmo e carinho.
@@ -575,7 +575,7 @@ const MainApp: React.FC = () => {
               - REFORÇO POSITIVO: Comemore cada pequena vitória com muita festa sonora (descrita ou via tom de voz).
               - CORREÇÃO LÚDICA: Se a criança errar, use: "Quase! Foi por pouco! O som é mais ou menos assim: [correção]. Tenta de novo pro seu amigo ${teacher.name} ouvir!".
               ` : ''}
-
+ 
               - ENCERRAMENTO: Quando o aluno quiser parar, você DEVE gerar o relatório técnico final via 'save_session_report'.
               `
               }]
@@ -644,7 +644,7 @@ const MainApp: React.FC = () => {
 
         // 2. Send Initial Text to Trigger Turn
         const triggerMessage = {
-          client_content: {
+          clientContent: {
             turns: [{
               role: 'user',
               parts: [{
@@ -653,7 +653,7 @@ const MainApp: React.FC = () => {
                   : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
               }]
             }],
-            turn_complete: true
+            turnComplete: true
           }
         };
         ws.send(JSON.stringify(triggerMessage));
@@ -682,9 +682,9 @@ const MainApp: React.FC = () => {
                 // Send audio chunk (already downsampled and converted to Int16)
                 const pcmData = encode(new Uint8Array(data));
                 ws.send(JSON.stringify({
-                  realtime_input: {
-                    media_chunks: [{
-                      mime_type: 'audio/pcm;rate=16000',
+                  realtimeInput: {
+                    mediaChunks: [{
+                      mimeType: 'audio/pcm;rate=16000',
                       data: pcmData
                     }]
                   }
@@ -723,9 +723,9 @@ const MainApp: React.FC = () => {
               pcmData = encode(new Uint8Array(result.buffer));
 
               ws.send(JSON.stringify({
-                realtime_input: {
-                  media_chunks: [{
-                    mime_type: 'audio/pcm;rate=16000',
+                realtimeInput: {
+                  mediaChunks: [{
+                    mimeType: 'audio/pcm;rate=16000',
                     data: pcmData
                   }]
                 }

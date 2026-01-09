@@ -7,7 +7,7 @@ dotenv.config();
 
 const port = process.env.PORT || 8080;
 const API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
-const MODEL = "models/gemini-2.0-flash-exp";
+const MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025";
 
 if (!API_KEY) {
     console.error("ERRO: GEMINI_API_KEY não encontrada no .env");

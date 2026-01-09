@@ -31,7 +31,7 @@ export const getAIResponse = async (
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.0-flash",
       contents: [
         ...history,
         { role: 'user', parts: [{ text: message }] }
