@@ -23,42 +23,60 @@ app.get('/', (req, res) => {
     res.send('LinguaFlow Proxy is running');
 });
 
-wss.on('connection', (clientWs: WebSocket) => {
+const PROXY_SECRET = process.env.PROXY_SECRET;
+
+wss.on('connection', (clientWs: WebSocket, req) => {
+    const url = new URL(req.url || '/', `http://${req.headers.host}`);
+    const token = url.searchParams.get('token');
+
+    if (PROXY_SECRET && token !== PROXY_SECRET) {
+        console.warn('Conexão recusada: Token inválido');
+        clientWs.close(4001, 'Unauthorized');
+        return;
+    }
+
     console.log('Cliente conectado ao Proxy');
 
     // Conectar ao Gemini
     const geminiUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${API_KEY}`;
+    let geminiWs: WebSocket | null = null;
 
-    let geminiWs: WebSocket | null = new WebSocket(geminiUrl);
+    const connectToGemini = () => {
+        geminiWs = new WebSocket(geminiUrl);
 
-    geminiWs.on('open', () => {
-        console.log('Proxy conectado ao Gemini API');
+        geminiWs.on('open', () => {
+            console.log('Proxy conectado ao Gemini API');
+        });
 
-        // Initial setup message if needed, or just ready to pipe
-        // clientWs.send(JSON.stringify({ type: 'STATUS', text: 'Connected to AI' }));
-    });
+        geminiWs.on('message', (data: any) => {
+            if (clientWs.readyState === WebSocket.OPEN) {
+                clientWs.send(data);
+            }
+        });
 
-    geminiWs.on('message', (data: any) => {
-        // Forward message from Gemini to Client
-        if (clientWs.readyState === WebSocket.OPEN) {
-            clientWs.send(data);
-        }
-    });
+        geminiWs.on('close', (code, reason) => {
+            console.log(`Gemini fechou a conexão: ${code} - ${reason}`);
+            // If the client is still open, we might want to try reconnecting gemini
+            // but for Live API, a closed session usually means we need to start over.
+            if (clientWs.readyState === WebSocket.OPEN) {
+                if (code !== 1000) {
+                    console.log('Tentando reconectar ao Gemini...');
+                    setTimeout(connectToGemini, 1000);
+                } else {
+                    clientWs.close();
+                }
+            }
+        });
 
-    geminiWs.on('close', () => {
-        console.log('Gemini fechou a conexão');
-        if (clientWs.readyState === WebSocket.OPEN) {
-            clientWs.close();
-        }
-    });
+        geminiWs.on('error', (err) => {
+            console.error('Erro no Gemini WS:', err);
+        });
+    };
 
-    geminiWs.on('error', (err) => {
-        console.error('Erro no Gemini WS:', err);
-    });
+    connectToGemini();
 
     // Handle Client Messages
     clientWs.on('message', (data: any) => {
-        // Forward message from Client to Gemini
         if (geminiWs && geminiWs.readyState === WebSocket.OPEN) {
             geminiWs.send(data);
         }
