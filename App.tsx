@@ -117,6 +117,10 @@ const MainApp: React.FC = () => {
   const hasWarnedRef = useRef(false);
   const teacherPanelRef = useRef<HTMLDivElement>(null);
 
+  // Latency & VAD Optimization Refs
+  const lastSpeechTimeRef = useRef<number>(Date.now());
+  const silenceHandledRef = useRef<boolean>(true);
+
   const [showSurvey, setShowSurvey] = useState(false);
 
 
@@ -336,6 +340,37 @@ const MainApp: React.FC = () => {
       window.removeEventListener('offline', handleOffline);
     };
   }, [user]);
+
+  // 🔇 Client-Side Silence Detection (Forces AI response if it's lagging)
+  useEffect(() => {
+    if (isUserSpeaking) {
+      lastSpeechTimeRef.current = Date.now();
+      silenceHandledRef.current = false;
+    }
+  }, [isUserSpeaking]);
+
+  useEffect(() => {
+    if (step !== 'call' || connectionStatus !== 'connected' || !sessionRef.current) return;
+
+    const silenceTimer = setInterval(() => {
+      const now = Date.now();
+      const silenceDuration = now - lastSpeechTimeRef.current;
+
+      // If user stopped speaking and we've been silent for > 1000ms
+      // Gemini's server VAD usually takes 1-2s. We force it at 1s for snappiness.
+      if (!isUserSpeaking && !silenceHandledRef.current && silenceDuration > 1000) {
+        if (sessionRef.current.readyState === WebSocket.OPEN) {
+          console.log('🔇 Silence timeout (1s). Forcing turn completion signal.');
+          sessionRef.current.send(JSON.stringify({
+            clientContent: { turnComplete: true }
+          }));
+          silenceHandledRef.current = true;
+        }
+      }
+    }, 250);
+
+    return () => clearInterval(silenceTimer);
+  }, [step, isUserSpeaking, connectionStatus]);
 
   // Auto-save session state to profile
   useEffect(() => {

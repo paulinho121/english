@@ -5,9 +5,12 @@
 class AudioCaptureProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
-        this.buffer = new Int16Array(2048);
+        this.buffer = new Int16Array(1024); // Smaller buffer for lower latency (approx 64ms)
         this.bufferIndex = 0;
         this.targetSampleRate = 16000;
+        this.holdTime = 0;
+        this.isCapturing = false;
+        this.speechCounter = 0;
     }
 
     process(inputs, outputs, parameters) {
@@ -15,38 +18,29 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
         if (input && input.length > 0) {
             const inputChannel0 = input[0];
 
-            // Advanced VAD Logic
+            // 1. RMS Calculation for UI
             let sum = 0;
             for (let i = 0; i < inputChannel0.length; i++) {
                 sum += inputChannel0[i] * inputChannel0[i];
             }
             const rms = Math.sqrt(sum / inputChannel0.length);
-
-            // Send RMS for UI visualization
             this.port.postMessage({ type: 'rms', value: rms });
 
-            // Dynamic Noise Floor adaptation
-            // Slowly decrease the threshold if we detect consistent silence
-            // Quickly increase it if we detect speech-like energy
+            // 2. Continuous VAD Logic (for UI indicators)
             if (!this.noiseFloor) this.noiseFloor = 0.005;
-
-            // Adapt noise floor based on environment (very slow moving average for noise)
             if (rms < this.noiseFloor) {
                 this.noiseFloor = this.noiseFloor * 0.999 + rms * 0.001;
             } else if (rms < this.noiseFloor * 2) {
-                // Potential background noise, drift up slightly
                 this.noiseFloor = this.noiseFloor * 0.99 + rms * 0.01;
             }
 
-            // Voice Activity Detection with Hold Time and Debouncing
-            const threshold = Math.max(0.012, this.noiseFloor * 1.8); // Slightly more aggressive
+            const threshold = Math.max(0.010, this.noiseFloor * 1.5);
             const isSpeechCandidate = rms > threshold;
 
             if (isSpeechCandidate) {
-                // Debouncing: Must see consistent energy for a few blocks before starting
-                this.speechCounter = (this.speechCounter || 0) + 1;
-                if (this.speechCounter > 3) { // ~40ms of consistent energy
-                    this.holdTime = 40; // ~600ms hold time
+                this.speechCounter++;
+                if (this.speechCounter > 2) { // Low debounce for responsiveness
+                    this.holdTime = 50; // Keep 'speaking' status for approx 150ms of silence
                     if (!this.isCapturing) {
                         this.isCapturing = true;
                         this.port.postMessage({ type: 'vad', value: true });
@@ -62,35 +56,33 @@ class AudioCaptureProcessor extends AudioWorkletProcessor {
                 }
             }
 
-            // Only process if capturing
-            if (this.isCapturing) {
-                const ratio = sampleRate / this.targetSampleRate;
+            // 3. Audio Processing (Continuous Stream)
+            // Even when not 'capturing' (silence), we send audio to Gemini 
+            // so its server-side VAD can work more accurately and respond faster.
+            const ratio = sampleRate / this.targetSampleRate;
 
-                for (let i = 0; i < inputChannel0.length; i += ratio) {
-                    const sample = inputChannel0[Math.floor(i)];
+            for (let i = 0; i < inputChannel0.length; i += ratio) {
+                const sample = inputChannel0[Math.floor(i)];
 
-                    // Basic High-Pass Filter (removes DC offset and low rumble)
-                    // y[i] = α * (y[i-1] + x[i] - x[i-1])
-                    this.lastIn = this.lastIn || 0;
-                    this.lastOut = this.lastOut || 0;
-                    const alpha = 0.95;
-                    const filtered = alpha * (this.lastOut + sample - this.lastIn);
-                    this.lastIn = sample;
-                    this.lastOut = filtered;
+                // Simple High-Pass Filter
+                this.lastIn = this.lastIn || 0;
+                this.lastOut = this.lastOut || 0;
+                const alpha = 0.95;
+                const filtered = alpha * (this.lastOut + sample - this.lastIn);
+                this.lastIn = sample;
+                this.lastOut = filtered;
 
-                    const int16Sample = Math.max(-1, Math.min(1, filtered)) * 0x7FFF;
+                const int16Sample = Math.max(-1, Math.min(1, filtered)) * 0x7FFF;
+                this.buffer[this.bufferIndex++] = int16Sample;
 
-                    this.buffer[this.bufferIndex++] = int16Sample;
+                if (this.bufferIndex >= this.buffer.length) {
+                    this.port.postMessage({
+                        type: 'audio',
+                        data: this.buffer.buffer
+                    }, [this.buffer.buffer]);
 
-                    if (this.bufferIndex >= this.buffer.length) {
-                        this.port.postMessage({
-                            type: 'audio',
-                            data: this.buffer.buffer
-                        }, [this.buffer.buffer]);
-
-                        this.buffer = new Int16Array(2048);
-                        this.bufferIndex = 0;
-                    }
+                    this.buffer = new Int16Array(1024);
+                    this.bufferIndex = 0;
                 }
             }
         }
