@@ -1352,7 +1352,8 @@ const MainApp: React.FC = () => {
             </div>
             <div className="max-w-5xl w-full mx-auto space-y-8 pb-20 relative z-10">
               {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+              {/* Header section with Title and User Stats */}
+              <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl md:text-3xl font-display font-bold flex items-center gap-3">
                     {isKidsMode ? 'Mapa de Aventuras' : 'Sua Jornada de Fluência'}
@@ -1363,48 +1364,55 @@ const MainApp: React.FC = () => {
                       : 'Domine novas línguas e expanda seus horizontes, uma missão de cada vez.'}
                   </p>
                 </div>
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
-                  {/* Left Group: User Info & Status */}
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 w-full md:w-auto">
+
+                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full">
+                  {/* Left Group: User Info & Status Indicators */}
+                  <div className="flex flex-wrap items-center justify-center xl:justify-start gap-2 md:gap-3">
                     {/* User Identification */}
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
                       <UserCircle className="w-4 h-4 text-slate-400" />
-                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider truncate max-w-[150px] sm:max-w-none">
+                      <span className="text-[10px] md:text-xs font-bold text-slate-300 uppercase tracking-wider truncate max-w-[120px] sm:max-w-none">
                         {user?.user_metadata?.full_name || user?.email?.split('@')[0] || (isDemoMode ? 'Visitante' : '')}
                       </span>
                     </div>
 
                     {/* Premium Status */}
-                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-colors ${isPremium
-                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_10px_rgba(245,158,11,0.1)]'
+                    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border backdrop-blur-md transition-colors ${isPremium
+                      ? 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.1)]'
                       : 'bg-slate-800/50 border-white/10 text-slate-400'
                       }`}>
-                      {isPremium ? <div className="crown-wrapper"><Crown className="w-3.5 h-3.5 text-amber-400 icon-3d-crown fill-amber-400/20" /></div> : <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />}
-                      <span className="font-bold text-[10px] tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE PLAN'}</span>
+                      {isPremium ? (
+                        <div className="crown-wrapper">
+                          <Crown className="w-3.5 h-3.5 text-amber-400 icon-3d-crown fill-amber-400/20" />
+                        </div>
+                      ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500" />
+                      )}
+                      <span className="font-bold text-[10px] md:text-xs tracking-wider uppercase">{isPremium ? 'PREMIUM' : 'FREE'}</span>
                     </div>
 
                     {!isPremium && (
                       <button
                         onClick={() => setShowUpgradeModal(true)}
-                        className={`btn-shimmer px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
+                        className={`btn-shimmer px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 shadow-lg active:scale-95 transition-all ${isKidsMode ? 'bg-[#ff6b6b] text-white shadow-[#ff6b6b]/20' : 'bg-orange-500 text-white shadow-orange-500/20'}`}
                       >
-                        <Zap className="w-3 h-3 fill-current" /> SEJA PRO
+                        <Zap className="w-3 h-3 fill-current" /> <span className="hidden sm:inline">SEJA PRO</span>
                       </button>
                     )}
 
-                    {/* Daily Goal & Streak */}
+                    {/* Streak and Progress Group */}
                     <div className="flex items-center gap-2">
                       {/* Streak */}
-                      <div className={`flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm ${streak > 0 ? 'animate-streak-fire border-white/20' : ''}`}>
+                      <div className={`flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md ${streak > 0 ? 'animate-streak-fire border-white/20' : ''}`}>
                         <Flame className={`w-4 h-4 ${streak > 0 ? 'text-orange-500 fill-orange-500/20' : 'text-slate-500'}`} />
-                        <span className={`text-[10px] font-black ${streak > 0 ? 'text-white' : 'text-slate-500'}`}>
-                          {streak} {isKidsMode ? 'DIAS' : 'OFENSIVA'}
+                        <span className={`text-[10px] md:text-xs font-black ${streak > 0 ? 'text-white' : 'text-slate-500'}`}>
+                          {streak} {isKidsMode ? 'DIAS' : 'DIAS'}
                         </span>
                       </div>
 
                       {/* Daily Goal Progress */}
-                      <div className="flex items-center gap-3 px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm group hover:border-white/20 transition-all cursor-help" title={`Meta diária: ${DAILY_GOAL_MINUTES} min`}>
-                        <div className="relative w-4 h-4 flex items-center justify-center">
+                      <div className="flex items-center gap-3 px-3 py-2 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md group hover:border-white/20 transition-all cursor-help" title={`Meta diária: ${DAILY_GOAL_MINUTES} min`}>
+                        <div className="relative w-4 h-4 flex items-center justify-center flex-shrink-0">
                           <svg className="w-full h-full transform -rotate-90">
                             <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="2" fill="transparent" className="text-white/5" />
                             <circle
@@ -1420,13 +1428,13 @@ const MainApp: React.FC = () => {
                               strokeLinecap="round"
                             />
                           </svg>
-                          <Clock className={`absolute w-1.5 h-1.5 ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'text-emerald-500' : 'text-orange-500'}`} />
+                          <Clock className={`absolute w-2 h-2 ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'text-emerald-500' : 'text-orange-500'}`} />
                         </div>
-                        <div className="flex flex-col">
+                        <div className="flex flex-col min-w-[45px]">
                           <span className="text-[10px] font-black text-white leading-none">
-                            {dailyMinutesUsed}/{DAILY_GOAL_MINUTES} MIN
+                            {Math.floor(dailyMinutesUsed)}/{DAILY_GOAL_MINUTES}M
                           </span>
-                          <div className={`mt-0.5 h-[1px] w-full bg-white/10 overflow-hidden rounded-full ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'bg-emerald-500/30' : ''}`}>
+                          <div className={`mt-1 h-[2px] w-full bg-white/10 overflow-hidden rounded-full ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'bg-emerald-500/30' : ''}`}>
                             <div
                               className={`h-full bg-gradient-to-r from-orange-500 to-amber-400 daily-progress-shine transition-all duration-1000 ${dailyMinutesUsed >= DAILY_GOAL_MINUTES ? 'from-emerald-400 to-emerald-600' : ''}`}
                               style={{ width: `${Math.min((dailyMinutesUsed / DAILY_GOAL_MINUTES) * 100, 100)}%` }}
@@ -1437,40 +1445,44 @@ const MainApp: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Right Group: Actions */}
-                  <div className="flex items-center justify-center gap-2 w-full md:w-auto">
+                  {/* Right Group: Action Buttons */}
+                  <div className="flex flex-wrap items-center justify-center xl:justify-end gap-2">
                     <button
                       onClick={() => { setContactType('support'); setShowContactModal(true); }}
-                      className="flex items-center gap-2 px-4 py-2 bg-white/5 text-slate-400 rounded-xl border border-white/5 hover:bg-orange-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest whitespace-nowrap"
+                      className="flex items-center gap-2 px-4 py-2 bg-white/5 text-slate-400 rounded-xl border border-white/5 hover:bg-orange-500/20 hover:text-white hover:border-orange-500/30 transition-all font-black text-[10px] uppercase tracking-widest"
                     >
-                      <MessageSquare className="w-4 h-4" /> <span>Suporte</span>
+                      <MessageSquare className="w-4 h-4" /> <span className="hidden sm:inline">Suporte</span>
                     </button>
+
                     {user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
                       <button
                         onClick={() => setIsAdminDashboardOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest whitespace-nowrap"
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
                       >
-                        <Shield className="w-4 h-4" /> <span>Dashboard Admin</span>
+                        <Shield className="w-4 h-4" /> <span className="hidden sm:inline">Dashboard Admin</span>
+                        <span className="sm:hidden text-[8px] ml-1">ADMIN</span>
                       </button>
                     )}
-                    <button
-                      onClick={() => setShowTutorial(true)}
-                      className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
-                      title="Como Usar"
-                    >
-                      <Globe className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={signOut}
-                      className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-colors"
-                      title="Sair"
-                    >
-                      <Key className="w-4 h-4" />
-                    </button>
+
+                    <div className="flex items-center gap-2 h-full">
+                      <button
+                        onClick={() => setShowTutorial(true)}
+                        className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl border border-white/5 text-slate-400 hover:text-white transition-all group"
+                        title="Ajuda"
+                      >
+                        <Globe className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                      </button>
+                      <button
+                        onClick={signOut}
+                        className="p-2.5 bg-white/5 hover:bg-red-500/10 rounded-xl border border-white/5 text-slate-400 hover:text-red-500 transition-all group"
+                        title="Sair"
+                      >
+                        <Key className="w-4 h-4 group-hover:-rotate-12 transition-transform" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-
               {/* Language Selector */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[Language.ENGLISH, Language.SPANISH, Language.FRENCH].map(lang => (
