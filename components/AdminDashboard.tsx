@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Users, Shield, Zap, Search, X, Loader2, TrendingUp, Clock, Flame } from 'lucide-react';
+import { Users, Shield, Zap, Search, X, Loader2, TrendingUp, Clock, Flame, MessageSquare, Building2, UserCircle2, CheckCircle, Mail } from 'lucide-react';
 
 interface UserProfile {
     id: string;
@@ -26,6 +26,18 @@ interface Coupon {
     created_at: string;
 }
 
+interface ContactMessage {
+    id: string;
+    created_at: string;
+    name: string;
+    email: string;
+    company_name: string;
+    message_type: 'support' | 'business';
+    subject: string;
+    message: string;
+    status: 'new' | 'read' | 'replied';
+}
+
 interface AdminDashboardProps {
     onClose: () => void;
 }
@@ -35,7 +47,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     const [users, setUsers] = useState<UserProfile[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [updatingId, setUpdatingId] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'users' | 'coupons'>('users');
+    const [activeTab, setActiveTab] = useState<'users' | 'coupons' | 'messages'>('users');
+
+    // Messages state
+    const [messages, setMessages] = useState<ContactMessage[]>([]);
+    const [loadingMessages, setLoadingMessages] = useState(false);
 
     // Coupons state
     const [coupons, setCoupons] = useState<Coupon[]>([]);
@@ -55,6 +71,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     useEffect(() => {
         fetchUsers();
         fetchCoupons();
+        fetchMessages();
 
         // Subscribe to Presence
         const channel = supabase.channel('online-users');
@@ -73,6 +90,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
             channel.unsubscribe();
         };
     }, []);
+
+    const fetchMessages = async () => {
+        setLoadingMessages(true);
+        const { data, error } = await supabase
+            .from('contact_messages')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            setMessages(data as ContactMessage[]);
+        }
+        setLoadingMessages(false);
+    };
+
+    const markAsRead = async (id: string) => {
+        const { error } = await supabase
+            .from('contact_messages')
+            .update({ status: 'read' })
+            .eq('id', id);
+
+        if (!error) {
+            setMessages(messages.map(m => m.id === id ? { ...m, status: 'read' } : m));
+        }
+    };
 
     const fetchCoupons = async () => {
         const { data, error } = await supabase
@@ -221,12 +262,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 </div>
 
                 <div className="glass-premium p-4 md:p-6 rounded-3xl border border-white/5 flex items-center gap-4">
-                    <div className="p-3 bg-purple-500/10 rounded-2xl text-purple-500">
-                        <Clock className="w-6 h-6" />
+                    <div className="p-3 bg-pink-500/10 rounded-2xl text-pink-500">
+                        <MessageSquare className="w-6 h-6" />
                     </div>
                     <div>
-                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Uso (Hoje)</p>
-                        <p className="text-2xl font-black text-white">{totalMinutes}m</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Contatos</p>
+                        <p className="text-2xl font-black text-white">{messages.length}</p>
                     </div>
                 </div>
             </div>
@@ -245,11 +286,109 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                 >
                     Cupons (Influenciadores)
                 </button>
+                <button
+                    onClick={() => setActiveTab('messages')}
+                    className={`py-4 px-2 font-black text-xs uppercase tracking-widest transition-all border-b-2 ${activeTab === 'messages' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+                >
+                    Mensagens
+                </button>
             </div>
 
             {/* Content Section */}
             <div className="flex-1 flex flex-col p-6 overflow-hidden">
-                {activeTab === 'users' ? (
+                {activeTab === 'messages' ? (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-white">Mensagens Recebidas</h3>
+                                <p className="text-slate-500 text-sm">Contatos via site e dashboard</p>
+                            </div>
+                            <button
+                                onClick={fetchMessages}
+                                className="px-6 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white font-bold transition-all flex items-center gap-2"
+                            >
+                                {loadingMessages ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Atualizar'}
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-auto rounded-3xl border border-white/10 bg-slate-900/20 no-scrollbar">
+                            <table className="w-full text-left border-collapse">
+                                <thead className="sticky top-0 bg-slate-900 border-b border-white/10 z-10">
+                                    <tr>
+                                        <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Data</th>
+                                        <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Tipo</th>
+                                        <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Nome / Empresa</th>
+                                        <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest">Assunto / Mensagem</th>
+                                        <th className="p-5 text-[10px] font-black text-slate-500 uppercase tracking-widest text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {messages.map((m) => (
+                                        <tr key={m.id} className={`hover:bg-white/[0.02] transition-colors group ${m.status === 'new' ? 'bg-orange-500/[0.02]' : ''}`}>
+                                            <td className="p-5">
+                                                <div className="text-xs text-slate-500 font-bold">
+                                                    {new Date(m.created_at).toLocaleDateString('pt-BR')}
+                                                </div>
+                                                <div className="text-[10px] text-slate-600 font-mono">
+                                                    {new Date(m.created_at).toLocaleTimeString('pt-BR')}
+                                                </div>
+                                            </td>
+                                            <td className="p-5">
+                                                {m.message_type === 'business' ? (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-500/20">
+                                                        <Building2 className="w-3 h-3" /> Business
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-wider border border-orange-500/20">
+                                                        <UserCircle2 className="w-3 h-3" /> Suporte
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="p-5">
+                                                <div className="text-sm font-bold text-white">{m.name}</div>
+                                                {m.company_name && (
+                                                    <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest">{m.company_name}</div>
+                                                )}
+                                                <div className="text-xs text-slate-500 flex items-center gap-1">
+                                                    <Mail className="w-3 h-3" /> {m.email}
+                                                </div>
+                                            </td>
+                                            <td className="p-5">
+                                                <div className="text-sm font-black text-slate-200 mb-1">{m.subject}</div>
+                                                <p className="text-xs text-slate-500 line-clamp-2 italic">"{m.message}"</p>
+                                            </td>
+                                            <td className="p-5 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {m.status === 'new' && (
+                                                        <button
+                                                            onClick={() => markAsRead(m.id)}
+                                                            className="p-2 bg-green-500/10 text-green-500 rounded-lg hover:bg-green-500 hover:text-white transition-all shadow-lg shadow-green-500/10"
+                                                            title="Marcar como lido"
+                                                        >
+                                                            <CheckCircle className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <a
+                                                        href={`mailto:${m.email}?subject=RE: ${m.subject}`}
+                                                        className="p-2 bg-blue-500/10 text-blue-500 rounded-lg hover:bg-blue-500 hover:text-white transition-all shadow-lg shadow-blue-500/10"
+                                                        title="Responder por e-mail"
+                                                    >
+                                                        <Mail className="w-4 h-4" />
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                    {messages.length === 0 && (
+                                        <tr>
+                                            <td colSpan={5} className="p-10 text-center text-slate-500 font-medium">Nenhuma mensagem recebida ainda.</td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                ) : activeTab === 'users' ? (
                     <>
                         <div className="flex flex-col md:flex-row gap-4 mb-6">
                             <div className="flex-1 relative">

@@ -23,11 +23,12 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight, MessageSquare
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
 import { QuickDemoOnboarding } from './components/QuickDemoOnboarding';
+import { ContactModal } from './components/ContactModal';
 
 // Initialize Analytics
 initAnalytics();
@@ -101,6 +102,8 @@ const MainApp: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showUpdatePasswordModal, setShowUpdatePasswordModal] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactType, setContactType] = useState<'support' | 'business'>('support');
 
   // Demo flow states
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -1436,6 +1439,12 @@ const MainApp: React.FC = () => {
 
                   {/* Right Group: Actions */}
                   <div className="flex items-center justify-center gap-2 w-full md:w-auto">
+                    <button
+                      onClick={() => { setContactType('support'); setShowContactModal(true); }}
+                      className="flex items-center gap-2 px-4 py-2 bg-white/5 text-slate-400 rounded-xl border border-white/5 hover:bg-orange-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest whitespace-nowrap"
+                    >
+                      <MessageSquare className="w-4 h-4" /> <span>Suporte</span>
+                    </button>
                     {user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
                       <button
                         onClick={() => setIsAdminDashboardOpen(true)}
@@ -1696,6 +1705,15 @@ const MainApp: React.FC = () => {
       {
         isAdminDashboardOpen && (
           <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
+        )
+      }
+
+      {
+        showContactModal && (
+          <ContactModal
+            onClose={() => setShowContactModal(false)}
+            initialType={contactType}
+          />
         )
       }
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Rocket, Sparkles, Shield, Globe, Zap, MessageCircleHeart, CheckCircle2, ArrowRight, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Rocket, Sparkles, Shield, Globe, Zap, MessageCircleHeart, CheckCircle2, ArrowRight, Star, ChevronLeft, ChevronRight, MessageSquare, Building2 } from 'lucide-react';
+import { ContactModal } from './ContactModal';
 
 interface LandingPageProps {
     onStart: () => void;
@@ -24,6 +25,8 @@ const USFlag = ({ className }: { className?: string }) => (
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [showContactModal, setShowContactModal] = useState(false);
+    const [contactType, setContactType] = useState<'support' | 'business'>('support');
 
     const testimonials = [
         {
@@ -98,12 +101,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                         Lingua<span className="text-orange-500">Flow</span>
                     </span>
                 </div>
-                <button
-                    onClick={onStart}
-                    className="px-6 py-2 rounded-full border border-white/10 hover:bg-white/5 font-bold text-sm transition-all hover:scale-105 active:scale-95"
-                >
-                    Entrar
-                </button>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => { setContactType('business'); setShowContactModal(true); }}
+                        className="hidden md:flex items-center gap-2 px-4 py-2 rounded-full text-slate-400 hover:text-white text-sm font-bold transition-colors"
+                    >
+                        <Building2 className="w-4 h-4" />
+                        Empresas
+                    </button>
+                    <button
+                        onClick={onStart}
+                        className="px-6 py-2 rounded-full border border-white/10 hover:bg-white/5 font-bold text-sm transition-all hover:scale-105 active:scale-95"
+                    >
+                        Entrar
+                    </button>
+                </div>
             </header>
 
             {/* Hero Section */}
@@ -328,9 +340,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                         Começar Gratuitamente
                     </span>
                 </button>
-                <p className="mt-8 text-slate-500 text-sm font-bold uppercase tracking-widest">
-                    &copy; 2026 LinguaFlow AI. Feito com amor por Paulinho Fernando.
+                <p className="mt-8 text-slate-500 text-sm font-bold uppercase tracking-widest flex items-center justify-center gap-6">
+                    <span>&copy; 2026 LinguaFlow AI</span>
+                    <button onClick={() => { setContactType('support'); setShowContactModal(true); }} className="hover:text-orange-500 transition-colors">Fale Conosco</button>
+                    <button onClick={() => { setContactType('business'); setShowContactModal(true); }} className="hover:text-blue-500 transition-colors">Enterprise</button>
                 </p>
+
+                {showContactModal && <ContactModal onClose={() => setShowContactModal(false)} initialType={contactType} />}
             </section>
         </div>
     );
