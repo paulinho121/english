@@ -14,6 +14,7 @@ import { supabase } from './lib/supabase';
 import { JourneyMap } from './components/JourneyMap';
 import { hotmartService } from './lib/hotmart_integration';
 import { AdminDashboard } from './components/AdminDashboard';
+import { CompanyDashboard } from './components/CompanyDashboard';
 import { PaymentModal } from './components/PaymentModal';
 import { UpdatePasswordModal } from './components/UpdatePasswordModal';
 import { OnboardingTutorial } from './components/OnboardingTutorial';
@@ -23,7 +24,7 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight, MessageSquare
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight, MessageSquare, Building2
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
@@ -63,6 +64,7 @@ const DAILY_GOAL_MINUTES = 10;
 
 const MainApp: React.FC = () => {
   const { user, loading, signOut } = useAuth();
+  const isAdmin = user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
   const navigate = useNavigate();
 
 
@@ -99,6 +101,8 @@ const MainApp: React.FC = () => {
   const [elapsedTime, setElapsedTime] = useState(0); // Added for Session Timer
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+  const [isCompanyDashboardOpen, setIsCompanyDashboardOpen] = useState(false);
+  const [userOrgRole, setUserOrgRole] = useState<'admin' | 'member' | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showUpdatePasswordModal, setShowUpdatePasswordModal] = useState(false);
   const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
@@ -178,7 +182,7 @@ const MainApp: React.FC = () => {
       let profile = null;
       let retries = 0;
       while (!profile && retries < 3) {
-        const { data } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial, org_role').eq('id', user.id).single();
         profile = data;
         if (!profile) await new Promise(r => setTimeout(r, 500)); // Wait 500ms
         retries++;
@@ -213,6 +217,10 @@ const MainApp: React.FC = () => {
         // Show tutorial only if both DB and LocalStorage say it's not complete
         if (profile.has_completed_tutorial === false && !hasCompletedTutorialLocal) {
           setShowTutorial(true);
+        }
+
+        if (profile.org_role) {
+          setUserOrgRole(profile.org_role as 'admin' | 'member');
         }
       } else {
         // Fallback: If absolutely no profile found after retries, assume new user -> Show Tutorial
@@ -1464,6 +1472,15 @@ const MainApp: React.FC = () => {
                       </button>
                     )}
 
+                    {(userOrgRole === 'admin' || isAdmin) && (
+                      <button
+                        onClick={() => setIsCompanyDashboardOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                      >
+                        <Building2 className="w-4 h-4" /> <span className="hidden sm:inline">Minha Equipe</span>
+                      </button>
+                    )}
+
                     <div className="flex items-center gap-2 h-full">
                       <button
                         onClick={() => setShowTutorial(true)}
@@ -1719,6 +1736,10 @@ const MainApp: React.FC = () => {
           <AdminDashboard onClose={() => setIsAdminDashboardOpen(false)} />
         )
       }
+
+      {isCompanyDashboardOpen && user && (
+        <CompanyDashboard onClose={() => setIsCompanyDashboardOpen(false)} currentUserId={user.id} />
+      )}
 
       {
         showContactModal && (
