@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { trackEvent } from '../../lib/analytics';
-import { LogIn, Key, Phone, ArrowRight, Loader2, AlertCircle, Sparkles } from 'lucide-react';
+import { LogIn, Key, Phone, ArrowRight, Loader2, AlertCircle, Sparkles, Building2, UserCircle } from 'lucide-react';
 
 export const LoginScreen: React.FC = () => {
     const { sessionError } = useAuth();
@@ -20,6 +20,11 @@ export const LoginScreen: React.FC = () => {
     const [phoneNumber, setPhoneNumber] = useState('');
     const [otp, setOtp] = useState('');
     const [showOtpInput, setShowOtpInput] = useState(false);
+
+    // B2B States
+    const [isB2B, setIsB2B] = useState(false);
+    const [orgName, setOrgName] = useState('');
+    const [cnpj, setCnpj] = useState('');
 
     const handleEmailLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,11 +47,27 @@ export const LoginScreen: React.FC = () => {
                 if (signUpError) throw signUpError;
 
                 if (user) {
+                    let orgId = null;
+                    if (isB2B) {
+                        // Create Organization
+                        const { data: orgData, error: orgError } = await supabase.from('organizations').insert({
+                            name: orgName,
+                            cnpj: cnpj,
+                            plan_type: 'team',
+                            max_seats: 5
+                        }).select().single();
+
+                        if (orgError) throw orgError;
+                        orgId = orgData.id;
+                    }
+
                     // 2. Create Profile Record explicitly to ensure consistency
                     const { error: profileError } = await supabase.from('profiles').insert({
                         id: user.id,
                         full_name: fullName,
                         phone_number: signupPhone,
+                        organization_id: orgId,
+                        org_role: isB2B ? 'admin' : 'member',
                         current_session_id: Math.random().toString(36).substring(7),
                         last_seen: new Date().toISOString()
                     });
@@ -55,7 +76,7 @@ export const LoginScreen: React.FC = () => {
                         console.error('Profile creation warning:', profileError);
                     }
 
-                    trackEvent('signup', { method: 'email' });
+                    trackEvent('signup', { method: 'email', type: isB2B ? 'b2b' : 'b2c' });
                     setMessage({ type: 'success', text: 'Conta criada! Verifique seu email.' });
                 }
             } else {
@@ -143,6 +164,26 @@ export const LoginScreen: React.FC = () => {
                     </div>
                     <h1 className="text-3xl md:text-4xl font-display font-black text-white tracking-tight mb-2 text-glow">Bem-vindo</h1>
                     <p className="text-slate-300 font-medium">Acesse sua conta para continuar.</p>
+                </div>
+
+                {/* Account Type Switcher */}
+                <div className="flex p-1 bg-slate-900/50 rounded-xl mb-6 border border-white/5">
+                    <button
+                        type="button"
+                        onClick={() => { setIsB2B(false); setMode('signin'); }}
+                        className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${!isB2B ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20' : 'text-slate-400 hover:text-white'
+                            }`}
+                    >
+                        <UserCircle className="w-4 h-4" /> Para Você
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setIsB2B(true); setMode('signup'); }}
+                        className={`flex-1 py-3 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${isB2B ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-400 hover:text-white'
+                            }`}
+                    >
+                        <Building2 className="w-4 h-4" /> Para Empresas
+                    </button>
                 </div>
 
                 {sessionError && (
@@ -233,6 +274,38 @@ export const LoginScreen: React.FC = () => {
                     <form onSubmit={handleEmailLogin} className="space-y-5">
                         {mode === 'signup' && (
                             <>
+                                {isB2B && (
+                                    <>
+                                        <div className="space-y-2 animate-in slide-in-from-top-4 duration-300">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nome da Empresa</label>
+                                            <div className="relative group">
+                                                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Sua Empresa Ltda"
+                                                    value={orgName}
+                                                    onChange={e => setOrgName(e.target.value)}
+                                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                                    required={isB2B}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2 animate-in slide-in-from-top-4 duration-300">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">CNPJ</label>
+                                            <div className="relative group">
+                                                <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+                                                <input
+                                                    type="text"
+                                                    placeholder="00.000.000/0001-00"
+                                                    value={cnpj}
+                                                    onChange={e => setCnpj(e.target.value)}
+                                                    className="w-full bg-slate-900/40 border border-white/10 rounded-2xl py-3 md:py-4 pl-12 pr-4 text-white placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                                                    required={isB2B}
+                                                />
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
                                 <div className="space-y-2 animate-in slide-in-from-top-4 duration-300">
                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nome Completo</label>
                                     <input
