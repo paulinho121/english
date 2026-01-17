@@ -223,9 +223,27 @@ const MainApp: React.FC = () => {
           setUserOrgRole(profile.org_role as 'admin' | 'member');
         }
       } else {
-        // Fallback: If absolutely no profile found after retries, assume new user -> Show Tutorial
-        if (!hasCompletedTutorialLocal) {
-          setShowTutorial(true);
+        // Fallback: If no profile found, create one (Self-healing for OAuth/Google users)
+        console.log('⚠️ No profile found. Creating new profile for user:', user.id);
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email,
+          full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Novo Usuário',
+          last_seen: new Date().toISOString(),
+          current_session_id: Math.random().toString(36).substring(7)
+        });
+
+        if (!insertError) {
+          // Retry fetch
+          const { data: newProfile } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial, org_role').eq('id', user.id).single();
+          if (newProfile) {
+            setStreak(newProfile.streak_count || 0);
+            setDailyMinutesUsed(newProfile.daily_minutes_used || 0);
+            // Set strict defaults for new users
+            if (!hasCompletedTutorialLocal && newProfile.has_completed_tutorial === false) {
+              setShowTutorial(true);
+            }
+          }
         }
       }
 
