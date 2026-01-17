@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Users, Shield, Zap, Search, X, Loader2, TrendingUp, Clock, Flame, MessageSquare, Building2, UserCircle2, CheckCircle, Mail } from 'lucide-react';
+import { FinancialWalkthrough } from './FinancialWalkthrough';
 
 interface UserProfile {
     id: string;
@@ -67,6 +68,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
 
     // Real-time Presence state
     const [onlineUserIds, setOnlineUserIds] = useState<Set<string>>(new Set());
+    const [showFinancialWalkthrough, setShowFinancialWalkthrough] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -211,12 +213,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                         <p className="text-slate-400 text-sm">Monitoramento em tempo real dos usuários</p>
                     </div>
                 </div>
-                <button
-                    onClick={onClose}
-                    className="p-2 hover:bg-white/5 rounded-full transition-colors group"
-                >
-                    <X className="w-8 h-8 text-slate-500 group-hover:text-white transition-colors" />
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setShowFinancialWalkthrough(true)}
+                        className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 flex items-center gap-2 transition-all group"
+                    >
+                        <TrendingUp className="w-4 h-4 text-green-500 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-bold text-white uppercase tracking-wider">Análise Financeira</span>
+                    </button>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-white/5 rounded-full transition-colors group"
+                    >
+                        <X className="w-8 h-8 text-slate-500 group-hover:text-white transition-colors" />
+                    </button>
+                </div>
             </div>
 
             {/* Full Stats Grid */}
@@ -649,6 +660,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                     </div>
                 )
             }
+
+            {showFinancialWalkthrough && (
+                <FinancialWalkthrough onClose={() => setShowFinancialWalkthrough(false)} />
+            )}
         </div >
     );
 };
