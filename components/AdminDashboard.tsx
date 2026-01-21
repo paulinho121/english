@@ -118,47 +118,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     };
 
     const fetchCoupons = async () => {
-        const { data, error } = await supabase
-            .from('coupons')
-            .select('*')
-            .order('created_at', { ascending: false });
+        try {
+            const { data, error } = await supabase
+                .from('coupons')
+                .select('*')
+                .order('created_at', { ascending: false });
 
-        if (!error && data) {
-            setCoupons(data as Coupon[]);
+            if (error) {
+                console.error('Error fetching coupons:', error);
+                return;
+            }
+
+            if (data) {
+                setCoupons(data as Coupon[]);
+            }
+        } catch (err) {
+            console.error('Unexpected error fetching coupons:', err);
         }
     };
 
     const createCoupon = async () => {
-        if (!newCoupon.code) return;
+        if (!newCoupon.code) {
+            alert('Por favor, insira um código para o cupom.');
+            return;
+        }
 
-        const { data, error } = await supabase
-            .from('coupons')
-            .insert([newCoupon])
-            .select()
-            .single();
+        try {
+            setLoading(true); // Reuse loading state if possible or just use a local one
+            const { data, error } = await supabase
+                .from('coupons')
+                .insert([newCoupon])
+                .select()
+                .single();
 
-        if (!error && data) {
-            setCoupons([data as Coupon, ...coupons]);
-            setIsCreatingCoupon(false);
-            setNewCoupon({
-                code: '',
-                description: '',
-                discount_percentage: 10,
-                influencer_name: '',
-                max_uses: 100,
-                is_active: true
-            });
+            if (error) {
+                console.error('Error creating coupon:', error);
+                alert(`Erro ao criar cupom: ${error.message}`);
+                return;
+            }
+
+            if (data) {
+                setCoupons([data as Coupon, ...coupons]);
+                setIsCreatingCoupon(false);
+                setNewCoupon({
+                    code: '',
+                    description: '',
+                    discount_percentage: 10,
+                    influencer_name: '',
+                    max_uses: 100,
+                    is_active: true
+                });
+                alert('Cupom criado com sucesso!');
+            }
+        } catch (err: any) {
+            console.error('Unexpected error creating coupon:', err);
+            alert(`Erro inesperado: ${err.message}`);
+        } finally {
+            setLoading(false);
         }
     };
 
     const toggleCouponStatus = async (couponId: string, currentStatus: boolean) => {
-        const { error } = await supabase
-            .from('coupons')
-            .update({ is_active: !currentStatus })
-            .eq('id', couponId);
+        try {
+            const { error } = await supabase
+                .from('coupons')
+                .update({ is_active: !currentStatus })
+                .eq('id', couponId);
 
-        if (!error) {
+            if (error) {
+                console.error('Error toggling coupon status:', error);
+                alert(`Erro ao alterar status: ${error.message}`);
+                return;
+            }
+
             setCoupons(coupons.map(c => c.id === couponId ? { ...c, is_active: !currentStatus } : c));
+        } catch (err: any) {
+            console.error('Unexpected error toggling coupon status:', err);
+            alert(`Erro inesperado: ${err.message}`);
         }
     };
 
@@ -622,8 +658,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Desconto (%)</label>
                                         <input
                                             type="number"
-                                            value={newCoupon.discount_percentage}
-                                            onChange={(e) => setNewCoupon({ ...newCoupon, discount_percentage: parseInt(e.target.value) })}
+                                            value={newCoupon.discount_percentage || ''}
+                                            onChange={(e) => setNewCoupon({ ...newCoupon, discount_percentage: parseInt(e.target.value) || 0 })}
                                             className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:outline-none focus:border-orange-500 transition-colors"
                                         />
                                     </div>
@@ -631,8 +667,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                         <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 px-1">Max de Usos</label>
                                         <input
                                             type="number"
-                                            value={newCoupon.max_uses}
-                                            onChange={(e) => setNewCoupon({ ...newCoupon, max_uses: parseInt(e.target.value) })}
+                                            value={newCoupon.max_uses || ''}
+                                            onChange={(e) => setNewCoupon({ ...newCoupon, max_uses: parseInt(e.target.value) || 0 })}
                                             className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white focus:outline-none focus:border-orange-500 transition-colors"
                                         />
                                     </div>
