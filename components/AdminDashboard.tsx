@@ -215,16 +215,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
     };
 
     const togglePremium = async (userId: string, currentStatus: boolean) => {
-        setUpdatingId(userId);
-        const { error } = await supabase
-            .from('profiles')
-            .update({ is_premium: !currentStatus })
-            .eq('id', userId);
+        try {
+            setUpdatingId(userId);
+            const { error } = await supabase
+                .from('profiles')
+                .update({ is_premium: !currentStatus })
+                .eq('id', userId);
 
-        if (!error) {
+            if (error) {
+                console.error('Error updating premium status:', error);
+                alert(`Erro ao atualizar status premium: ${error.message}`);
+                return;
+            }
+
             setUsers(users.map(u => u.id === userId ? { ...u, is_premium: !currentStatus } : u));
+            alert(`Usuário agora é ${!currentStatus ? 'Premium' : 'Gratuito'}!`);
+        } catch (err: any) {
+            console.error('Unexpected error toggling premium:', err);
+            alert(`Erro inesperado: ${err.message}`);
+        } finally {
+            setUpdatingId(null);
         }
-        setUpdatingId(null);
     };
 
     const filteredUsers = users.filter(u =>
