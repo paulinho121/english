@@ -14,7 +14,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
     if (!isOpen) return null;
 
     const handleStripe = () => {
-        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/test_placeholder';
+        const STRIPE_PAYMENT_LINK = import.meta.env.VITE_STRIPE_PAYMENT_LINK || 'https://buy.stripe.com/5kQ28jeGw7jQaxucUG2ZO00';
 
         if (STRIPE_PAYMENT_LINK) {
             const url = new URL(STRIPE_PAYMENT_LINK);
