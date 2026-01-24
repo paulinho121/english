@@ -64,7 +64,7 @@ const DAILY_GOAL_MINUTES = 10;
 
 const MainApp: React.FC = () => {
   const { user, loading, signOut } = useAuth();
-  const isAdmin = user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false);
   const navigate = useNavigate();
 
 
@@ -182,15 +182,18 @@ const MainApp: React.FC = () => {
       let profile = null;
       let retries = 0;
       while (!profile && retries < 3) {
-        const { data } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial, org_role').eq('id', user.id).single();
+        const { data } = await supabase.from('profiles').select('streak_count, last_language, last_level, last_teacher_id, last_topic_id, is_premium, daily_minutes_used, is_kids_mode, has_completed_tutorial, org_role, is_system_admin').eq('id', user.id).single();
         profile = data;
         if (!profile) await new Promise(r => setTimeout(r, 500)); // Wait 500ms
         retries++;
       }
 
       const realPremiumStatus = profile?.is_premium || false;
+      const isAdminStatus = profile?.is_system_admin || false;
 
-      if (isAdmin || realPremiumStatus) {
+      setIsSystemAdmin(isAdminStatus);
+
+      if (isAdminStatus || realPremiumStatus) {
         setIsPremium(true);
       } else {
         setIsPremium(false);
@@ -312,8 +315,7 @@ const MainApp: React.FC = () => {
         },
         (payload) => {
           if (payload.new && typeof payload.new.is_premium === 'boolean') {
-            const isAdmin = user.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
-            setIsPremium(isAdmin || payload.new.is_premium);
+            setIsPremium(isSystemAdmin || payload.new.is_premium);
             console.log('Premium status synced:', payload.new.is_premium);
           }
         }
@@ -431,7 +433,7 @@ const MainApp: React.FC = () => {
   // Session Timer for Monetization
   useEffect(() => {
     // Admin and Real Premium are exempt
-    const isAdmin = user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com';
+    const isAdmin = isSystemAdmin;
     // We need to fetch/know real premium status here. 
     // Since 'isPremium' is now potentially "fake true" for demo, we must rely on a stricter check.
     // However, to keep it simple: If it's a demo user (isPremium=true but NOT admin), we enforce the limit.
@@ -1480,7 +1482,7 @@ const MainApp: React.FC = () => {
                       <MessageSquare className="w-4 h-4" /> <span className="hidden sm:inline">Suporte</span>
                     </button>
 
-                    {user?.email?.toLowerCase() === 'paulofernandoautomacao@gmail.com' && (
+                    {isSystemAdmin && (
                       <button
                         onClick={() => setIsAdminDashboardOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 hover:bg-purple-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
@@ -1490,7 +1492,7 @@ const MainApp: React.FC = () => {
                       </button>
                     )}
 
-                    {(userOrgRole === 'admin' || isAdmin) && (
+                    {(userOrgRole === 'admin' || isSystemAdmin) && (
                       <button
                         onClick={() => setIsCompanyDashboardOpen(true)}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
