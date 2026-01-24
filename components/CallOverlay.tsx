@@ -70,10 +70,10 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                     {/* Stats Icons */}
                     <div className="hidden sm:flex items-center gap-2">
                         <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <Flame className="w-3 h-3 text-orange-500" /> {streak}d
+                            <Flame className="w-4 h-4 text-orange-500 shrink-0" /> {streak}d
                         </div>
                         <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                            <Clock className="w-3 h-3 text-blue-500" /> {dailyMinutesUsed}m
+                            <Clock className="w-4 h-4 text-blue-500 shrink-0" /> {dailyMinutesUsed}m
                         </div>
                     </div>
                 </div>
@@ -81,7 +81,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                 <div className="flex items-center gap-2">
                     {isPremium && (
                         <div className="px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-500 flex items-center gap-2">
-                            <Crown className="w-3 h-3 fill-current" />
+                            <Crown className="w-4 h-4 fill-current shrink-0" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Premium</span>
                         </div>
                     )}
@@ -192,7 +192,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                 </button>
 
                                 <div className="flex items-center gap-2 text-[8px] sm:text-[9px] font-bold text-slate-500 uppercase tracking-widest whitespace-nowrap">
-                                    <Mic className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-orange-500" /> Leia em voz alta
+                                    <Mic className="w-3.5 h-3.5 text-orange-500 shrink-0" /> Leia em voz alta
                                 </div>
 
                                 <button

@@ -166,7 +166,7 @@ export const CompanyDashboard: React.FC<CompanyDashboardProps> = ({ onClose, cur
                                             <td className="p-4">
                                                 <div className="font-bold text-white text-sm">{member.full_name || 'Usuário Sem Nome'}</div>
                                                 <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                                                    <Mail className="w-3 h-3" /> {member.email}
+                                                    <Mail className="w-3.5 h-3.5 shrink-0" /> {member.email}
                                                 </div>
                                             </td>
                                             <td className="p-4">

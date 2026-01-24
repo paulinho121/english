@@ -128,7 +128,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, isK
                             </button>
 
                             <div className={`flex items-center justify-center gap-2 text-xs opacity-70 mt-2 ${isKidsMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                                <ShieldCheck className="w-3 h-3" />
+                                <ShieldCheck className="w-4 h-4" />
                                 <span>Pagamento 100% seguro • R$ 29,90/mês</span>
                             </div>
                         </div>

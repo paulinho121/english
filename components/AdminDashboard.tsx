@@ -394,11 +394,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                             <td className="p-5">
                                                 {m.message_type === 'business' ? (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-wider border border-blue-500/20">
-                                                        <Building2 className="w-3 h-3" /> Business
+                                                        <Building2 className="w-3.5 h-3.5 shrink-0" /> Business
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/10 text-orange-400 text-[10px] font-black uppercase tracking-wider border border-orange-500/20">
-                                                        <UserCircle2 className="w-3 h-3" /> Suporte
+                                                        <UserCircle2 className="w-3.5 h-3.5 shrink-0" /> Suporte
                                                     </span>
                                                 )}
                                             </td>
@@ -407,8 +407,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onClose }) => {
                                                 {m.company_name && (
                                                     <div className="text-[10px] text-blue-400 font-black uppercase tracking-widest">{m.company_name}</div>
                                                 )}
-                                                <div className="text-xs text-slate-500 flex items-center gap-1">
-                                                    <Mail className="w-3 h-3" /> {m.email}
+                                                <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                                    <Mail className="w-3.5 h-3.5 shrink-0" /> {m.email}
                                                 </div>
                                             </td>
                                             <td className="p-5">
