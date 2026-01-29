@@ -7,6 +7,10 @@ import { Analytics } from "@vercel/analytics/react"
 
 import { BrowserRouter } from 'react-router-dom';
 import './index.css';
+import { initSecurityProtections } from './lib/security';
+
+// Initialize IP protections
+initSecurityProtections();
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
