@@ -50,6 +50,23 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
     isConnectedRef,
     isOnline
 }) => {
+    const [loadingMsgIndex, setLoadingMsgIndex] = React.useState(0);
+    const PRE_FLIGHT_MESSAGES = [
+        "Sincronizando tutor nativo...",
+        "Calibrando seus sensores...",
+        "Preparando sala de aula...",
+        "Ajustando áudio HD...",
+        `Chamando ${teacher?.name || 'IA'}...`
+    ];
+
+    React.useEffect(() => {
+        if (connectionStatus === 'connecting') {
+            const interval = setInterval(() => {
+                setLoadingMsgIndex(prev => (prev + 1) % PRE_FLIGHT_MESSAGES.length);
+            }, 2500);
+            return () => clearInterval(interval);
+        }
+    }, [connectionStatus, teacher]);
     return (
         <div className="flex-1 flex flex-col items-center justify-between p-6 relative overflow-hidden">
             {/* Background Blobs - Subtly moving */}
@@ -97,7 +114,28 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
             {/* Central Conversation Space */}
             <div className="flex-1 flex flex-col items-center justify-center w-full z-10 relative">
                 {/* The Connection Orb */}
-                <div className={`orb-container ${isUserSpeaking ? 'orb-listening' : isTeacherSpeaking ? 'orb-speaking' : connectionStatus === 'connected' ? 'orb-thinking' : ''}`}>
+                <div className={`orb-container ${isUserSpeaking ? 'orb-listening' : isTeacherSpeaking ? 'orb-speaking' : connectionStatus === 'connected' ? 'orb-thinking' : connectionStatus === 'connecting' ? 'orb-powering-up' : ''}`}>
+                    {/* Anticipatory Glow - UX: Real-time local feedback */}
+                    <div
+                        className="orb-anticipatory-glow"
+                        style={{
+                            transform: `scale(${1 + (audioLevel / 200)})`,
+                            opacity: audioLevel > 5 ? Math.min(0.6, audioLevel / 100) : 0,
+                            background: isUserSpeaking ? 'radial-gradient(circle, rgba(59, 130, 246, 0.6) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(249, 115, 22, 0.4) 0%, transparent 70%)'
+                        }}
+                    />
+
+                    {/* Thinking Particles - UX: Reduce perceived latency during processing */}
+                    {connectionStatus === 'connected' && !isTeacherSpeaking && !isUserSpeaking && isConnectedRef.current && (
+                        [...Array(6)].map((_, i) => (
+                            <div
+                                key={i}
+                                className="thinking-particle"
+                                style={{ animationDelay: `${i * 0.3}s` }}
+                            />
+                        ))
+                    )}
+
                     <div className="neural-wave"></div>
                     <div className="neural-wave" style={{ animationDelay: '0.5s' }}></div>
                     <div className="orb-shared"></div>
@@ -140,9 +178,13 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                             <span className="text-[10px] font-bold text-orange-400 uppercase tracking-[0.2em] flex items-center gap-2 bg-orange-500/10 px-3 py-1 rounded-full border border-orange-500/20">
                                 <div className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" /> Falando...
                             </span>
+                        ) : connectionStatus === 'connecting' ? (
+                            <span className="text-[10px] font-bold text-orange-400 uppercase tracking-[0.2em] flex items-center gap-2 bg-orange-500/10 px-4 py-1.5 rounded-full border border-orange-500/20 skeleton-shimmer">
+                                <Loader2 className="w-3 h-3 animate-spin" /> {PRE_FLIGHT_MESSAGES[loadingMsgIndex]}
+                            </span>
                         ) : (
                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2 bg-slate-500/10 px-3 py-1 rounded-full border border-white/5">
-                                Pronto para ouvir
+                                {connectionStatus === 'connected' && isConnectedRef.current ? 'Pronto para ouvir' : 'Inicializando conexão...'}
                             </span>
                         )}
                     </div>
@@ -150,7 +192,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
             </div>
 
             {/* Bottom Caption, Pronunciation & Controls Area */}
-            <div className="w-full max-w-4xl flex flex-col items-center gap-6 pb-8 z-50">
+            <div className="w-full max-w-4xl flex flex-col items-center gap-6 pb-8 z-50 thumb-zone-nav">
 
                 {/* Pronunciation Card - Integrated at Bottom */}
                 {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (() => {
@@ -176,7 +218,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                     "{currentPhrase.text}"
                                 </div>
                                 {currentPhrase.translation && (
-                                    <div className="text-[10px] sm:text-xs text-slate-500 text-center opacity-70 font-medium">
+                                    <div className="text-[10px] sm:text-xs text-slate-500 text-center opacity-70 font-medium whitespace-pre-wrap">
                                         ({currentPhrase.translation})
                                     </div>
                                 )}
@@ -184,9 +226,12 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
 
                             <div className="mt-5 sm:mt-6 flex justify-between items-center">
                                 <button
-                                    onClick={() => setCurrentPhraseIndex(p => Math.max(0, p - 1))}
+                                    onClick={() => {
+                                        if (window.navigator.vibrate) window.navigator.vibrate(5);
+                                        setCurrentPhraseIndex(p => Math.max(0, p - 1));
+                                    }}
                                     disabled={currentPhraseIndex === 0}
-                                    className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5"
+                                    className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5 active-haptic"
                                 >
                                     <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>
@@ -196,9 +241,12 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                 </div>
 
                                 <button
-                                    onClick={() => setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1))}
+                                    onClick={() => {
+                                        if (window.navigator.vibrate) window.navigator.vibrate(5);
+                                        setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1));
+                                    }}
                                     disabled={currentPhraseIndex === filteredPhrases.length - 1}
-                                    className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5"
+                                    className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5 active-haptic"
                                 >
                                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                                 </button>
@@ -222,8 +270,11 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                 {/* Enhanced Controls */}
                 <div className="flex items-center gap-3 sm:gap-6 p-2 sm:p-4 glass-premium rounded-full sm:rounded-[2.5rem] border border-white/10 shadow-2xl backdrop-blur-2xl transition-all">
                     <button
-                        onClick={() => setIsMuted(prev => !prev)}
-                        className={`p-3 sm:p-5 rounded-full transition-all duration-300 shadow-lg ${isMuted
+                        onClick={() => {
+                            if (window.navigator.vibrate) window.navigator.vibrate(10);
+                            setIsMuted(prev => !prev);
+                        }}
+                        className={`p-3 sm:p-5 rounded-full transition-all duration-300 shadow-lg active-haptic ${isMuted
                             ? 'bg-red-500/20 text-red-500 border border-red-500/30'
                             : 'bg-white/5 text-slate-400 hover:text-white border border-white/5'
                             }`}
@@ -235,7 +286,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
 
                     <div className="flex flex-col items-center gap-1 sm:gap-1.5 px-1 sm:px-4 min-w-[100px] sm:min-w-[120px]">
                         <div className="flex items-center justify-between w-full mb-0.5 sm:mb-1">
-                            <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nível</span>
+                            <span className="text-[8px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sensibilidade</span>
                             <span className="text-[8px] sm:text-[10px] font-bold text-orange-500">{Math.round(audioLevel)}%</span>
                         </div>
                         <div className="w-full h-2 sm:h-3 bg-white/5 rounded-full overflow-hidden border border-white/5 relative">
@@ -249,8 +300,11 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                     <div className="h-8 sm:h-10 w-[1px] bg-white/10"></div>
 
                     <button
-                        onClick={endCall}
-                        className="p-3 sm:p-5 bg-red-500 rounded-full text-white hover:bg-orange-600 active:scale-95 transition-all shadow-xl shadow-red-500/20"
+                        onClick={() => {
+                            if (window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
+                            endCall();
+                        }}
+                        className="p-3 sm:p-5 bg-red-500 rounded-full text-white hover:bg-orange-600 active:scale-95 transition-all shadow-xl shadow-red-500/20 active-haptic"
                     >
                         <PhoneOff className="w-5 h-5 sm:w-6 sm:h-6" />
                     </button>
@@ -258,27 +312,23 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
             </div>
 
 
-            {/* Offline/Reconnecting Overlay */}
-            {
-                (!isOnline || connectionStatus === 'connecting') && (
-                    <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300">
-                        <div className="text-center p-8 glass-premium rounded-[3rem] border border-white/10 shadow-2xl">
-                            <div className="relative mb-6">
-                                <div className="w-20 h-20 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto" />
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Globe className="w-8 h-8 text-orange-500 animate-pulse" />
-                                </div>
+            {/* Offline Overlay - Only for true disconnection */}
+            {!isOnline && (
+                <div className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl animate-in fade-in duration-300">
+                    <div className="text-center p-12 glass-premium rounded-[3rem] border border-white/10 shadow-2xl max-w-sm">
+                        <div className="relative mb-8">
+                            <div className="w-24 h-24 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin mx-auto" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <AlertTriangle className="w-10 h-10 text-red-500 animate-pulse" />
                             </div>
-                            <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">
-                                {!isOnline ? 'Sem Internet' : 'Conectando à IA...'}
-                            </h3>
-                            <p className="text-slate-400 text-sm max-w-[200px] mx-auto font-medium">
-                                {!isOnline ? 'Por favor, verifique sua conexão.' : 'Preparando sua aula personalizada...'}
-                            </p>
                         </div>
+                        <h3 className="text-3xl font-black text-white mb-3 uppercase tracking-tight">Sem Internet</h3>
+                        <p className="text-slate-400 text-base font-medium leading-relaxed">
+                            Detectamos uma oscilação na sua rede. Por favor, verifique sua conexão para continuar a aula.
+                        </p>
                     </div>
-                )
-            }
+                </div>
+            )}
         </div>
     );
 };

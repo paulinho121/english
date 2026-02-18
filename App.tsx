@@ -24,12 +24,15 @@ import { LandingPage } from './components/LandingPage';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import {
   Mic, MicOff, PhoneOff, Settings, Sparkles, Globe, LayoutGrid, Loader2,
-  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight, MessageSquare, Building2
+  ArrowRight, BrainCircuit, Bookmark, Key, Flag, Flame, AlertTriangle, Shield, Rocket, Zap, UserCircle, Crown, Clock, X, ChevronLeft, ChevronRight, MessageSquare, Building2, BookOpen
 } from 'lucide-react';
 import { initAnalytics, trackEvent, identifyUser } from './lib/analytics';
 import { SeanEllisSurvey } from './components/SeanEllisSurvey';
 import { QuickDemoOnboarding } from './components/QuickDemoOnboarding';
 import { ContactModal } from './components/ContactModal';
+import { StudentDashboard } from './components/Classroom/StudentDashboard';
+import { TeacherCommandCenter } from './components/Teacher/TeacherDashboard';
+import { ClassroomInvitePractice } from './components/Classroom/ClassroomInvitePractice';
 
 // Initialize Analytics
 initAnalytics();
@@ -108,6 +111,10 @@ const MainApp: React.FC = () => {
   const [activeLegalModal, setActiveLegalModal] = useState<'privacy' | 'terms' | null>(null);
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactType, setContactType] = useState<'support' | 'business'>('support');
+  const [showStudentDashboard, setShowStudentDashboard] = useState(false);
+  const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
+  const [activeAssignment, setActiveAssignment] = useState<any>(null); // Armazena a tarefa atual para a sessão de IA
+  const [isClassroomMode, setIsClassroomMode] = useState(() => !!localStorage.getItem('linguaflow_classroom_session'));
 
   // Demo flow states
   const [isDemoMode, setIsDemoMode] = useState(false);
@@ -271,6 +278,35 @@ const MainApp: React.FC = () => {
 
     loadProgress();
   }, [user]);
+
+  // Handle Classroom Invite Auto-Start
+  useEffect(() => {
+    const classroomCache = localStorage.getItem('linguaflow_classroom_session');
+    if (classroomCache && connectionStatus === 'idle' && !loading) {
+      const config = JSON.parse(classroomCache);
+      console.log('🎓 Classroom Session Found:', config);
+
+      setIsClassroomMode(true);
+      setIsPremium(true); // Permitir recursos premium na sessão de sala
+
+      // Clear cache immediately so it doesn't loop
+      localStorage.removeItem('linguaflow_classroom_session');
+
+      // Start the session with classroom context
+      setTimeout(() => {
+        startSession({
+          teacherId: config.teacherId,
+          level: config.level,
+          assignmentOverride: {
+            title: config.topicName,
+            description: config.missionDescription,
+            difficulty_level: config.level,
+            studentName: config.studentName
+          }
+        });
+      }, 500);
+    }
+  }, [loading, connectionStatus]);
 
   // Listen for Password Recovery Event - Independent of user state
   useEffect(() => {
@@ -515,10 +551,14 @@ const MainApp: React.FC = () => {
     return () => clearInterval(interval);
   }, [step, isPremium, sessionStartTime, dailyMinutesUsed, user]);
 
-  const startSession = async (demoConfig?: { teacherId: string, level: Level, topicId: string }) => {
+  const startSession = async (config?: { teacherId?: string, level?: Level, topicId?: string, assignmentOverride?: any }) => {
     setStep('call');
 
-    if (!demoConfig && !isPremium && dailyMinutesUsed >= 10) {
+    // Se estiver fazendo um assignment, não verifica limite de tempo de demo (ou permite 20 min)
+    const isAssignment = !!config?.assignmentOverride;
+
+    const isAdmin = isSystemAdmin;
+    if (!config && !isPremium && !isAssignment && dailyMinutesUsed >= 10 && !isAdmin) {
       setUpgradeModalReason('time_limit');
       setShowUpgradeModal(true);
       return;
@@ -559,9 +599,10 @@ const MainApp: React.FC = () => {
       return;
     }
 
-    const tId = demoConfig ? demoConfig.teacherId : selectedTeacherId;
-    const lId = demoConfig ? demoConfig.topicId : selectedTopicId;
-    const lvl = demoConfig ? demoConfig.level : selectedLevel;
+    const tId = config?.teacherId || selectedTeacherId;
+    const lId = config?.topicId || selectedTopicId;
+    const lvl = config?.level || selectedLevel;
+    const assignment = config?.assignmentOverride;
 
     if (!tId || !lId) {
       console.warn('⚠️ Missing teacher or topic. Using defaults.');
@@ -666,7 +707,22 @@ const MainApp: React.FC = () => {
               parts: [{
                 text: isKidsMode
                   ? `[[SISTEMA]] A criança entrou na sala mágica! Comece a aventura agora com MUITA ENERGIA. Apresente-se como seu amigo ${teacher.name} e inicie a brincadeira no tema ${topic.name}. TOME A INICIATIVA E LIDERE A CONVERSA!`
-                  : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
+                  : assignment
+                    ? `[[SISTEMA - IMPORTANTE]] O ALUNO ESTÁ INICIANDO A ATIVIDADE: "${assignment.title}".
+DIFICULDADE DEFINIDA PELO PROFESSOR: ${assignment.difficulty_level || 'beginner'}.
+INSTRUÇÕES DE COMPORTAMENTO PARA ESTE NÍVEL:
+${(assignment.difficulty_level === 'intermediate')
+                      ? '- Fale 50% em Inglês e 50% em Português. Use inglês para exemplos e português para explicações se necessário. Mantenha ritmo natural.'
+                      : (assignment.difficulty_level === 'advanced')
+                        ? '- Fale 100% em INGLÊS. IMERSÃO TOTAL. Não use português. Aja como um falante nativo conversando com outro falante proficiente.'
+                        : '- Fale 80% em Português e 20% em Inglês (apenas palavras-chave). Fale DEVAGAR e CLARAMENTE. Sempre pergunte "Quer que eu repita mais devagar?" se o aluno hesitar.'}
+
+INSTRUÇÕES DO PROFESSOR (CONTEXTO DA AULA): "${assignment.description || assignment.instructionPrompt || 'Siga o roteiro previsto'}".
+${assignment.studentName ? `NOME DO ALUNO: ${assignment.studentName}.` : ''}
+${assignment.aiSuggestions ? `ROTEIRO SUGERIDO PELA IA: ${JSON.stringify(assignment.aiSuggestions)}` : ''}
+
+Aja como o professor ${teacher.name}. Guie o aluno por essa atividade específica respeitando o nível de dificuldade acima.`
+                    : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
               }]
             }],
             turnComplete: true
@@ -1127,7 +1183,7 @@ const MainApp: React.FC = () => {
 
   if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950 text-orange-500"><Loader2 className="animate-spin w-10 h-10" /></div>;
 
-  if (!user && !isDemoMode) {
+  if (!user && !isDemoMode && !isClassroomMode) {
     if (!demoCompleted && !hasAccount) {
       return (
         <QuickDemoOnboarding
@@ -1431,6 +1487,23 @@ const MainApp: React.FC = () => {
                       <MessageSquare className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Suporte</span>
                     </button>
 
+                    <button
+                      onClick={() => setShowStudentDashboard(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 hover:bg-blue-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                    >
+                      <BookOpen className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Minha Escola</span>
+                    </button>
+
+                    {/* Teacher / School Admin Access */}
+                    {(userOrgRole === 'admin' || isSystemAdmin) && (
+                      <button
+                        onClick={() => setShowTeacherDashboard(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 rounded-xl border border-indigo-500/20 hover:bg-indigo-500 hover:text-white transition-all font-black text-[10px] uppercase tracking-widest"
+                      >
+                        <BrainCircuit className="w-4 h-4 shrink-0" /> <span className="hidden sm:inline">Portal do Professor</span>
+                      </button>
+                    )}
+
                     {isSystemAdmin && (
                       <button
                         onClick={() => setIsAdminDashboardOpen(true)}
@@ -1719,6 +1792,23 @@ const MainApp: React.FC = () => {
         )
       }
 
+      {showStudentDashboard && user && (
+        <StudentDashboard
+          userId={user.id}
+          onClose={() => setShowStudentDashboard(false)}
+          onStartAssignment={(assignment) => {
+            setActiveAssignment(assignment);
+            setShowStudentDashboard(false);
+            // Inicia a sessão com o contexto da tarefa
+            startSession({ assignmentOverride: assignment });
+          }}
+        />
+      )}
+
+      {showTeacherDashboard && user && (
+        <TeacherCommandCenter userId={user.id} onClose={() => setShowTeacherDashboard(false)} />
+      )}
+
       {
         showTutorial && (
           <OnboardingTutorial onComplete={completeTutorial} isKidsMode={isKidsMode} />
@@ -1746,6 +1836,7 @@ const App: React.FC = () => {
   return (
     <Routes>
       <Route path="/landingpage" element={<LandingPage onStart={() => window.location.href = '/'} />} />
+      <Route path="/turma/:token" element={<ClassroomInvitePractice />} />
       <Route path="/*" element={<MainApp />} />
     </Routes>
   );

@@ -73,16 +73,22 @@ export const QuickDemoOnboarding: React.FC<QuickDemoOnboardingProps> = ({ onStar
 
                     <div className="flex flex-col items-center gap-6 w-full">
                         <button
-                            onClick={() => onStartDemo(selectedTeacher)}
-                            className="btn-glass w-full max-w-md py-4 md:py-5 rounded-xl md:rounded-2xl flex items-center justify-center gap-3 text-lg md:text-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+                            onClick={() => {
+                                if (window.navigator.vibrate) window.navigator.vibrate([10, 30]);
+                                onStartDemo(selectedTeacher);
+                            }}
+                            className="btn-shimmer w-full max-w-md py-4 md:py-5 rounded-xl md:rounded-2xl flex items-center justify-center gap-3 text-lg md:text-xl hover:scale-[1.02] active:scale-[0.98] transition-all active-haptic"
                         >
                             FALE AGORA
                             <ArrowRight className="w-5 h-5 md:w-6 md:h-6" />
                         </button>
 
                         <button
-                            onClick={onLoginClick}
-                            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest group"
+                            onClick={() => {
+                                if (window.navigator.vibrate) window.navigator.vibrate(5);
+                                onLoginClick();
+                            }}
+                            className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest group active-haptic"
                         >
                             <LogIn className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                             Já sou aluno • Fazer Login

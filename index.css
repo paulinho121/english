@@ -787,6 +787,136 @@ h6,
     }
 }
 
+/* --- High-Performance UX Enhancements --- */
+
+/* Anticipatory Glow - Responds to local audio level before server processing */
+.orb-anticipatory-glow {
+    position: absolute;
+    inset: -15px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+    filter: blur(10px);
+    transition: transform 0.1s ease-out, opacity 0.2s ease;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Thinking State Particles */
+.thinking-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #f97316;
+    border-radius: 50%;
+    filter: blur(1px);
+    pointer-events: none;
+    animation: particle-orbit 2s infinite linear;
+}
+
+@keyframes particle-orbit {
+    0% {
+        transform: rotate(0deg) translateX(150px) rotate(0deg);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: rotate(360deg) translateX(150px) rotate(-360deg);
+        opacity: 0;
+    }
+}
+
+/* Progressive Disclosure - Fade in segments */
+.reveal-step {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes reveal-up {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Skeleton for Actions */
+.skeleton-shimmer {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.05) 25%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+}
+
+/* Smooth Count-up for Scores */
+.score-pulse {
+    animation: score-pop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+}
+
+@keyframes score-pop {
+    0% {
+        transform: scale(0.8);
+    }
+
+    70% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Mobile Thumb-Zone Navigation */
+@media (max-width: 768px) {
+    .thumb-zone-nav {
+        padding-bottom: env(safe-area-inset-bottom);
+        background: linear-gradient(to top, rgba(2, 6, 23, 0.9) 0%, transparent 100%);
+    }
+}
+
+/* Haptic Feedback Class (Visual cues for touch) */
+.active-haptic:active {
+    transform: scale(0.92);
+    filter: brightness(1.2);
+    transition: all 0.1s;
+}
+
+/* Orb Powering Up - UX: Visual feedback during technical connection */
+.orb-powering-up {
+    animation: orb-power-pulse 1.5s infinite ease-in-out;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.4) 0%, transparent 70%);
+}
+
+@keyframes orb-power-pulse {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.3;
+        filter: blur(5px);
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+        filter: blur(15px);
+    }
+
+    100% {
+        transform: scale(0.9);
+        opacity: 0.3;
+        filter: blur(5px);
+    }
+}
+
 /* --- Responsive Adjustments for Conversation View --- */
 @media (max-width: 640px) {
     .orb-container {
