@@ -37,8 +37,8 @@ wss.on('connection', (clientWs: WebSocket, req) => {
     const level = url.searchParams.get('level') || 'B1';
     const isKidsMode = url.searchParams.get('kids') === 'true';
 
-    if (PROXY_SECRET && token !== PROXY_SECRET) {
-        console.warn('Conexão recusada: Token inválido');
+    if (!PROXY_SECRET || !token || token !== PROXY_SECRET) {
+        console.warn('Conexão recusada: Token inválido ou ausente no Proxy');
         clientWs.close(4001, 'Unauthorized');
         return;
     }
