@@ -57,6 +57,8 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 -- Limpar políticas conflitantes
 DROP POLICY IF EXISTS "profiles_select_own" ON public.profiles;
 DROP POLICY IF EXISTS "profiles_update_own" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_secure_select" ON public.profiles;
+DROP POLICY IF EXISTS "profiles_secure_update" ON public.profiles;
 DROP POLICY IF EXISTS "User Own Access" ON public.profiles;
 DROP POLICY IF EXISTS "Admin Email Access" ON public.profiles;
 DROP POLICY IF EXISTS "Org Admins can view their members" ON public.profiles;
@@ -94,14 +96,17 @@ CREATE TABLE IF NOT EXISTS public.subscriptions (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
-
--- Apenas o dono pode ver sua assinatura
-CREATE POLICY "subscriptions_owner_select" ON public.subscriptions 
-FOR SELECT USING (user_id = auth.uid() OR is_super_admin());
-
--- Apenas o sistema/admin pode criar/atualizar assinaturas (SERVICE ROLE ou RPC SEGURO)
--- Sem política de INSERT/UPDATE para 'authenticated', forçando uso de Webhooks/Functions.
+DO $$ 
+BEGIN
+    IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'subscriptions') THEN
+        ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
+        DROP POLICY IF EXISTS "subscriptions_owner_select" ON public.subscriptions;
+        
+        -- Apenas o dono pode ver sua assinatura
+        CREATE POLICY "subscriptions_owner_select" ON public.subscriptions 
+        FOR SELECT USING (user_id = auth.uid() OR is_super_admin());
+    END IF;
+END $$;
 
 
 -- ==========================================
