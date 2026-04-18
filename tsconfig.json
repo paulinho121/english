@@ -29,6 +29,7 @@
   },
   "exclude": [
     "backend_reference",
+    "supabase",
     "node_modules",
     "dist"
   ]
