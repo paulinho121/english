@@ -60,11 +60,13 @@ jobs:
 
       - name: Check no .env files committed
         run: |
-          if git ls-files | grep -E '^\.env($|\.)'; then
-            echo "❌ ERRO: Arquivo .env encontrado no repositório!"
+          FOUND=$(git ls-files | grep -E '^\.env($|\.)' | grep -v '\.env\.example$' || true)
+          if [ -n "$FOUND" ]; then
+            echo "❌ ERRO: Arquivo .env com secrets encontrado no repositório!"
+            echo "$FOUND"
             exit 1
           fi
-          echo "✅ Nenhum arquivo .env rastreado pelo git"
+          echo "✅ Nenhum arquivo .env com secrets rastreado pelo git"
 
   # ─────────────────────────────────────────
   # 4. SAST — Análise estática do código TypeScript/React
