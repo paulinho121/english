@@ -26,17 +26,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [localInstanceId] = useState(() => Math.random().toString(36).substring(7));
 
     useEffect(() => {
-        // 1. Initial Session Check
-        // 1. Initial Session Check
+            // 1. Initial Session Check (with 5s timeout to prevent infinite spinner)
         const checkSession = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Supabase connection timeout after 5s')), 5000)
+                );
+                const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
                 setUser(session?.user ?? null);
                 if (session?.user) {
                     registerSession(session.user.id);
                 }
             } catch (error) {
-                console.error('Session check failed:', error);
+                console.error('Session check failed (Supabase may be unreachable):', error);
+                setUser(null);
             } finally {
                 setLoading(false);
             }

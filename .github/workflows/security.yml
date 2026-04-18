@@ -1,0 +1,99 @@
+name: 🔐 Security Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 6 * * 1'  # Toda segunda-feira às 6h UTC
+
+jobs:
+  # ─────────────────────────────────────────
+  # 1. SECRETS — Detectar chaves/tokens expostos
+  # Gitleaks: gratuito para repos privados ✅
+  # ─────────────────────────────────────────
+  secret-scan:
+    name: 🔑 Secret Detection (Gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Histórico completo
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────
+  # 2. DEPENDÊNCIAS — Auditoria de pacotes vulneráveis
+  # npm audit: nativo, 100% gratuito ✅
+  # ─────────────────────────────────────────
+  dependency-audit:
+    name: 📦 Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=high
+
+  # ─────────────────────────────────────────
+  # 3. ENV FILES — Garantir que nenhum .env foi commitado
+  # Script nativo: gratuito ✅
+  # ─────────────────────────────────────────
+  env-check:
+    name: 🌍 Env Files Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check no .env files committed
+        run: |
+          if git ls-files | grep -E '^\.env($|\.)'; then
+            echo "❌ ERRO: Arquivo .env encontrado no repositório!"
+            exit 1
+          fi
+          echo "✅ Nenhum arquivo .env rastreado pelo git"
+
+  # ─────────────────────────────────────────
+  # 4. SAST — Análise estática do código TypeScript/React
+  # Semgrep: gratuito para repos privados ✅
+  # ─────────────────────────────────────────
+  semgrep:
+    name: 🔬 Semgrep Static Analysis
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Semgrep (OWASP + React + Secrets)
+        run: |
+          semgrep \
+            --config=p/javascript \
+            --config=p/typescript \
+            --config=p/react \
+            --config=p/secrets \
+            --config=p/owasp-top-ten \
+            --json \
+            --output=semgrep-results.json \
+            . || true
+
+      - name: Upload Semgrep results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: semgrep-results
+          path: semgrep-results.json
+          retention-days: 30

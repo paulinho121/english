@@ -23,7 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment Variables
+# Environment Variables - NUNCA commitar nenhum arquivo .env
 .env
-.env.production
+.env.*
+.env.local
+.env.*.local
 .env.development
+.env.production
+.env.staging
+.env.test
