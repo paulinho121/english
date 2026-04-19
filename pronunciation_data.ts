@@ -256,6 +256,44 @@ export const PRONUNCIATION_DATA = {
             { id: 'es-adv-38', text: "El eclecticismo en su estilo de decoración.", translation: "O ecletismo em seu estilo de decoração." },
             { id: 'es-adv-39', text: "La xenofobia es un miedo irracional a lo extranjero.", translation: "A xenofobia é um medo irracional ao estrangeiro." },
             { id: 'es-adv-40', text: "La procrastinación nos impide alcanzar metas.", translation: "A procrastinação nos impede de alcançar metas." }
+        ],
+    },
+    [Language.FRENCH]: {
+        [Level.BEGINNER]: [
+            { id: 'fr-beg-1', text: "Bonjour, comment allez-vous ?", translation: "Olá, como vai você?" },
+            { id: 'fr-beg-2', text: "Je m'appelle Pierre.", translation: "Meu nome é Pierre." },
+            { id: 'fr-beg-3', text: "Enchanté de vous rencontrer.", translation: "Prazer em conhecê-lo." },
+            { id: 'fr-beg-4', text: "Où se trouvent les toilettes ?", translation: "Onde ficam os banheiros?" },
+            { id: 'fr-beg-5', text: "Je voudrais un café, s'il vous plaît.", translation: "Eu gostaria de um café, por favor." },
+            { id: 'fr-beg-6', text: "Merci beaucoup pour votre aide.", translation: "Muito obrigado pela sua ajuda." },
+            { id: 'fr-beg-7', text: "Quel temps fait-il aujourd'hui ?", translation: "Como está o tempo hoje?" },
+            { id: 'fr-beg-8', text: "J'aime beaucoup la cuisine française.", translation: "Eu gosto muito da culinária francesa." },
+            { id: 'fr-beg-9', text: "Pardon, je ne comprends pas.", translation: "Perdão, eu não entendo." },
+            { id: 'fr-beg-10', text: "À bientôt et bonne journée.", translation: "Até logo e tenha um bom dia." }
+        ],
+        [Level.INTERMEDIATE]: [
+            { id: 'fr-int-1', text: "Il faut que j'aille faire les courses ce soir.", translation: "Eu preciso ir fazer compras hoje à noite." },
+            { id: 'fr-int-2', text: "Si j'avais plus de temps, j'apprendrais le piano.", translation: "Se eu tivesse mais tempo, aprenderia piano." },
+            { id: 'fr-int-3', text: "Je pense que ce film est très intéressant.", translation: "Eu acho que este filme é muito interessante." },
+            { id: 'fr-int-4', text: "Est-ce que tu peux me prêter ton livre ?", translation: "Você pode me emprestar seu livro?" },
+            { id: 'fr-int-5', text: "Nous avons décidé de partir en vacances en Italie.", translation: "Decidimos ir de férias para a Itália." },
+            { id: 'fr-int-6', text: "Il y a beaucoup de monde dans la rue aujourd'hui.", translation: "Tem muita gente na rua hoje." },
+            { id: 'fr-int-7', text: "Je suis d'accord avec ce que tu dis.", translation: "Eu concordo com o que você diz." },
+            { id: 'fr-int-8', text: "Peux-tu m'expliquer comment ça fonctionne ?", translation: "Você pode me explicar como isso funciona?" },
+            { id: 'fr-int-9', text: "C'est la chose la plus difficile que j'aie jamais faite.", translation: "É a coisa mais difícil que já fiz." },
+            { id: 'fr-int-10', text: "J'espère que tout se passera bien pour toi.", translation: "Espero que tudo corra bem para você." }
+        ],
+        [Level.ADVANCED]: [
+            { id: 'fr-adv-1', text: "L'art de vivre à la française est mondialement connu.", translation: "A arte de viver à francesa é mundialmente conhecida." },
+            { id: 'fr-adv-2', text: "Il est indispensable de préserver la biodiversité.", translation: "É indispensável preservar a biodiversidade." },
+            { id: 'fr-adv-3', text: "Cette situation est tout à fait inacceptable.", translation: "Esta situação é totalmente inaceitável." },
+            { id: 'fr-adv-4', text: "Les répercussions économiques seront considérables.", translation: "As repercussões econômicas serão consideráveis." },
+            { id: 'fr-adv-5', text: "Un chasseur sachant chasser doit savoir chasser sans son chien.", translation: "Um caçador que sabe caçar deve saber caçar sem seu cão (trava-língua)." },
+            { id: 'fr-adv-6', text: "Les chaussettes de l'archiduchesse sont-elles sèches, archi-sèches ?", translation: "As meias da arquiduquesa estão secas, arqui-secas? (trava-língua)." },
+            { id: 'fr-adv-7', text: "La quintessence de la pensée philosophique contemporaine.", translation: "A quintessência do pensamento filosófico contemporâneo." },
+            { id: 'fr-adv-8', text: "L'obsolescence programmée est un défi pour l'écologie.", translation: "A obsolescência programada é um desafio para a ecologia." },
+            { id: 'fr-adv-9', text: "Le gouvernement a pris des mesures sans précédent.", translation: "O governo tomou medidas sem precedentes." },
+            { id: 'fr-adv-10', text: "Son éloquence a captivé l'ensemble de l'auditoire.", translation: "Sua eloquência cativou todo o auditório." }
         ]
     }
 };

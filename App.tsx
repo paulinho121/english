@@ -7,7 +7,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { type LiveServerMessage } from "@google/genai";
 import { Language, Level, Teacher, Topic, SessionReportData, UserProgress } from './types';
-import { TEACHERS, TOPICS, PRONUNCIATION_PHRASES } from './constants';
+import { TEACHERS, TOPICS } from './constants';
+import { PRONUNCIATION_DATA } from './pronunciation_data';
 import { useAuth } from './contexts/AuthContext';
 import { LoginScreen } from './components/auth/LoginScreen';
 import { supabase } from './lib/supabase';
@@ -87,6 +88,14 @@ const MainApp: React.FC = () => {
   const [upgradeModalReason, setUpgradeModalReason] = useState<'user_action' | 'time_limit'>('user_action');
   const [audioLevel, setAudioLevel] = useState(0);
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+  const currentPhraseIndexRef = React.useRef(0); // Ref so WS handlers can read latest value
+  // Keep ref in sync with state
+  useEffect(() => { currentPhraseIndexRef.current = currentPhraseIndex; }, [currentPhraseIndex]);
+  // Reset phrase index when topic or level changes
+  useEffect(() => {
+    setCurrentPhraseIndex(0);
+    currentPhraseIndexRef.current = 0;
+  }, [selectedTopicId, selectedLevel, selectedLanguage]);
   const [isMuted, setIsMuted] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
@@ -638,7 +647,7 @@ const MainApp: React.FC = () => {
               }]
             },
             tools: [
-              { function_declarations: [{ name: 'next_phrase', description: 'Next phrase' }] },
+              { function_declarations: [{ name: 'next_phrase', description: 'Advance to the next pronunciation phrase on the student screen. Call this when the student says "next", "próxima", "avança" or finishes a phrase with 100 score.' }] },
               {
                 function_declarations: [{
                   name: "save_session_report",
@@ -705,10 +714,12 @@ const MainApp: React.FC = () => {
             turns: [{
               role: 'user',
               parts: [{
-                text: isKidsMode
-                  ? `[[SISTEMA]] A criança entrou na sala mágica! Comece a aventura agora com MUITA ENERGIA. Apresente-se como seu amigo ${teacher.name} e inicie a brincadeira no tema ${topic.name}. TOME A INICIATIVA E LIDERE A CONVERSA!`
-                  : assignment
-                    ? `[[SISTEMA - IMPORTANTE]] O ALUNO ESTÁ INICIANDO A ATIVIDADE: "${assignment.title}".
+                text: (() => {
+                  if (isKidsMode) {
+                    return `[[SISTEMA]] A criança entrou na sala mágica! Comece a aventura agora com MUITA ENERGIA. Apresente-se como seu amigo ${teacher.name} e inicie a brincadeira no tema ${topic.name}. TOME A INICIATIVA E LIDERE A CONVERSA!`;
+                  }
+                  if (assignment) {
+                    return `[[SISTEMA - IMPORTANTE]] O ALUNO ESTÁ INICIANDO A ATIVIDADE: "${assignment.title}".
 DIFICULDADE DEFINIDA PELO PROFESSOR: ${assignment.difficulty_level || 'beginner'}.
 INSTRUÇÕES DE COMPORTAMENTO PARA ESTE NÍVEL:
 ${(assignment.difficulty_level === 'intermediate')
@@ -721,8 +732,17 @@ INSTRUÇÕES DO PROFESSOR (CONTEXTO DA AULA): "${assignment.description || assig
 ${assignment.studentName ? `NOME DO ALUNO: ${assignment.studentName}.` : ''}
 ${assignment.aiSuggestions ? `ROTEIRO SUGERIDO PELA IA: ${JSON.stringify(assignment.aiSuggestions)}` : ''}
 
-Aja como o professor ${teacher.name}. Guie o aluno por essa atividade específica respeitando o nível de dificuldade acima.`
-                    : `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`
+Aja como o professor ${teacher.name}. Guie o aluno por essa atividade específica respeitando o nível de dificuldade acima.`;
+                  }
+                  if (lId === 'pronunciation' && selectedLanguage && selectedLevel) {
+                    const levelKey = selectedLevel as any;
+                    const langData = (PRONUNCIATION_DATA as any)[selectedLanguage];
+                    const phrases = langData?.[levelKey] || [];
+                    const firstPhrase = phrases[0];
+                    return `[[SISTEMA - PRONÚNCIA]] O aluno iniciou o Treinamento de Pronúncia. A PRIMEIRA FRASE ALVO que aparece na tela dele agora é: "${firstPhrase?.text || 'Hello, how are you today?'}". Apresente-se brevemente e peça para ele ler essa frase. Avalie a pronúncia assim que ele falar.`;
+                  }
+                  return `[[SISTEMA]] O aluno entrou. Comece a aula agora de forma proativa. Apresente-se como ${teacher.name} e inicie o tópico ${topic.name}.`;
+                })()
               }]
             }],
             turnComplete: true
@@ -860,6 +880,51 @@ Aja como o professor ${teacher.name}. Guie o aluno por essa atividade específic
             const functionCalls = toolCall.functionCalls;
             if (functionCalls) {
               for (const call of functionCalls) {
+                // ── next_phrase: advance the pronunciation card on screen ──
+                if (call.name === 'next_phrase') {
+                  const nextIndex = currentPhraseIndexRef.current + 1;
+                  currentPhraseIndexRef.current = nextIndex;
+                  setCurrentPhraseIndex(nextIndex);
+
+                  // Tell the AI which phrase is now on screen
+                  if (selectedLanguage && selectedLevel) {
+                    const levelKey = selectedLevel as any;
+                    const langData = (PRONUNCIATION_DATA as any)[selectedLanguage];
+                    const phrases = langData?.[levelKey] || [];
+                    const nextPhrase = phrases[nextIndex];
+                    if (nextPhrase && ws.readyState === WebSocket.OPEN) {
+                      ws.send(JSON.stringify({
+                        tool_response: {
+                          function_responses: [{
+                            name: 'next_phrase',
+                            id: call.id,
+                            response: { result: 'success', next_phrase_text: nextPhrase.text }
+                          }]
+                        }
+                      }));
+                      // Immediately tell AI which phrase is now showing
+                      ws.send(JSON.stringify({
+                        clientContent: {
+                          turns: [{ role: 'user', parts: [{ text: `[[SISTEMA]] A nova FRASE ALVO na tela agora é: "${nextPhrase.text}". Aguarde o aluno ler.` }] }],
+                          turnComplete: true
+                        }
+                      }));
+                    } else if (!nextPhrase && ws.readyState === WebSocket.OPEN) {
+                      // All phrases completed
+                      ws.send(JSON.stringify({
+                        tool_response: {
+                          function_responses: [{
+                            name: 'next_phrase',
+                            id: call.id,
+                            response: { result: 'completed', message: 'All phrases finished' }
+                          }]
+                        }
+                      }));
+                    }
+                  }
+                  continue;
+                }
+
                 if (call.name === 'save_session_report') {
                   const report = call.args as unknown as SessionReportData;
 
@@ -1749,6 +1814,7 @@ Aja como o professor ${teacher.name}. Guie o aluno por essa atividade específic
             endCall={endCall}
             selectedTopicId={selectedTopicId}
             selectedLanguage={selectedLanguage}
+            selectedLevel={selectedLevel}
             currentCaption={currentCaption}
             audioLevel={audioLevel}
             currentPhraseIndex={currentPhraseIndex}

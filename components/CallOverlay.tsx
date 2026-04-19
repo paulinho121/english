@@ -3,7 +3,8 @@ import {
     X, Mic, MicOff, PhoneOff, Flame, Clock, Crown, ChevronLeft, ChevronRight, AlertTriangle, Globe, Loader2
 } from 'lucide-react';
 import { Teacher, Language, Level } from '../types';
-import { TEACHERS, PRONUNCIATION_PHRASES } from '../constants';
+import { TEACHERS } from '../constants';
+import { PRONUNCIATION_DATA } from '../pronunciation_data';
 
 interface CallOverlayProps {
     teacher: Teacher | undefined;
@@ -20,6 +21,7 @@ interface CallOverlayProps {
     endCall: () => void;
     selectedTopicId: string | null;
     selectedLanguage: Language | null;
+    selectedLevel: Level | null;
     currentCaption: string;
     audioLevel: number;
     currentPhraseIndex: number;
@@ -43,6 +45,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
     endCall,
     selectedTopicId,
     selectedLanguage,
+    selectedLevel,
     currentCaption,
     audioLevel,
     currentPhraseIndex,
@@ -195,11 +198,13 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
             <div className="w-full max-w-4xl flex flex-col items-center gap-6 pb-8 z-50 thumb-zone-nav">
 
                 {/* Pronunciation Card - Integrated at Bottom */}
-                {selectedTopicId === 'pronunciation' && selectedLanguage && PRONUNCIATION_PHRASES[selectedLanguage] && (() => {
-                    const allPhrases = PRONUNCIATION_PHRASES[selectedLanguage];
-                    const filteredPhrases = allPhrases.filter(p => isKidsMode ? p.level === 'Kids' : p.level !== 'Kids');
-                    const currentPhrase = filteredPhrases[currentPhraseIndex];
-                    if (!currentPhrase) return null;
+                {selectedTopicId === 'pronunciation' && selectedLanguage && selectedLevel && (() => {
+                    const levelKey = selectedLevel as any;
+                    const langData = (PRONUNCIATION_DATA as any)[selectedLanguage];
+                    const phrases: { id: string; text: string; translation: string }[] = langData?.[levelKey] || [];
+                    const safeIndex = Math.min(currentPhraseIndex, phrases.length - 1);
+                    const currentPhrase = phrases[safeIndex];
+                    if (!currentPhrase || phrases.length === 0) return null;
 
                     return (
                         <div className={`w-[95%] sm:w-full glass-premium p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 shadow-2xl animate-in slide-in-from-bottom-8 duration-700 ${isKidsMode ? 'bg-[#4ecdc4]/10 border-[#4ecdc4]/30' : ''}`}>
@@ -209,13 +214,13 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                     <span className="text-[9px] sm:text-[10px] font-black text-orange-500 uppercase tracking-[0.2em]">Prática de Pronúncia</span>
                                 </div>
                                 <span className="text-[9px] sm:text-[10px] font-bold text-slate-500 tracking-widest bg-white/5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg">
-                                    {currentPhraseIndex + 1} de {filteredPhrases.length}
+                                    {safeIndex + 1} de {phrases.length}
                                 </span>
                             </div>
 
                             <div className="space-y-3 sm:space-y-4">
                                 <div className="text-lg sm:text-2xl font-black text-white text-center italic leading-tight drop-shadow-md">
-                                    "{currentPhrase.text}"
+                                    &ldquo;{currentPhrase.text}&rdquo;
                                 </div>
                                 {currentPhrase.translation && (
                                     <div className="text-[10px] sm:text-xs text-slate-500 text-center opacity-70 font-medium whitespace-pre-wrap">
@@ -230,7 +235,7 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                         if (window.navigator.vibrate) window.navigator.vibrate(5);
                                         setCurrentPhraseIndex(p => Math.max(0, p - 1));
                                     }}
-                                    disabled={currentPhraseIndex === 0}
+                                    disabled={safeIndex === 0}
                                     className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5 active-haptic"
                                 >
                                     <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -243,9 +248,9 @@ export const CallOverlay: React.FC<CallOverlayProps> = ({
                                 <button
                                     onClick={() => {
                                         if (window.navigator.vibrate) window.navigator.vibrate(5);
-                                        setCurrentPhraseIndex(p => Math.min(filteredPhrases.length - 1, p + 1));
+                                        setCurrentPhraseIndex(p => Math.min(phrases.length - 1, p + 1));
                                     }}
-                                    disabled={currentPhraseIndex === filteredPhrases.length - 1}
+                                    disabled={safeIndex === phrases.length - 1}
                                     className="p-2 sm:p-3 bg-white/5 hover:bg-white/10 disabled:opacity-20 rounded-xl sm:rounded-2xl transition-all border border-white/5 active-haptic"
                                 >
                                     <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
