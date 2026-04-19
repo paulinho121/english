@@ -13,8 +13,7 @@
 // ─── AUDIO (Live / Realtime / BidiGenerateContent) ──────────────────────────
 // Used by: server/index.ts (WebSocket proxy to Gemini Multimodal Live API)
 export const AUDIO_MODELS: string[] = [
-    'models/gemini-2.5-flash-preview-native-audio-dialog',  // Newest — try first
-    'models/gemini-2.5-flash-native-audio-preview-12-2025', // Previous stable
+    'models/gemini-2.5-flash-native-audio-preview-12-2025', // Last confirmed working — primary
     'models/gemini-2.0-flash-live-001',                     // Stable fallback
     'models/gemini-2.0-flash-exp',                          // Last resort
 ];
