@@ -627,7 +627,7 @@ const MainApp: React.FC = () => {
         // 1. Send Setup Message (Minimal - Server will inject protected systemInstructions)
         const setupMessage = {
           setup: {
-            model: 'models/gemini-2.5-flash-native-audio-preview-12-2025',
+            model: 'models/gemini-2.5-flash-preview-native-audio-dialog', // Server will override with active model from fallback chain
             generationConfig: {
               responseModalities: ['AUDIO'],
               speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: teacher.voice } } },
