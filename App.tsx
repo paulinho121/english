@@ -149,7 +149,8 @@ const MainApp: React.FC = () => {
 
 
   // Moved loading/auth checks to bottom to prevent Hook Error #310
-  initAnalytics();
+  // initAnalytics is called at top level, no need to call it here on every render
+
 
 
   useEffect(() => {

@@ -1,15 +1,16 @@
 import posthog from 'posthog-js';
 
-const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY;
-const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://app.posthog.com';
+const POSTHOG_KEY = import.meta.env.VITE_POSTHOG_KEY || 'phc_Mt8o1IOEqDRawtJe4rbEKeRWxvAHSy7auQVo9hqzok9';
+const POSTHOG_HOST = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 
 export const initAnalytics = () => {
     if (POSTHOG_KEY && POSTHOG_HOST) {
         try {
             posthog.init(POSTHOG_KEY, {
                 api_host: POSTHOG_HOST,
-                autocapture: false, // We want manual control for precision
-                capture_pageview: false, // Too noisy for SPA
+                defaults: '2026-01-30',
+                autocapture: true,
+                capture_pageview: true,
                 loaded: (ph) => {
                     console.log('✅ PostHog Loaded Successfully!', ph);
                 }
@@ -26,6 +27,7 @@ export const initAnalytics = () => {
 export const trackEvent = (eventName: string, properties?: Record<string, any>) => {
     if (POSTHOG_KEY) {
         posthog.capture(eventName, properties);
+        console.log(`📊 [Analytics] Tracked: ${eventName}`, properties);
     } else {
         console.log(`[Analytics - Dev] ${eventName}`, properties);
     }
@@ -34,6 +36,7 @@ export const trackEvent = (eventName: string, properties?: Record<string, any>) 
 export const identifyUser = (userId: string, email?: string) => {
     if (POSTHOG_KEY) {
         posthog.identify(userId, { email });
+        console.log(`👤 [Analytics] Identified User: ${userId}`, { email });
     }
 };
 
